@@ -1,0 +1,31 @@
+# Global settings for the psnap code
+#
+# this file should be adapted to your platform/system/OS
+
+# Target CPU
+CPU     = x86
+
+# Target OS
+OS      = LINUX
+
+# Optimisation level
+OPT     = -O
+
+# compiler version
+CVER    = 4.1
+
+# compiler
+CC      = g++
+
+# Python Library
+PYTHON	= /usr/include/python2.5/
+
+# Libraries
+LIB	= -lPvAPI -lrt -lz
+
+# some flags
+DFLAGS	= -D_$(CPU) -D_$(OS)
+
+## few locations
+INC_DIR	  = ./Prosilica/inc-pc
+LIB_DIR   = ./Prosilica/lib-pc/$(CPU)/$(CVER)

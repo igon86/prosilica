@@ -1,0 +1,28 @@
+### Psnap Interface for Prosilica cameras
+###
+### 07/27/09
+###
+
+The Psnap interface can be build as follow:
+
+make sample; make install;
+
+this is the same pattern used to build the prosilica examples
+
+* All the Python code can be found on the folder ./Python
+
+* The folder ./Prosilica should contain all the folders from the Prosilica SDK 
+  it actually contains the SDK 1.20 for Linux, if you have a different OS change this folder and hope....
+
+* Modify the conf file for your architecture
+
+* Should work fine on 64bit machines (never tried)
+
+
+  from the Prosilica README
+
+* For best streaming performance, the examples and your application should be run as superuser.
+
+* The MTU of the GigE adapter should be changed to accommodate for Jumbo frames using the 'ifconfig' command. The syntax is as follow:
+
+> sudo ifconfig eth0 mtu 8228
