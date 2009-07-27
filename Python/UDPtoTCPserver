@@ -1,0 +1,21 @@
+#!/bin/sh
+PATH=$PATH:/cvs/cds/caltech/target/Prosilica/40mCode/SnapCode/SnapPyClean
+
+if [ $# = 0 ]; then
+
+gst-launch-0.10 udpsrc multicast-group="239.255.1.1" port=5000 caps=image/jpeg ! tcpserversink host="127.0.0.1" port=5010
+
+fi
+
+if [ $# = 1 ]; then
+
+gst-launch-0.10 udpsrc multicast-group="239.255.1.1" port=5000 caps=image/jpeg ! tcpserversink host="127.0.0.1" port=$1
+
+fi
+
+
+if [ $# = 2 ]; then
+
+gst-launch-0.10 udpsrc multicast-group="239.255.1.1" port=$2 caps=image/jpeg ! tcpserversink host="127.0.0.1" port=$1
+
+fi
