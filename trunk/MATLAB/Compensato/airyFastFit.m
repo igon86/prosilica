@@ -79,14 +79,14 @@ for j=1:iterazioni
     
     M(:,8) = 1;
     
-%     %plot della differenza della predizione
-%     if j == 1
-%         figure(6);
-%         diffmap = reshape(differenze,dimx,dimy);
-%         mesh(diffmap);
-%         title('Predition residual map');
-%         drawnow;
-%     end
+    %     %plot della differenza della predizione
+    %     if j == 1
+    %         figure(6);
+    %         diffmap = reshape(differenze,dimx,dimy);
+    %         mesh(diffmap);
+    %         title('Predition residual map');
+    %         drawnow;
+    %     end
     
     %calcolo la matrice di iterazione a e b
     matrix = M'*M;
@@ -130,7 +130,7 @@ end
 
 %plot3D iterata
 % gaussiana = reshape(immagine,dimx,dimy);
-% 
+%
 % figure(3);
 % mesh(real(gaussiana));
 % title('fittedSolution');
@@ -180,7 +180,7 @@ R2 = 1 - (SSerr/SStot);
 % %goodness = chi/dimension;
 % title(['Residuals map, goodness of fit is: ',num2str(R2)]);
 
-%%%%%%%%%%%%%%%%%%%%%%%%%     STATISTICS      %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%     STATISTICS  x_0    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 if stat == 1
     
@@ -188,22 +188,22 @@ if stat == 1
     %confidence of x
     
     stat_thres = 5;
-    threshold = R2*((100+stat_thres)/100);
-    epsilon = R2/100;
+    threshold = SSerr*((100+stat_thres)/100);
+    epsilon = SSerr/100;
     upthreshold = threshold + epsilon;
     lowthreshold = threshold - epsilon;
     
     %left border -> algoritmo di bisezione
     
-    left = 0
-    right = x_0
-    center = x_0/2
-    quadrati = 2*R2
+    left = 0;
+    right = x_0;
+    center = x_0/2;
+    quadrati = 2*SSerr;
     
     iterazione=1;
     
     while quadrati > upthreshold || quadrati < lowthreshold
-        fprintf(1,'Iterazione %d con residuo %d che lavora su %d   %d  %d\n',iterazione,quadrati,left,center,right);
+        %fprintf(1,'Iterazione %d con residuo %d che lavora su %d   %d  %d\n',iterazione,quadrati,left,center,right);
         %adjustment of the section
         if quadrati > upthreshold
             left = center;
@@ -226,8 +226,10 @@ if stat == 1
         iterazione = iterazione +1;
     end
     
-    left_confidence = center
-    left_spot = quadrati
+    left_confidence_x = center
+    left_spot_x = quadrati
+    
+    x_0
     
     %right border -> algoritmo di bisezione
     
@@ -239,7 +241,7 @@ if stat == 1
     iterazione=1;
     
     while quadrati > upthreshold || quadrati < lowthreshold
-        fprintf(1,'Iterazione %d con residuo %d che lavora su %d   %d  %d\n',iterazione,quadrati,left,center,right);
+        %fprintf(1,'Iterazione %d con residuo %d che lavora su %d   %d  %d\n',iterazione,quadrati,left,center,right);
         %adjustment of the section
         if quadrati > upthreshold
             right = center;
@@ -260,8 +262,8 @@ if stat == 1
         quadrati = differenze' * differenze;
     end
     
-    right_confidence = center
-    right_spot = quadrati
+    right_confidence_x = center
+    right_spot_x = quadrati
     
     % plot su x
     s = 100;
@@ -285,12 +287,123 @@ if stat == 1
     end
     
     figure(7);
-    plot(x_s,stat_x,left_confidence,left_spot,'ro',right_confidence,right_spot,'ro')
-    title(['chi of x, x_0 is: ',num2str(x_0),' and is between ',num2str(left_confidence),' and ',num2str(right_confidence)]);
+    plot(x_s,stat_x,left_confidence_x,left_spot_x,'ro',right_confidence_x,right_spot_x,'ro')
+    title([' chi of x, x_0 is: ',num2str(x_0),' and is between ',num2str(left_confidence_x),' and ',num2str(right_confidence_x)]);
     
     %     figure(8);
     %     semilogy(x_s,stat_x)
     %     title(['confidence of x, x_0 is: ',num2str(x_0),' (ylogscale)']);
+    
+    
+    
+%%%%%%%%%%%%%%%%%%%%%%%%%     STATISTICS  y_0    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%    
+    
+    
+    
+    %confidence of y
+    
+    stat_thres = 5;
+    threshold = SSerr*((100+stat_thres)/100);
+    epsilon = SSerr/100;
+    upthreshold = threshold + epsilon;
+    lowthreshold = threshold - epsilon;
+    
+    %left border -> algoritmo di bisezione
+    
+    left = 0;
+    right = y_0;
+    center = y_0/2;
+    quadrati = 2*SSerr;
+    
+    iterazione=1;
+    
+    while quadrati > upthreshold || quadrati < lowthreshold
+        %fprintf(1,'Iterazione %d con residuo %d che lavora su %d   %d  %d\n',iterazione,quadrati,left,center,right);
+        %adjustment of the section
+        if quadrati > upthreshold
+            left = center;
+            center = left + ((right - left)/2);
+        else
+            right = center;
+            center = left + ((right - left)/2);
+        end
+        
+        %new error calculation
+        for i=1:m
+            x = mod(i ,  dimx);
+            y = floor(i/dimx);
+            immagine(i) = valutaPunto(A,x_0,center,sigma_x,sigma_y,a,b,c,x,y);
+        end
+        
+        differenze = img - immagine;
+        quadrati = differenze' * differenze;
+        
+        iterazione = iterazione +1;
+    end
+    
+    left_confidence_y = center;
+    left_spot_y = quadrati
+    
+    y_0
+    
+    %right border -> algoritmo di bisezione
+    
+    left = y_0;
+    right = dimy;
+    center = left + (right-left)/2;
+    quadrati = 2*SSerr;
+    
+    iterazione=1;
+    
+    while quadrati > upthreshold || quadrati < lowthreshold
+        %fprintf(1,'Iterazione %d con residuo %d che lavora su %d   %d  %d\n',iterazione,quadrati,left,center,right);
+        %adjustment of the section
+        if quadrati > upthreshold
+            right = center;
+            center = left + (right - left)/2;
+        else
+            left = center;
+            center = left + (right - left)/2;
+        end
+        
+        %new error calculation
+        for i=1:m
+            x = mod(i ,  dimx);
+            y = floor(i/dimx);
+            immagine(i) = valutaPunto(A,x_0,center,sigma_x,sigma_y,a,b,c,x,y);
+        end
+        
+        differenze = img - immagine;
+        quadrati = differenze' * differenze;
+    end
+    
+    right_confidence_y = center
+    right_spot_y = quadrati
+    
+    % plot su x
+    s = 100;
+    x_s = linspace(x_0 -10,x_0 +10,s);
+    
+    stat_x = zeros(s,1);
+    for j=1:s
+        %calcolo l'immagine shiftata
+        for i=1:m
+            x = mod(i ,  dimx);
+            y = floor(i/dimx);
+            immagine(i) = valutaPunto(A,x_s(j),y_0,sigma_x,sigma_y,a,b,c,x,y);
+        end
+        
+        differenze = img - immagine;
+        quadrati = differenze' * differenze;
+        stat_x(j) = quadrati;
+        %         if(quadrati < R2)
+        %             fprintf('Non ha convergiuto completamente, R: %d',quadrati);
+        %         end
+    end
+    
+    figure(8);
+    plot(x_s,stat_x,left_confidence_y,left_spot_y,'ro',right_confidence_y,right_spot_y,'ro')
+    title([' chi of y, y_0 is: ',num2str(y_0),' and is between ',num2str(left_confidence_y),' and ',num2str(right_confidence_y)]);
     
 end
 end
