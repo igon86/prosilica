@@ -189,7 +189,7 @@ if stat == 1
     
     stat_thres = 5;
     threshold = SSerr*((100+stat_thres)/100);
-    epsilon = SSerr/100;
+    epsilon = SSerr/1000;
     upthreshold = threshold + epsilon;
     lowthreshold = threshold - epsilon;
     
@@ -288,8 +288,9 @@ if stat == 1
     
     figure(7);
     plot(x_s,stat_x,left_confidence_x,left_spot_x,'ro',right_confidence_x,right_spot_x,'ro')
-    title([' chi of x, x_0 is: ',num2str(x_0),' and is between ',num2str(left_confidence_x),' and ',num2str(right_confidence_x)]);
-    
+    title([' x_0 is: ',num2str(x_0),' and is between ',num2str(left_confidence_x),' and ',num2str(right_confidence_x)]);
+    xlabel('x_0');
+    ylabel('SSerr');
     %     figure(8);
     %     semilogy(x_s,stat_x)
     %     title(['confidence of x, x_0 is: ',num2str(x_0),' (ylogscale)']);
@@ -301,12 +302,6 @@ if stat == 1
     
     
     %confidence of y
-    
-    stat_thres = 5;
-    threshold = SSerr*((100+stat_thres)/100);
-    epsilon = SSerr/100;
-    upthreshold = threshold + epsilon;
-    lowthreshold = threshold - epsilon;
     
     %left border -> algoritmo di bisezione
     
@@ -403,7 +398,9 @@ if stat == 1
     
     figure(8);
     plot(x_s,stat_x,left_confidence_y,left_spot_y,'ro',right_confidence_y,right_spot_y,'ro')
-    title([' chi of y, y_0 is: ',num2str(y_0),' and is between ',num2str(left_confidence_y),' and ',num2str(right_confidence_y)]);
+    title([' y_0 is: ',num2str(y_0),' and is between ',num2str(left_confidence_y),' and ',num2str(right_confidence_y)]);
+    xlabel('y_0');
+    ylabel('SSerr');
     
 end
 end
