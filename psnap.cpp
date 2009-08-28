@@ -380,26 +380,28 @@ unsigned long getUID(tCamera * Camera)
 }
 
 /***************************************************************************************************************
-DEPRECATED
+DEPRECATED ->  to be modified _. is it good now??
+
+Return the actual frame -> works only in black and white
 ****************************************************************************************************************/
-/**
-PyObject * getFrame(tCamera * Camera, char* mode)
+
+unsigned char* getFrame(tCamera * Camera,int* s)
 {
   int  size = 0;
-  if(!strcmp(mode, "Grey"))
-    {
       if (Camera->Frame.Format == ePvFmtMono8)
 	{
 	  size = Camera->Frame.Width * Camera->Frame.Height;
-	  PyObject * newFrame;
-	  newFrame = PyBuffer_FromMemory(Camera->Frame.ImageBuffer,size); 
+	  unsigned char * newFrame = (unsigned char*) malloc(size);
+		memcpy(newFrame,Camera->Frame.ImageBuffer,size);
+		*s = size;
 	  return newFrame;
 	}
       else if (Camera->Frame.Format == ePvFmtMono16)
 	{
 	  size = Camera->Frame.Width * Camera->Frame.Height * 2;
-	  PyObject * newFrame;
-	  newFrame = PyBuffer_FromMemory(Camera->Frame.ImageBuffer,size);
+	  unsigned char * newFrame = (unsigned char*) malloc(size);
+		memcpy(newFrame,Camera->Frame.ImageBuffer,size);
+		*s = size;
 	  return newFrame;
 	}
       else
@@ -407,83 +409,4 @@ PyObject * getFrame(tCamera * Camera, char* mode)
 	  fprintf(stderr,"Unexpected Frame Format - neither Mono8 or Mono16 \n");
 	  return NULL;
 	}
-    }
-  if(!strcmp(mode, "Color"))
-    {
-      if (Camera->Frame.Format == ePvFmtMono8)
-	{
-	  size = Camera->Frame.Width * Camera->Frame.Height;
-	  uint8_t * colorArray;
-	  colorArray = new uint8_t [size * 3];
-	  uint8_t temp = 0;
-	  
-	  for (int i = 0; i < size; i++)
-	    {
-	      
-	      temp = ((uint8_t *) Camera->Frame.ImageBuffer)[i];
-	      
-	      if (temp < 128)
-		{
-		  colorArray[(3 * i)] =  0;
-		  colorArray[(3 * i) + 1] = 2 * temp;
-		  colorArray[(3 * i) + 2] = 255 - (2 * temp);
-		}
-	      else
-		{
-		  colorArray[(3 *i)] =  2 * (temp - 128);
-		  colorArray[(3 * i) + 1] = 255 - (2 * (temp - 128));
-		  colorArray[(3 * i) + 2] = 0;
-		}
-	    }
-	  
-	  PyObject * newFrame;
-	  newFrame = PyBuffer_FromMemory(colorArray,size * 3);
-	  delete[] colorArray;
-	  
-	  return newFrame;
-	}
-      else if (Camera->Frame.Format == ePvFmtMono16)
-	{
-	  size = Camera->Frame.Width * Camera->Frame.Height;
-	  uint8_t * colorArray;
-	  colorArray = new uint8_t [size * 3];
-	  uint16_t origTemp = 0;
-	  uint8_t temp = 0;
-	  for (int i = 0; i < size; i++)
-	    {
-	      origTemp = ((uint16_t *) Camera->Frame.ImageBuffer)[i];
-	      temp = (uint8_t) (temp/256);
-	      if (temp < 128)
-		{
-		  colorArray[(3 * i)] = 0;
-		  colorArray[(3 * i) + 1] = 2 * temp;
-		  colorArray[(3 * i) + 2] = 255 - (2 * temp);
-		}
-	      else
-		{
-		  colorArray[(3 * i)] = 2 * (temp - 128);
-		  colorArray[(3 * i) + 1] = 255 - (2 * (temp - 128));
-		  colorArray[(3 * i) + 2] = 0;
-		}
-	    }
-
-
-	  PyObject * newFrame;
-	  newFrame = PyBuffer_FromMemory(colorArray,size * 3);
-	  fprintf(stdout,"The number is %i",(uint8_t)colorArray[1]);
-	  delete[] colorArray;
-	  return newFrame;
-	}
-      else
-	{
-	  fprintf(stderr,"Unexpected Frame Format - neither Mono8 or Mono16 \n");
-	  return NULL;
-	}
-    }
-  else
-    {
-      fprintf(stderr,"Unexpected Color Format - neither Gray or Color \n");
-      return NULL;
-    }
 }
-*/

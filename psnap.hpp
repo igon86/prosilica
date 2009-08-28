@@ -1,3 +1,5 @@
+#ifndef __PSNAP__HPP
+#define __PSNAP__HPP
 
 //Comment out to remove debug print commands
 //#define DEBUG
@@ -69,3 +71,8 @@ bool setUID(tCamera * Camera, long camera_uid);
 
 //Get Camera UID from a tCamera object
 unsigned long getUID(tCamera * Camera);
+
+/**return the current frame in the camera buffer, s is the size of the frame*/
+unsigned char* getFrame(tCamera * Camera,int* s);
+
+#endif
