@@ -14,6 +14,7 @@ imag = double(image);
 iterazioni = 10;
 R = zeros(iterazioni+1,1);
 
+
 %parameter inizialization
 A = massimo;
 x_0 = centro_x;
