@@ -2,9 +2,6 @@
 //Comment out to remove debug print commands
 //#define DEBUG
 
-//Python includes (Python and Numpy)
-#include "Python.h"
-
 //Basic Includes
 //#include "StdAfx.h"
 #include <iostream>
@@ -72,9 +69,3 @@ bool setUID(tCamera * Camera, long camera_uid);
 
 //Get Camera UID from a tCamera object
 unsigned long getUID(tCamera * Camera);
-
-//Access frame buffer data at indicated offset from zero (position)
-//Since this pointing to the raw data, running snapCamera before copying
-//will change the data
-
-PyObject* getFrame(tCamera * Camera, char* mode);

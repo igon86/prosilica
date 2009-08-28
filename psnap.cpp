@@ -380,9 +380,9 @@ unsigned long getUID(tCamera * Camera)
 }
 
 /***************************************************************************************************************
-
+DEPRECATED
 ****************************************************************************************************************/
-
+/**
 PyObject * getFrame(tCamera * Camera, char* mode)
 {
   int  size = 0;
@@ -486,3 +486,4 @@ PyObject * getFrame(tCamera * Camera, char* mode)
       return NULL;
     }
 }
+*/
