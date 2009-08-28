@@ -200,7 +200,7 @@ int main(int argc, char* argv[])
 			case 'f': temp = atoi(argv[parcounter-1]);
 				if(temp>0) iter = temp;
 				break;
-			case 'd': int temp = atoi(argv[parcounter-1]);
+			case 'd': temp = atoi(argv[parcounter-1]);
 				if(temp > 0) delay = temp;
 				break;
 			case 'n': dest=argv[parcounter-1];

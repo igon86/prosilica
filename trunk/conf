@@ -12,7 +12,7 @@ OS      = LINUX
 OPT     = -O
 
 # compiler version
-CVER    = 4.0
+CVER    = 4.1
 
 # compiler
 CC      = g++
