@@ -382,22 +382,22 @@ if stat == 1
     right_confidence_y = center;
     right_spot_y = quadrati;
     
-    % plot su x
+    % plot su y
     s = 100;
-    x_s = linspace(x_0 -10,x_0 +10,s);
+    y_s = linspace(x_0 -10,x_0 +10,s);
     
-    stat_x = zeros(s,1);
+    stat_y = zeros(s,1);
     for j=1:s
         %calcolo l'immagine shiftata
         for i=1:m
             x = mod(i ,  dimx);
             y = floor(i/dimx);
-            immagine(i) = valutaPunto(A,x_s(j),y_0,sigma_x,sigma_y,a,b,c,x,y);
+            immagine(i) = valutaPunto(A,x_0,y_s(j),sigma_x,sigma_y,a,b,c,x,y);
         end
         
         differenze = img - immagine;
         quadrati = differenze' * differenze;
-        stat_x(j) = quadrati;
+        stat_y(j) = quadrati;
         %         if(quadrati < R2)
         %             fprintf('Non ha convergiuto completamente, R: %d',quadrati);
         %         end
@@ -409,5 +409,109 @@ if stat == 1
 %     plot(x_s,stat_x,left_confidence_y,left_spot_y,'ro',right_confidence_y,right_spot_y,'ro')
 %     title([' chi of y, y_0 is: ',num2str(y_0),' and is between ',num2str(left_confidence_y),' and ',num2str(right_confidence_y)]);
     
+%%%%%%%%%%%%%%%%%%%%%%%%%     STATISTICS  sigma_x    %%%%%%%%%%%%%%%%%%%%%%%%%
+
+    %left border -> algoritmo di bisezione
+    
+    left = 0;
+    right = sigma_x;
+    center = left + (right-left)/2 ;
+    quadrati = 2*SSerr;
+    
+    iterazione=1;
+    
+    while quadrati > upthreshold || quadrati < lowthreshold
+        fprintf(1,'Iterazione %d con residuo %d che lavora su %d   %d  %d\n',iterazione,quadrati,left,center,right);
+        %adjustment of the section
+        
+        if quadrati > upthreshold
+            left = center;
+            center = left + ((right - left)/2);
+        else
+            right = center;
+            center = left + ((right - left)/2);
+        end
+        
+        %new error calculation
+        for i=1:m
+            x = mod(i ,  dimx);
+            y = floor(i/dimx);
+            immagine(i) = valutaPunto(A,x_0,y_0,center,sigma_y,a,b,c,x,y);
+        end
+        
+        differenze = img - immagine;
+        quadrati = differenze' * differenze;
+        
+        iterazione = iterazione +1;
+    end
+    
+    left_confidence_sigma_x = center
+    left_spot_sigma_x = quadrati;
+    
+            center/sigma_x
+    
+    sigma_x
+    
+    %right border -> algoritmo di bisezione
+    
+    left = sigma_x;
+    right = 10*sigma_x;
+    center = left + (right-left)/2;
+    quadrati = 2*SSerr;
+    
+    iterazione=1;
+    
+    while quadrati > upthreshold || quadrati < lowthreshold
+        fprintf(1,'Iterazione %d con residuo %d che lavora su %d   %d  %d\n',iterazione,quadrati,left,center,right);
+        %adjustment of the section
+        if quadrati > upthreshold
+            right = center;
+            center = left + (right - left)/2;
+        else
+            left = center;
+            center = left + (right - left)/2;
+        end
+        
+        %new error calculation
+        for i=1:m
+            x = mod(i ,  dimx);
+            y = floor(i/dimx);
+            immagine(i) = valutaPunto(A,x_0,y_0,center,sigma_y,a,b,c,x,y);
+        end
+        
+        center/sigma_x
+        
+        differenze = img - immagine;
+        quadrati = differenze' * differenze;
+    end
+    
+    right_confidence_sigma_x = center;
+    right_spot_sigma_x = quadrati;
+    
+    % plot su x
+    s = 100;
+    sigma_x_s = linspace(x_0 -10,x_0 +10,s);
+    
+    stat_sigma_x = zeros(s,1);
+    for j=1:s
+        %calcolo l'immagine shiftata
+        for i=1:m
+            x = mod(i ,  dimx);
+            y = floor(i/dimx);
+            immagine(i) = valutaPunto(A,x_0,y_0,sigma_x_s(j),sigma_y,a,b,c,x,y);
+        end
+        
+        differenze = img - immagine;
+        quadrati = differenze' * differenze;
+        stat_sigma_x(j) = quadrati;
+        %         if(quadrati < R2)
+        %             fprintf('Non ha convergiuto completamente, R: %d',quadrati);
+        %         end
+    end
+    
+        figure(8);
+    plot(sigma_x_s,stat_sigma_x,left_confidence_sigma_x,left_spot_sigma_x,'ro',right_confidence_sigma_x,right_spot_sigma_x,'ro')
+    title([' chi of sigma_x, sigma_x is: ',num2str(sigma_x),' and is between',num2str(left_confidence_sigma_x),' and ',num2str(right_confidence_sigma_x)]);
+
 end
 end
