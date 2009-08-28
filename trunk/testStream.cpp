@@ -4,8 +4,8 @@
 #include "mysnap.hpp"
 #include "tiffPostElaboration.hpp"
 
-#define iter 10
-#define len 15
+#define iter 100
+#define len 30
 
 int main(int argc, char* argv[])
 {
@@ -53,6 +53,7 @@ int main(int argc, char* argv[])
 							unsigned char* temp = getFrame(&Camera,&tempsize);
 
 							/**write the test image*/
+							printf("\n\n%s\n",file);
 							writeImage(temp,file,w,h);
 							//Sleep(delay);
 						}
