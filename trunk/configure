@@ -1,0 +1,18 @@
+#!/bin/bash
+
+echo -n "searching libraries."
+if ! [ -a ./Prosilica/examples/ARCH ]; then
+	echo ".......failed"
+	echo "missing ARCH file \n ./Prosilica/examples/ARCH"
+	exit 1
+fi
+echo "....ok"
+
+echo -n "checking operative system......"
+
+os = $(grep -c OSX ./Prosilica/examples/ARCH)
+if [ $os == 1 ]; then
+	echo "OSX"
+else
+	echo "LINUX"
+fi
