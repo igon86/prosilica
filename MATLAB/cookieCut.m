@@ -1,7 +1,5 @@
 function [mask,Ampiezza,minimo,x_0,y_0,sigma_x,sigma_y] = cookieCut(image,alpha)
     
-    
-    
     %dimension of the image
     [dimx,dimy] = size(image);
     img = image(:);
@@ -55,7 +53,7 @@ function [mask,Ampiezza,minimo,x_0,y_0,sigma_x,sigma_y] = cookieCut(image,alpha)
     
     %sigma detection
     
-    FWHM =massimo/2;
+    FWHM =massimo/2
     tempx1 = wcenter;
     tempx2 = wcenter;
     tempy1 = hcenter;
@@ -63,11 +61,12 @@ function [mask,Ampiezza,minimo,x_0,y_0,sigma_x,sigma_y] = cookieCut(image,alpha)
     
     %sigma_x detection
     while(image(hcenter,tempx1)>FWHM)
-        tempx1 = tempx1+1;
+        
+        tempx1 = tempx1+1
     end
     
     while(image(hcenter,tempx2)>FWHM)
-        tempx2 = tempx2-1;
+        tempx2 = tempx2-1
     end
     
     FWHM_x = 0.5*(tempx1-wcenter) + 0.5*abs(tempx2-wcenter);

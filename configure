@@ -8,11 +8,29 @@ if ! [ -a ./Prosilica/examples/ARCH ]; then
 fi
 echo "....ok"
 
+echo -n "checking CPU......"
+temp=($(grep CPU ./Prosilica/examples/ARCH))
+cpu=${temp[5]}
+echo $cpu
+
 echo -n "checking operative system......"
 
-os = $(grep -c OSX ./Prosilica/examples/ARCH)
-if [ $os == 1 ]; then
+os=$(grep -c OSX ./Prosilica/examples/ARCH)
+#echo $os
+
+if [ $os != 0 ]; then
 	echo "OSX"
+	cp ./Prosilica/examples/ARCH conf
+	cp ./Prosilica/bin-pc/$cpu/libPvAPI.dylib .
 else
 	echo "LINUX"
+	cp ./Prosilica/examples/ARCH conf
+	#there is an error in the Prosilica Makefile --> just to be sure
+	sed -i s/'CC      = g++-$(CVER)'/'CC      = g++ -$(CVER)'/g conf
+	cp ./Prosilica/bin-pc/$cpu/libPvAPI.so .
 fi
+
+#directory update
+sed -ibak s:inc-pc:/Prosilica/inc-pc:g conf
+sed -ibak s:'../../bin-pc/':'./Prosilica/bin-pc/':g conf
+sed -ibak s:'../../lib-pc/':'./Prosilica/lib-pc/':g conf
