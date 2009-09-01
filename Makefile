@@ -12,11 +12,18 @@ clean:
 	rm -f mySnap
 	rm -rf ./Image/*
 
+## shared libs
+SOLIB   = $(EXTRA_LIB) -L$(BIN_DIR) -lPvAPI
+LIB         = -Bstatic $(LIB_DIR)/$(CVER)/libImagelib.a -Bdynamic $(LTIFF) $(SOLIB) 
+
+## final compilation flags
+CFLAGS  = $(OPT) $(FLAGS) -Wall -I$(INC_DIR) -D_REENTRANT $(EXTRA)
+
 snap:
-	g++ -O3 -fno-strict-aliasing -fexceptions -I/usr/include -D_x86 -D_OSX -Wall -I./Prosilica/inc-pc -D_REENTRANT  mysnap.cpp psnap.cpp snap.cpp -o mySnap -Bstatic $(LIB_DIR)/libImagelib.a -Bdynamic -lpthread -lz -ltiff -L./Prosilica/bin-pc/x86 -lPvAPI
+	$(CC) $(RPATH) $(TARGET) $(CFLAGS)  mysnap.cpp psnap.cpp snap.cpp -o mySnap $(LIB)
 
 post:
 	g++ -ltiff -o post tiffPostElaboration.cpp
 
 stream:
-	g++ -O3 -fno-strict-aliasing -fexceptions -I/usr/include -D_x86 -D_OSX -Wall -I./Prosilica/inc-pc -D_REENTRANT testStream.cpp mysnap.cpp psnap.cpp tiffPostElaboration.cpp -o stream -Bstatic $(LIB_DIR)/libImagelib.a -Bdynamic -lpthread -lz -ltiff -L./Prosilica/bin-pc/x86 -lPvAPI
+	$(CC) $(RPATH) $(TARGET) $(CFLAGS) testStream.cpp mysnap.cpp psnap.cpp tiffPostElaboration.cpp -o stream $(LIB)

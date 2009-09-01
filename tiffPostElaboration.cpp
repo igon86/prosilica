@@ -1,7 +1,4 @@
-#include <tiffio.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+
 
 #include "tiffPostElaboration.hpp"
 
@@ -85,7 +82,7 @@ bool writeImage(unsigned char* image,char* dest, int w, int h){
 		TIFFSetField(out, TIFFTAG_ROWSPERSTRIP, TIFFDefaultStripSize(out, w*sampleperpixel));
 		
 		//Now writing image to the file one strip at a time
-		for (uint32 row = 0; row < h; row++)
+		for (uint32 row = 0; row < (uint32) h; row++)
 		{
 			//printf("%d ",row);
 			//fflush(stdout);

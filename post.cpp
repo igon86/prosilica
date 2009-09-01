@@ -1,4 +1,4 @@
-#include "tiffPostElaboration.hpp" 
+#include "tiffPostElaboration.hpp"
 
 /***************************************************************************************************************
 						MAIN

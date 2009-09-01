@@ -1,31 +1,43 @@
-# Global settings for the psnap code
+# Global ARCHitecture settings for the Sample code
 #
-# this file should be adapted to your platform/system/OS
+# this file should be adapted to your platform
 
 # Target CPU
-CPU     = x86
+CPU	= x86
+#CPU	= x64
+#CPU	= ppc
 
 # Target OS
-OS      = LINUX
+OS	= OSX
+OS_DIR  = OSX
 
-# Optimisation level
-OPT     = -O
+# OS-X version
+OSXV	= -mmacosx-version-min=10.4
+# architecture flags
+#ARCH	= -m64
+#ARCH	= -arch ppc
+
+# compilation flags
+OPT	= -O3 $(ARCH) $(OSXV)
 
 # compiler version
 CVER    = 4.0
-
 # compiler
-CC      = g++
-
-# Python Library
-PYTHON	= /usr/include/python2.5/
-
-# Libraries
-LIB	= -lPvAPI -lrt -lz
+CC      = g++-$(CVER)
+# linker
+LD      = ld
+AR      = ar
 
 # some flags
 DFLAGS	= -D_$(CPU) -D_$(OS)
+FLAGS   = -fno-strict-aliasing -fexceptions -I/usr/include $(DFLAGS)
+
+## TIFF library
+#LTIFF   = -ltiff
 
 ## few locations
 INC_DIR	  = ./Prosilica/inc-pc
-LIB_DIR   = ./Prosilica/lib-pc/$(CPU)/$(CVER)
+BIN_DIR   = ./Prosilica/bin-pc/$(CPU)
+LIB_DIR   = ./Prosilica/lib-pc/$(CPU)
+OBJ_DIR	  = ./obj/$(CPU)
+EXTRA_LIB = -lpthread -lz
