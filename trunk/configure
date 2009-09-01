@@ -31,6 +31,6 @@ else
 fi
 
 #directory update
-sed -ibak s:inc-pc:/Prosilica/inc-pc:g conf
+sed -ibak s:'../../inc-pc':'./Prosilica/inc-pc':g conf
 sed -ibak s:'../../bin-pc/':'./Prosilica/bin-pc/':g conf
 sed -ibak s:'../../lib-pc/':'./Prosilica/lib-pc/':g conf
