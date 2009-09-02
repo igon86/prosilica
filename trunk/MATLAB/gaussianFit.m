@@ -1,6 +1,6 @@
 %max,x_0,y_0 vengono dalla preelaborazione in C, sigma_x e sigma_y si
 %possono ricavare dall'immagine come bordi della maschera (forse...)
-function [A,x_0,y_0,sigma_x,sigma_y,a,b,c] = gaussianFit(image,mask,max,min,centro_x,centro_y,var_x,var_y)
+function [A,x_0,y_0,sigma_x,sigma_y,a,b,c] = gaussianFit(image,max,min,centro_x,centro_y,var_x,var_y)
     
     %plot della roba da fittare
     figure(1);
@@ -9,7 +9,7 @@ function [A,x_0,y_0,sigma_x,sigma_y,a,b,c] = gaussianFit(image,mask,max,min,cent
     title('toBeFitted');
     
     %scelgo quanto iterare (ancora non funziona abbastanza bene da poter usare i residui come criterio di areesto)
-    iterazioni = 10;
+    iterazioni = 5;
     R = zeros(iterazioni,1);
     
     %parameter inizialization
@@ -50,9 +50,9 @@ function [A,x_0,y_0,sigma_x,sigma_y,a,b,c] = gaussianFit(image,mask,max,min,cent
             y = floor(i/dimx);
             test = valutaPunto(A,x_0,y_0,sigma_x,sigma_y,a,b,c,x,y);
             %tutto il problema e` qui! -> il round e` una vera merda
-            if mask(i) == 1
+%             if mask(i) == 1
                 differenze(i) = img(i) - test;
-            end
+%             end
             M(i,1) = 1/exp((x - x_0)^2/sigma_x^2 + (y - y_0)^2/sigma_y^2);
             M(i,2) = (A*(2*x - 2*x_0))/(sigma_x^2*exp((x - x_0)^2/sigma_x^2 + (y - y_0)^2/sigma_y^2));
             M(i,3) = (A*(2*y - 2*y_0))/(sigma_y^2*exp((x - x_0)^2/sigma_x^2 + (y - y_0)^2/sigma_y^2));
