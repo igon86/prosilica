@@ -1,6 +1,6 @@
-
-
 #include "tiffPostElaboration.hpp"
+
+#define MAX 255
 
 /***************************************************************************************************************
 				Helper function for math programs
@@ -49,12 +49,116 @@ void matlabMatrixPort(unsigned char *data,int width,int length){
 }
 
 /***************************************************************************************************************
+									Centroid
+****************************************************************************************************************/
+
+void centroid(unsigned char* image,int w,int h,double* x,double* y){
+	int npixels = w*h;
+
+	//support data arrays
+	int counth[h];
+	int countw[w];
+	int count=0;
+	for (int i=0;i<h;i++) counth[i]=0;
+	for (int i=0;i<w;i++) countw[i]=0;
+	for(int i=0;i<npixels;i++){
+		unsigned temp = image[i];
+		if(temp){
+			++count;
+			++countw[i%w];
+			++counth[i/w];
+		}
+	}
+	
+	double w_center = 0;
+	double h_center = 0;
+	
+	//W CENTER
+	for (int i=0;i<w;i++){
+		w_center = w_center + ((double) countw[i] / count)*(i+1);
+		//printf("%d: %f ",i,media);
+	}
+	
+	//H CENTER
+	for (int i=0;i<h;i++){
+		h_center = h_center + ((double) counth[i] / count)*(i+1);
+	}
+	
+	*x = w_center;
+	*y = h_center;
+}
+
+/***************************************************************************************************************
+									Cookie
+****************************************************************************************************************/
+
+unsigned char* createMask(unsigned char* image,int w,int h,int max,double filter){
+	int threshold = filter*max;
+	printf("Il limite e` a %d pixel\n",threshold);
+	fflush(stdout);
+	int npixels = w*h;
+	printf("npixel e` %d\n",npixels);
+	unsigned char* cookie = new unsigned char [npixels];
+	for(int i=0;i<npixels;i++){
+		unsigned char temp = image[i];
+		if(temp > threshold) cookie[i]=MAX;
+		else cookie[i]=0; //basta dire poti poti. me le puoi toccare ma non dire poti poti se no mammina sa cosa vuol dire poti poti e sa cosa stai facendo! lo sa lo sa. e ovvio amore. 
+	}
+	return cookie;
+}
+
+/***************************************************************************************************************
+							Read TIFF function
+****************************************************************************************************************/
+unsigned char* readTIFF(int* width,int* height,int *max,char* link){
+	TIFF* tif = TIFFOpen(link,"r");
+
+	uint32 w, h;
+	size_t npixels;
+	uint32* raster;
+	
+	TIFFGetField(tif, TIFFTAG_IMAGEWIDTH, &w);
+	TIFFGetField(tif, TIFFTAG_IMAGELENGTH, &h);
+	
+	npixels = w * h;
+	raster = (uint32*) _TIFFmalloc(npixels * sizeof (uint32));
+	
+	unsigned char *immagine=new unsigned char[npixels];
+	*max = 0;
+	
+	if (raster != NULL) {
+
+		// filling the image char[]
+		unsigned char R;
+		if (TIFFReadRGBAImage(tif, w, h, raster, 0)) {
+			
+			for (int i=0;i<npixels;i++){
+				R= (char)TIFFGetR(raster[i]);
+				immagine[i]= (unsigned char)R;
+				if(R>*max) *max =R;
+			}
+
+			_TIFFfree(raster);
+
+		}
+		
+	}
+	*width = w;
+	*height = h;
+	return immagine;
+	
+}
+/***************************************************************************************************************
 				Writing mono8 black and white tiff function
 ****************************************************************************************************************/
 
-bool writeImage(unsigned char* image,char* dest, int w, int h){
-	//creo l'immagine per la maschera e ci copio la vecchia
+void writeImage(unsigned char* image,char* dest, int w, int h){
+		printf("STO PER APRIRE\n");
+		fflush(stdout);
 		TIFF* out = TIFFOpen(dest, "w");
+		printf("APERTA IN SCRITTURA\n");
+		fflush(stdout);
+		//8bit image
 		int sampleperpixel = 1;
 		
 		TIFFSetField (out, TIFFTAG_IMAGEWIDTH, w);  // set the width of the image
@@ -82,7 +186,7 @@ bool writeImage(unsigned char* image,char* dest, int w, int h){
 		TIFFSetField(out, TIFFTAG_ROWSPERSTRIP, TIFFDefaultStripSize(out, w*sampleperpixel));
 		
 		//Now writing image to the file one strip at a time
-		for (uint32 row = 0; row < (uint32) h; row++)
+		for (uint32 row = 0; row < h; row++)
 		{
 			//printf("%d ",row);
 			//fflush(stdout);
@@ -95,7 +199,18 @@ bool writeImage(unsigned char* image,char* dest, int w, int h){
 		}
 		(void) TIFFClose(out);
 		if (buf) _TIFFfree(buf);
-		if (image) delete(image);
-		return true;
 }
 
+/***************************************************************************************************************
+												Crop function
+****************************************************************************************************************/
+
+void cropImage(const unsigned char *input, int w,int h,unsigned char *result,int x1,int x2,int y1,int y2){
+	int count = 0;
+	int limit = w*y2;
+	for (int i = 0;i<limit;i++){
+		int a = i%h;
+		int b = i*h;
+		if(a >= x1 && a <= x2 && b >= y1 && b <= y2) result[count++] = input[i];
+	}
+}

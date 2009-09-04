@@ -23,7 +23,7 @@ snap:
 	$(CC) $(RPATH) $(TARGET) $(CFLAGS)  mysnap.cpp psnap.cpp snap.cpp -o mySnap $(LIB)
 
 post:
-	g++ -ltiff -o post tiffPostElaboration.cpp post.cpp
+	g++ -Wall -ltiff -o post tiffPostElaboration.cpp post.cpp
 
 stream:
-	$(CC) $(RPATH) $(TARGET) $(CFLAGS) testStream.cpp mysnap.cpp psnap.cpp tiffPostElaboration.cpp -o stream $(LIB)
+	$(CC) $(RPATH) $(TARGET) $(CFLAGS) -ltiff testStream.cpp mysnap.cpp psnap.cpp tiffPostElaboration.cpp -o stream $(LIB)

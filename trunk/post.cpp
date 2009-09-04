@@ -63,7 +63,7 @@ int main(int argc, char *argv[]){
 			//CHAR[] PER LA MASK
 			image=new unsigned char [w*h*s];
 			unsigned char temp;
-			int threshold = (int) filter*max;
+			int threshold = filter*max;
 			for(int i=0;i<npixels;i++){
 				unsigned char temp = (unsigned char)TIFFGetR(raster[i]);
 				if(temp>threshold) image[i]=255;
@@ -270,7 +270,7 @@ int main(int argc, char *argv[]){
 				//RILEGGO ANCORA LA MALEDETTA IMMAGINE ORIGINALE, questo codice fa schifo!!
 				tif = TIFFOpen(argv[1],"r");
 				TIFFReadRGBAImage(tif, w, h, raster, 0);
-				int i= (int) (h_center)*w;
+				int i= (h_center)*w;
 				unsigned char data[w];
 				int founded=0;
 				for (int j=0;j<w;j++){
