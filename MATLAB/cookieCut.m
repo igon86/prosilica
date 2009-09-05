@@ -89,5 +89,4 @@ function [mask,Ampiezza,minimo,x_0,y_0,sigma_x,sigma_y] = cookieCut(image,alpha)
     
     fprintf(1,'Centro in %d - %d con ampiezza %d e deviazioni sui due assi %d - %d\n',round(wcenter),round(hcenter),Ampiezza,round(sigma_x),round(sigma_y));
     mask = reshape(mask,dimx,dimy);
-    
 end
