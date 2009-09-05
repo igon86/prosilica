@@ -9,7 +9,7 @@ function [A,x_0,y_0,sigma_x,sigma_y,a,b,c] = gaussianFit(image,max,min,centro_x,
     title('toBeFitted');
     
     %scelgo quanto iterare (ancora non funziona abbastanza bene da poter usare i residui come criterio di areesto)
-    iterazioni = 5;
+    iterazioni = 10;
     R = zeros(iterazioni,1);
     
     %parameter inizialization

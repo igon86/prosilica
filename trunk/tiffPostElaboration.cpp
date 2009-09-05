@@ -1,7 +1,5 @@
 #include "tiffPostElaboration.hpp"
 
-#define MAX 255
-
 /***************************************************************************************************************
 				Helper function for math programs
 ****************************************************************************************************************/
@@ -48,69 +46,12 @@ void matlabMatrixPort(unsigned char *data,int width,int length){
 	fclose(fp);
 }
 
-/***************************************************************************************************************
-									Centroid
-****************************************************************************************************************/
 
-void centroid(unsigned char* image,int w,int h,double* x,double* y){
-	int npixels = w*h;
-
-	//support data arrays
-	int counth[h];
-	int countw[w];
-	int count=0;
-	for (int i=0;i<h;i++) counth[i]=0;
-	for (int i=0;i<w;i++) countw[i]=0;
-	for(int i=0;i<npixels;i++){
-		unsigned temp = image[i];
-		if(temp){
-			++count;
-			++countw[i%w];
-			++counth[i/w];
-		}
-	}
-	
-	double w_center = 0;
-	double h_center = 0;
-	
-	//W CENTER
-	for (int i=0;i<w;i++){
-		w_center = w_center + ((double) countw[i] / count)*(i+1);
-		//printf("%d: %f ",i,media);
-	}
-	
-	//H CENTER
-	for (int i=0;i<h;i++){
-		h_center = h_center + ((double) counth[i] / count)*(i+1);
-	}
-	
-	*x = w_center;
-	*y = h_center;
-}
-
-/***************************************************************************************************************
-									Cookie
-****************************************************************************************************************/
-
-unsigned char* createMask(unsigned char* image,int w,int h,int max,double filter){
-	int threshold = filter*max;
-	printf("Il limite e` a %d pixel\n",threshold);
-	fflush(stdout);
-	int npixels = w*h;
-	printf("npixel e` %d\n",npixels);
-	unsigned char* cookie = new unsigned char [npixels];
-	for(int i=0;i<npixels;i++){
-		unsigned char temp = image[i];
-		if(temp > threshold) cookie[i]=MAX;
-		else cookie[i]=0; //basta dire poti poti. me le puoi toccare ma non dire poti poti se no mammina sa cosa vuol dire poti poti e sa cosa stai facendo! lo sa lo sa. e ovvio amore. 
-	}
-	return cookie;
-}
 
 /***************************************************************************************************************
 							Read TIFF function
 ****************************************************************************************************************/
-unsigned char* readTIFF(int* width,int* height,int *max,char* link){
+unsigned char* readTIFF(int* width,int* height,int *max,int *min,char* link){
 	TIFF* tif = TIFFOpen(link,"r");
 
 	uint32 w, h;
@@ -125,6 +66,7 @@ unsigned char* readTIFF(int* width,int* height,int *max,char* link){
 	
 	unsigned char *immagine=new unsigned char[npixels];
 	*max = 0;
+	*min=255;
 	
 	if (raster != NULL) {
 
@@ -136,6 +78,7 @@ unsigned char* readTIFF(int* width,int* height,int *max,char* link){
 				R= (char)TIFFGetR(raster[i]);
 				immagine[i]= (unsigned char)R;
 				if(R>*max) *max =R;
+				if(R<*min) *min=R;
 			}
 
 			_TIFFfree(raster);
@@ -153,11 +96,9 @@ unsigned char* readTIFF(int* width,int* height,int *max,char* link){
 ****************************************************************************************************************/
 
 void writeImage(unsigned char* image,char* dest, int w, int h){
-		printf("STO PER APRIRE\n");
-		fflush(stdout);
+		
 		TIFF* out = TIFFOpen(dest, "w");
-		printf("APERTA IN SCRITTURA\n");
-		fflush(stdout);
+		
 		//8bit image
 		int sampleperpixel = 1;
 		
@@ -201,16 +142,3 @@ void writeImage(unsigned char* image,char* dest, int w, int h){
 		if (buf) _TIFFfree(buf);
 }
 
-/***************************************************************************************************************
-												Crop function
-****************************************************************************************************************/
-
-void cropImage(const unsigned char *input, int w,int h,unsigned char *result,int x1,int x2,int y1,int y2){
-	int count = 0;
-	int limit = w*y2;
-	for (int i = 0;i<limit;i++){
-		int a = i%h;
-		int b = i*h;
-		if(a >= x1 && a <= x2 && b >= y1 && b <= y2) result[count++] = input[i];
-	}
-}
