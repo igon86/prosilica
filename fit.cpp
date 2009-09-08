@@ -1,5 +1,3 @@
-#include <Accelerate/Accelerate.h>
-
 #include "fit.hpp"
 #include "tiffPostElaboration.hpp"
 

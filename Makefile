@@ -14,7 +14,7 @@ clean:
 
 ## shared libs
 SOLIB   = $(EXTRA_LIB) -L$(BIN_DIR) -lPvAPI
-LIB         = -Bstatic $(LIB_DIR)/$(CVER)/libImagelib.a -Bdynamic $(LTIFF) $(SOLIB) 
+LIB         = -Bstatic $(LIB_DIR)/$(CVER)/libImagelib.a -Bdynamic $(SOLIB)
 
 ## final compilation flags
 CFLAGS  = $(OPT) $(FLAGS) -Wall -I$(INC_DIR) -D_REENTRANT $(EXTRA)
@@ -26,4 +26,7 @@ post:
 	g++ -Wall -ltiff -o post tiffPostElaboration.cpp post.cpp
 
 stream:
-	$(CC) $(RPATH) $(TARGET) $(CFLAGS) -ltiff testStream.cpp mysnap.cpp psnap.cpp tiffPostElaboration.cpp -o stream $(LIB)
+	$(CC) $(RPATH) $(TARGET) $(CFLAGS) $(LTIFF) testStream.cpp mysnap.cpp psnap.cpp tiffPostElaboration.cpp -o stream $(LIB)
+
+crop:
+	$(CC) $(RPATH) $(TARGET) $(CFLAGS) $(LTIFF) $(MAT) testCrop.cpp fit.cpp tiffPostElaboration.cpp -o stream $(LIB) $(LAPACK)
