@@ -20,6 +20,7 @@ int main(int argc,char *argv[]){
 	double FWHM_y;
 	centroid(mask,w,h,&x0,&y0,&FWHM_x,&FWHM_y);
 	printf("centro in %f - %f\nCon ampiezza %f e %f\n",x0,y0,FWHM_x,FWHM_y);
+	
 	int span_x = (int) (2*FWHM_x);
 	int span_y = (int) (2*FWHM_y);
 	int x = (int) x0;
@@ -28,24 +29,27 @@ int main(int argc,char *argv[]){
 	int dimx = 2*span_x+1;
 	int dimy = 2*span_y+1;
 	writeImage(cropped,"crop.tiff",dimx,dimy);
+	
 	fit_t test_g;
 	test_g.type = GAUSSIAN;
 	test_g.A = max;
-	test_g.x_0 = x0;
-	test_g.y_0 = y0;
+	test_g.x_0 = span_x;
+	test_g.y_0 = span_y;
 	test_g.sigma_x = FWHM_x;
 	test_g.sigma_y = FWHM_y;
 	test_g.a = 0;
 	test_g.b = 0;
 	test_g.c = min;
+	
 	int dimension = dimx*dimy;
-	double* predition = new double [dimension];
+	
 	unsigned char* pred = new unsigned char [dimension];
 	int temp;
 	for (int i=0; i < dimension; i++){
-		temp = (int) evaluateGaussian(&test_g,i%w,i/w);
+		temp = (int) evaluateGaussian(&test_g,i%dimx,i/dimx);
 		pred[i] = temp;
 	}
+	printf("\n");
 	writeImage(pred,"pred.tiff",dimx,dimy);
 	iteration(cropped,dimx,dimy,&test_g);
 	return 0;
