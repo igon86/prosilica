@@ -9,6 +9,10 @@
 #include <stdio.h>
 #include "math.h"
 
+#if OS == OSX
+#include <Accelerate/Accelerate.h>
+#endif
+
 typedef struct fit {
 
   	/** function type*/
