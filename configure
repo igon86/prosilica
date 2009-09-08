@@ -22,6 +22,7 @@ if [ $os != 0 ]; then
 	echo "OSX"
 	cp ./Prosilica/examples/ARCH conf
 	cp ./Prosilica/bin-pc/$cpu/libPvAPI.dylib .
+	echo "##Linear Algebra Framework\nLAPACK	= -framework accelerate" >> conf
 else
 	echo "LINUX"
 	cp ./Prosilica/examples/ARCH conf
