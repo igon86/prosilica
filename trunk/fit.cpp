@@ -1,3 +1,4 @@
+#include <Accelerate/Accelerate.h>
 
 #include "fit.hpp"
 #include "tiffPostElaboration.hpp"
@@ -78,7 +79,7 @@ unsigned char* createMask(unsigned char* image,int w,int h,int max,int min,doubl
 ****************************************************************************************************************/
 
 unsigned char* cropImage(const unsigned char *input, int w,int h,int x1,int x2,int y1,int y2){
-	//printf("CROP: %d - %d   %d - %d\nsu immagine %dx%d\n",x1,x2,y1,y2,w,h);
+	printf("CROP: %d - %d   %d - %d\nsu immagine %dx%d\n",x1,x2,y1,y2,w,h);
 	fflush(stdout);
 	int count = 0;
 	int limit = w*(y2+1);
@@ -104,7 +105,7 @@ double evaluateGaussian(fit_t* gaussian,int x, int y){
 	double y_arg = pow(((double)y - gaussian->y_0),2.0) / pow(gaussian->sigma_y,2.0);
 	double arg = - ( x_arg +  y_arg);
 	double z = gaussian->A * exp( arg ) + slope;
-	printf("GGG %.2f - %.2f - %.2f - %.2f ",x_arg,y_arg,arg,z);
+	//printf("GGG %.2f - %.2f - %.2f - %.2f ",x_arg,y_arg,arg,z);
 	return z;
 }
 
@@ -115,18 +116,52 @@ void iteration(const unsigned char* data,int w,int h,fit_t* results){
 	int npixels = w*h;
 
 	double* diff = new double [npixels];
+	unsigned char* toPrint = new unsigned char[npixels];
 	double min = 255;
 	double max = -255;
-	double temp;
+	int temp;
+	int x,y;
 
 	for (int i =0; i < npixels; i++){
-		diff[i] = data[i] - evaluateGaussian(results,i%w,i/w);
-		temp = diff[i];
+		x = i%w;
+		y = i/w;
+		diff[i] = data[i] - evaluateGaussian(results,x,y);
+		temp = (int)diff[i];
+		toPrint[i] = abs(temp);
 		if(temp > max) max = temp;
 		if(temp<min) min = temp;
 	}
-	printf("Errore massimo: %f \n Errore minimo: %f",max,min);	
+	printf("Errore massimo: %f \n Errore minimo: %f\n",max,min);	
 	// display the residuals
-	//writeImage(diff,"diff.tiff",w,h);
+	writeImage(toPrint,"diff.tiff",w,h);
+	
+	//filling the M matrix
+	
+	double M[npixels][8];
+	
+	double diff_x,diff_y;
+	double frac_x,frac_y,sig2x,sig2y,dexp;
+	for (int i=0; i<npixels; i++){
+		x = i%w;
+		y = i/w;
+		
+		diff_x = x - results->x_0;
+		diff_y = y - results->y_0;
+		sig2x = pow(results->sigma_x,2);
+		sig2y = pow(results->sigma_y,2);
+		frac_x = pow(diff_x,2)/sig2x;
+		frac_y = pow(diff_y,2)/sig2y;
+		dexp = exp(frac_x + frac_y);
+						
+		M[i][1] = 1/dexp;
+		M[i][2] = (results->A*(2*x - 2*results->x_0)) / (sig2x*dexp);
+		M[i][3] = (results->A*(2*y - 2*results->y_0)) / (sig2y*dexp);
+		M[i][4] = (2*results->A*sig2x) / (pow(results->sigma_x,3)*dexp);
+		M[i][5] = (2*results->A*sig2y) / (pow(results->sigma_y,3)*dexp);
+		//derivative of the slopePlan!
+		M[i][6] = x;
+		M[i][7] = y;
+		M[i][8] = 1.0;
+	}
 }
 
