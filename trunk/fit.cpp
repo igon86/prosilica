@@ -129,20 +129,31 @@ void iteration(const unsigned char* data,int w,int h,fit_t* results){
 		if(temp > max) max = temp;
 		if(temp<min) min = temp;
 	}
-	printf("Errore massimo: %f \n Errore minimo: %f\n",max,min);	
+	printf("Errore massimo: %f \nErrore minimo: %f\n\n",max,min);	
 	// display the residuals
 	writeImage(toPrint,"diff.tiff",w,h);
 	
 	//filling the M matrix
+	int lda,ldb,ldc;
+	lda=8;
+	ldb=8;
+	ldc=8;
 	
-	double M[npixels][8];
+	/* consider that M is M' in reality*/
+	int dimension = 8*npixels;
+	double M[dimension];
+	double matrix[8][8];
+	double vector[8];
 	
 	double diff_x,diff_y;
 	double frac_x,frac_y,sig2x,sig2y,dexp;
+	int base;
 	for (int i=0; i<npixels; i++){
 		x = i%w;
 		y = i/w;
 		
+		base = i*8;
+		 
 		diff_x = x - results->x_0;
 		diff_y = y - results->y_0;
 		sig2x = pow(results->sigma_x,2);
@@ -151,15 +162,58 @@ void iteration(const unsigned char* data,int w,int h,fit_t* results){
 		frac_y = pow(diff_y,2)/sig2y;
 		dexp = exp(frac_x + frac_y);
 						
-		M[i][1] = 1/dexp;
-		M[i][2] = (results->A*(2*x - 2*results->x_0)) / (sig2x*dexp);
-		M[i][3] = (results->A*(2*y - 2*results->y_0)) / (sig2y*dexp);
-		M[i][4] = (2*results->A*sig2x) / (pow(results->sigma_x,3)*dexp);
-		M[i][5] = (2*results->A*sig2y) / (pow(results->sigma_y,3)*dexp);
+		M[base] = 1/dexp;
+		M[base+1] = (results->A*(2*x - 2*results->x_0)) / (sig2x*dexp);
+		M[base+2] = (results->A*(2*y - 2*results->y_0)) / (sig2y*dexp);
+		M[base+3] = (2*results->A*pow(diff_x,2)) / (pow(results->sigma_x,3)*dexp);
+		M[base+4] = (2*results->A*pow(diff_y,2)) / (pow(results->sigma_y,3)*dexp);
 		//derivative of the slopePlan!
-		M[i][6] = x;
-		M[i][7] = y;
-		M[i][8] = 1.0;
+		M[base+5] = x;
+		M[base+6] = y;
+		M[base+7] = 1.0;
+		
 	}
+	printf("TEST\n");
+	for (int index1 = 8;index1<16;index1++){
+		printf("%08f\t",M[index1]);
+	}
+	printf("\nMM\n");
+
+	/* Compute matrix = M'*M */
+	cblas_dgemm (CblasRowMajor, CblasTrans, CblasNoTrans, 8, 8, npixels,1.0,(double*) &M, lda,(double*) &M, ldb, 0.0,(double*) &matrix, ldc);
+	
+	for (int index1 = 0;index1<8;index1++){
+		for (int index2 =0;index2<8;index2++){
+			printf("%08.2f\t",matrix[index1][index2]);
+		}
+		printf("\n");
+	}
+	printf("\nDIFF\n");
+	/* Compute vector = M'*diff */
+	for (int i =8; i<16 ;i++){
+		for (int k=0;k<npixels;k++){
+			vector[i] = vector[i] + M[k*8 + i]*diff[k];
+		}
+	}
+	for (int index1 = 0;index1<8;index1++){
+		printf("%08.2f\t",vector[index1]);
+	}
+	printf("\n");
+	
+	/* Compute the delta vectorof deviation */
+	gsl_matrix_view m = gsl_matrix_view_array ((double* ) matrix, 8, 8);	
+	gsl_vector_view b = gsl_vector_view_array (vector, 8);
+	
+	gsl_vector *delta = gsl_vector_alloc (8);
+	
+	int s;
+     
+	gsl_permutation * p = gsl_permutation_alloc (8);
+     
+	gsl_linalg_LU_decomp (&m.matrix, p, &s);
+     
+	gsl_linalg_LU_solve (&m.matrix, p, &b.vector, delta);
+	printf ("delta = \n");
+	gsl_vector_fprintf (stdout, delta, "%g");
 }
 

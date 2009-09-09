@@ -9,9 +9,8 @@
 #include <stdio.h>
 #include "math.h"
 
-#if OS == OSX
-#include <Accelerate/Accelerate.h>
-#endif
+#include <gsl/gsl_cblas.h>
+#include <gsl/gsl_linalg.h>
 
 typedef struct fit {
 
