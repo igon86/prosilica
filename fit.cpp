@@ -171,16 +171,25 @@ void iteration(const unsigned char* data,int w,int h,fit_t* results){
 		M[base+5] = x;
 		M[base+6] = y;
 		M[base+7] = 1.0;
-		
 	}
 	printf("TEST\n");
 	for (int index1 = 8;index1<16;index1++){
 		printf("%08f\t",M[index1]);
 	}
 	printf("\nMM\n");
-
+	
 	/* Compute matrix = M'*M */
-	cblas_dgemm (CblasRowMajor, CblasTrans, CblasNoTrans, 8, 8, npixels,1.0,(double*) &M, lda,(double*) &M, ldb, 0.0,(double*) &matrix, ldc);
+	gsl_matrix *matrice = gsl_matrix_alloc(8, 8);	
+	gsl_vector *delta = gsl_vector_alloc (8);
+	
+	gsl_matrix_view gsl_M = gsl_matrix_view_array(M, npixels, 8);
+	
+	gsl_vector_view gsl_vector = gsl_vector_view_array(vector, 8);
+	
+	printf("\nMM\n");
+
+	
+	gsl_blas_dgemm (CblasTrans, CblasNoTrans,1.0, &gsl_M.matrix, &gsl_M.matrix,0.0,matrice.matrix);
 	
 	for (int index1 = 0;index1<8;index1++){
 		for (int index2 =0;index2<8;index2++){
@@ -188,8 +197,24 @@ void iteration(const unsigned char* data,int w,int h,fit_t* results){
 		}
 		printf("\n");
 	}
+	/* Compute matrix = M'*M */
+	printf("MM2\n");
+	for (int index1 = 0;index1<8;index1++){
+		for(int index2 = 0;index2<8;index2++){
+			matrix[index1][index2] = 0;
+			for (int index3 = 0;index3<npixels;index3++){
+				matrix[index1][index2] = matrix[index1][index2] + M[index3*8+index1]*M[index3*8+index2];
+			}
+		}
+	}
+	for (int index1 = 0;index1<8;index1++){
+		for (int index2 =0;index2<8;index2++){
+			printf("%08.2f\t",matrix[index1][index2]);
+		}
+		printf("\n");
+	}
 	printf("\nDIFF\n");
-	/* Compute vector = M'*diff */
+	/* Compute vector = M'*diff 
 	for (int i =8; i<16 ;i++){
 		for (int k=0;k<npixels;k++){
 			vector[i] = vector[i] + M[k*8 + i]*diff[k];
@@ -199,12 +224,18 @@ void iteration(const unsigned char* data,int w,int h,fit_t* results){
 		printf("%08.2f\t",vector[index1]);
 	}
 	printf("\n");
-	
+	*/
+	/* Compute vector = M'*diff */
+	cblas_dgemv (CblasRowMajor, CblasTrans , 8, npixels, 1.0,(double*) &M, lda ,(double*) &diff, 0.0, 0.0,(double*) &vector, 0.0);
+	for (int index1 = 0;index1<8;index1++){
+		printf("%08.2f\t",vector[index1]);
+	}
+	printf("\n");
 	/* Compute the delta vectorof deviation */
 	gsl_matrix_view m = gsl_matrix_view_array ((double* ) matrix, 8, 8);	
 	gsl_vector_view b = gsl_vector_view_array (vector, 8);
 	
-	gsl_vector *delta = gsl_vector_alloc (8);
+	
 	
 	int s;
      

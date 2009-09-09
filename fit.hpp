@@ -9,7 +9,7 @@
 #include <stdio.h>
 #include "math.h"
 
-#include <gsl/gsl_cblas.h>
+#include <gsl/gsl_blas.h>
 #include <gsl/gsl_linalg.h>
 
 typedef struct fit {
