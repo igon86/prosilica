@@ -13,7 +13,7 @@ int main(int argc,char *argv[]){
 	printf("MAX: %d MIN: %d\n",max,min);
 	writeImage(immagine,"copy.tiff",w,h);
 	unsigned char* mask = createMask(immagine,w,h,max,min,0.5);
-	writeImage(mask,"mannaggia.tiff",w,h);
+	writeImage(mask,"mask.tiff",w,h);
 	double x0;
 	double y0;
 	double FWHM_x;
