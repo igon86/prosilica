@@ -141,13 +141,17 @@ void iteration(const unsigned char* data,int w,int h,fit_t* results){
 	
 	/* consider that M is M' in reality*/
 	int dimension = 8*npixels;
+	
 	double M[dimension];
-	double matrix[8][8];
+	double matrix[8*8];
 	double vector[8];
+	
+	
 	
 	double diff_x,diff_y;
 	double frac_x,frac_y,sig2x,sig2y,dexp;
 	int base;
+	
 	for (int i=0; i<npixels; i++){
 		x = i%w;
 		y = i/w;
@@ -171,45 +175,43 @@ void iteration(const unsigned char* data,int w,int h,fit_t* results){
 		M[base+5] = x;
 		M[base+6] = y;
 		M[base+7] = 1.0;
+		
 	}
 	printf("TEST\n");
 	for (int index1 = 8;index1<16;index1++){
 		printf("%08f\t",M[index1]);
 	}
-	printf("\nMM\n");
-	
-	/* Compute matrix = M'*M */
-	gsl_matrix *matrice = gsl_matrix_alloc(8, 8);	
-	gsl_vector *delta = gsl_vector_alloc (8);
 	
 	gsl_matrix_view gsl_M = gsl_matrix_view_array(M, npixels, 8);
+	gsl_matrix_view matrice = gsl_matrix_view_array(matrix,8, 8);
 	
 	gsl_vector_view gsl_vector = gsl_vector_view_array(vector, 8);
 	
 	printf("\nMM\n");
 
-	
-	gsl_blas_dgemm (CblasTrans, CblasNoTrans,1.0, &gsl_M.matrix, &gsl_M.matrix,0.0,matrice.matrix);
-	
+	/* Compute matrix = M'*M */
+	gsl_blas_dgemm (CblasTrans, CblasNoTrans,1.0, &gsl_M.matrix, &gsl_M.matrix,0.0,&matrice.matrix);
+		
 	for (int index1 = 0;index1<8;index1++){
 		for (int index2 =0;index2<8;index2++){
-			printf("%08.2f\t",matrix[index1][index2]);
+			printf("%08.2f\t",matrix[index1*8 + index2]);
 		}
 		printf("\n");
 	}
+	
 	/* Compute matrix = M'*M */
 	printf("MM2\n");
 	for (int index1 = 0;index1<8;index1++){
 		for(int index2 = 0;index2<8;index2++){
-			matrix[index1][index2] = 0;
+			matrix[index1*8 + index2] = 0;
 			for (int index3 = 0;index3<npixels;index3++){
-				matrix[index1][index2] = matrix[index1][index2] + M[index3*8+index1]*M[index3*8+index2];
+				matrix[index1*8 + index2] = matrix[index1*8 + index2] + M[index3*8+index1]*M[index3*8+index2];
 			}
 		}
 	}
 	for (int index1 = 0;index1<8;index1++){
 		for (int index2 =0;index2<8;index2++){
-			printf("%08.2f\t",matrix[index1][index2]);
+			printf("%08.2f\t",matrix[index1*8 + index2]);
 		}
 		printf("\n");
 	}
@@ -235,7 +237,7 @@ void iteration(const unsigned char* data,int w,int h,fit_t* results){
 	gsl_matrix_view m = gsl_matrix_view_array ((double* ) matrix, 8, 8);	
 	gsl_vector_view b = gsl_vector_view_array (vector, 8);
 	
-	
+	gsl_vector *cazzo = gsl_vector_alloc (8);
 	
 	int s;
      
@@ -243,8 +245,8 @@ void iteration(const unsigned char* data,int w,int h,fit_t* results){
      
 	gsl_linalg_LU_decomp (&m.matrix, p, &s);
      
-	gsl_linalg_LU_solve (&m.matrix, p, &b.vector, delta);
+	//gsl_linalg_LU_solve (&m.matrix, p, &b.vector, delta);
 	printf ("delta = \n");
-	gsl_vector_fprintf (stdout, delta, "%g");
+	//gsl_vector_fprintf (stdout, delta, "%g");
 }
 
