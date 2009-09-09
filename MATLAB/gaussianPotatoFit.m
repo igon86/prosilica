@@ -1,6 +1,6 @@
 %max,x_0,y_0 vengono dalla preelaborazione in C, sigma_x e sigma_y si
 %possono ricavare dall'immagine come bordi della maschera (forse...)
-function [A,x_0,y_0,sigma_x,sigma_y,a,b,c] = gaussianFit(image,max,min,centro_x,centro_y,var_x,var_y)
+function [A,x_0,y_0,sigma_x,sigma_y,a,b,c,B,alpha,beta] = gaussianPotatoFit(image,max,min,centro_x,centro_y,var_x,var_y)
     
     %plot della roba da fittare
     figure(1);
@@ -9,7 +9,7 @@ function [A,x_0,y_0,sigma_x,sigma_y,a,b,c] = gaussianFit(image,max,min,centro_x,
     title('toBeFitted');
     
     %scelgo quanto iterare (ancora non funziona abbastanza bene da poter usare i residui come criterio di areesto)
-    iterazioni = 10;
+    iterazioni = 4;
     R = zeros(iterazioni,1);
     
     %parameter inizialization
@@ -21,6 +21,9 @@ function [A,x_0,y_0,sigma_x,sigma_y,a,b,c] = gaussianFit(image,max,min,centro_x,
     a = 0;
     b = 0;
     c = min;
+    B= 2.5;
+    alpha = 0.2;
+    beta = 0.2;
     
     %support data arrays inizialization
     [dimx,dimy] = size(image);
@@ -34,7 +37,8 @@ function [A,x_0,y_0,sigma_x,sigma_y,a,b,c] = gaussianFit(image,max,min,centro_x,
     for i=1:m
         x = mod(i ,  dimx);
         y = floor(i/dimx);
-        immagine(i) = valutaPunto(A,x_0,y_0,sigma_x,sigma_y,a,b,c,x,y);
+        z = img(i);
+        immagine(i) = valutaPuntoPotato(A,x_0,y_0,sigma_x,sigma_y,a,b,c,B,alpha,beta,x,y,z);
     end
     predition = reshape(immagine,dimx,dimy);
     figure(2);
@@ -48,7 +52,8 @@ function [A,x_0,y_0,sigma_x,sigma_y,a,b,c] = gaussianFit(image,max,min,centro_x,
         for i=1:m
             x = mod(i-1,  dimx);
             y = floor(i/dimx);
-            test = valutaPunto(A,x_0,y_0,sigma_x,sigma_y,a,b,c,x,y);
+            z = img(i);
+            test = valutaPuntoPotato(A,x_0,y_0,sigma_x,sigma_y,a,b,c,B,alpha,beta,x,y,z);
             %tutto il problema e` qui! -> il round e` una vera merda
 %             if mask(i) == 1
                    differenze(i) = img(i) - test;
@@ -62,11 +67,21 @@ function [A,x_0,y_0,sigma_x,sigma_y,a,b,c] = gaussianFit(image,max,min,centro_x,
             M(i,6) = x;
             M(i,7) = y;
             M(i,8) = 1;
+            %M(i,9) = 0;
+            if z >= 10
+                M(i,9) = log(z)*sin(alpha*x+beta*y);
+                M(i,10) = alpha*B*log(z)*cos(alpha*x+beta*y);
+                M(i,11) = beta*B*log(z)*cos(alpha*x+beta*y);
+            else
+                %M(i,9) = 0;
+                M(i,9) = 0;
+                M(i,10) = 0;
+            end
         end
-        for index1 = 1:8
-            fprintf(1,'%f ',M(2,index1));
-        end
-        fprintf(1,'\n');
+%         for index1 = 1:8
+%             fprintf(1,'%f ',M(2,index1));
+%         end
+%         fprintf(1,'\n');
 
         %plot della differenza della predizione
         if j == 1
@@ -77,9 +92,9 @@ function [A,x_0,y_0,sigma_x,sigma_y,a,b,c] = gaussianFit(image,max,min,centro_x,
         end
         %calcolo la matrice di iterazione a e b
         matrix = M'*M
-        for k=1:8
-        fprintf(1,'%8f\t %8f\t %8f\t %8f\t %8f\t %8f\t %8f\t %8f\n',matrix(k,1),matrix(k,2),matrix(k,3),matrix(k,4),matrix(k,5),matrix(k,6),matrix(k,7),matrix(k,8));
-        end
+%         for k=1:8
+%         fprintf(1,'%8f\t %8f\t %8f\t %8f\t %8f\t %8f\t %8f\t %8f\n',matrix(k,1),matrix(k,2),matrix(k,3),matrix(k,4),matrix(k,5),matrix(k,6),matrix(k,7),matrix(k,8));
+%         end
         vector = M'*differenze;
 
         %guardo il livello di schifezza
@@ -97,6 +112,9 @@ function [A,x_0,y_0,sigma_x,sigma_y,a,b,c] = gaussianFit(image,max,min,centro_x,
         a = a+delta(6);
         b = b+delta(7);
         c = c+delta(8);
+        B = B +delta(9);
+        alpha = alpha + delta(10);
+        beta = beta+delta(11);
     end
     
     
@@ -105,7 +123,8 @@ function [A,x_0,y_0,sigma_x,sigma_y,a,b,c] = gaussianFit(image,max,min,centro_x,
     for i=1:m
         x = mod(i ,  dimx);
         y = floor(i/dimx);
-        immagine(i) = valutaPunto(A,x_0,y_0,sigma_x,sigma_y,a,b,c,x,y);
+        z = img(i);
+        immagine(i) = valutaPuntoPotato(A,x_0,y_0,sigma_x,sigma_y,a,b,c,B,alpha,beta,x,y,z);
     end
     gaussiana = reshape(immagine,dimx,dimy);
     figure(3);
