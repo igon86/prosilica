@@ -9,7 +9,7 @@ function [A,x_0,y_0,sigma_x,sigma_y,a,b,c,B,s_x,s_y] = gaussianPotatoFit(image,m
     title('toBeFitted');
     
     %scelgo quanto iterare (ancora non funziona abbastanza bene da poter usare i residui come criterio di areesto)
-    iterazioni = 10;
+    iterazioni = 5;
     R = zeros(iterazioni,1);
     
     %parameter inizialization
@@ -45,6 +45,7 @@ function [A,x_0,y_0,sigma_x,sigma_y,a,b,c,B,s_x,s_y] = gaussianPotatoFit(image,m
     mesh(predition);
     title('initialPredition (C++ RMS pre-elaboration)');
     drawnow;
+    potato = zeros(m,1);
     %lo faccio girare per un po
     for j=1:iterazioni
         %a questo punto calcolo il vettore delle differenze e la matrice M
@@ -53,6 +54,7 @@ function [A,x_0,y_0,sigma_x,sigma_y,a,b,c,B,s_x,s_y] = gaussianPotatoFit(image,m
             x = mod(i-1,  dimx);
             y = floor(i/dimx);
             test = valutaPuntoPotato(A,x_0,y_0,sigma_x,sigma_y,a,b,c,B,s_x,s_y,x,y);
+            potato(i) = valutaPotato(A,x_0,y_0,sigma_x,sigma_y,a,b,c,B,s_x,s_y,x,y);
             %tutto il problema e` qui! -> il round e` una vera merda
 %             if mask(i) == 1
             differenze(i) = img(i) - test;
@@ -79,9 +81,9 @@ function [A,x_0,y_0,sigma_x,sigma_y,a,b,c,B,s_x,s_y] = gaussianPotatoFit(image,m
         %plot della differenza della predizione
         if j == 1
             figure(6);
-            diffmap = reshape(differenze,dimx,dimy);
+            diffmap = reshape(potato,dimx,dimy);
             mesh(diffmap);
-            title('Predition residual map');
+            title('Potato Signal');
         end
         %calcolo la matrice di iterazione a e b
         matrix = M'*M;
@@ -104,6 +106,7 @@ function [A,x_0,y_0,sigma_x,sigma_y,a,b,c,B,s_x,s_y] = gaussianPotatoFit(image,m
         sigma_y = sigma_y + delta(5);
         a = a+delta(6);
         b = b+delta(7);
+        %TROIAIO
         c = c+delta(8);
         B = B +delta(9);
         s_x = s_x + delta(10);
