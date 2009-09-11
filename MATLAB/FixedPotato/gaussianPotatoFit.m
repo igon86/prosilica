@@ -22,8 +22,8 @@ function [A,x_0,y_0,sigma_x,sigma_y,a,b,c,B,s_x,s_y] = gaussianPotatoFit(image,m
     b = 0;
     c = min;
     B= 0.05;
-    s_x = 0.2;
-    s_y = 0.2;
+    s_x = 0.1;
+    s_y = 0.1;
     
     %support data arrays inizialization
     [dimx,dimy] = size(image);
@@ -31,7 +31,7 @@ function [A,x_0,y_0,sigma_x,sigma_y,a,b,c,B,s_x,s_y] = gaussianPotatoFit(image,m
     m=size(img);
     differenze = zeros(m,1);
     immagine = zeros(m,1);
-    M = zeros(m,11);
+    M = zeros(m,10);
     
     %predition plot
     for i=1:m
@@ -67,9 +67,9 @@ function [A,x_0,y_0,sigma_x,sigma_y,a,b,c,B,s_x,s_y] = gaussianPotatoFit(image,m
             M(i,7) = y;
             M(i,8) = 1;
             %DERIVATiVE OF THE POTATO EFFECT
-            M(i,9) = (A*sin(s_x*x + s_y*y))/exp((x - x_0)^2/sigma_x^2 + (y - y_0)^2/sigma_y^2);
-            M(i,10) = (A*B*x*cos(s_x*x + s_y*y))/exp((x - x_0)^2/sigma_x^2 + (y - y_0)^2/sigma_y^2);
-            M(i,11) = (A*B*y*cos(s_x*x + s_y*y))/exp((x - x_0)^2/sigma_x^2 + (y - y_0)^2/sigma_y^2);
+            %M(i,9) = (A*sin(s_x*x + s_y*y))/exp((x - x_0)^2/sigma_x^2 + (y - y_0)^2/sigma_y^2);
+            M(i,9) = (A*B*x*cos(s_x*x + s_y*y))/exp((x - x_0)^2/sigma_x^2 + (y - y_0)^2/sigma_y^2);
+            M(i,10) = (A*B*y*cos(s_x*x + s_y*y))/exp((x - x_0)^2/sigma_x^2 + (y - y_0)^2/sigma_y^2);
         end
 %         for index1 = 1:8
 %             fprintf(1,'%f ',M(2,index1));
@@ -105,9 +105,9 @@ function [A,x_0,y_0,sigma_x,sigma_y,a,b,c,B,s_x,s_y] = gaussianPotatoFit(image,m
         a = a+delta(6);
         b = b+delta(7);
         c = c+delta(8);
-        B = B +delta(9);
-        s_x = s_x + delta(10);
-        s_y = s_y + delta(11);
+        %B = B +delta(9);
+        s_x = s_x + delta(9);
+        s_y = s_y + delta(10);
     end
     
     
