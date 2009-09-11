@@ -1,13 +1,14 @@
-function b = derivateg(A)
-    b=1;
-    syms y x z x_0 y_0 sigma_x sigma_y A g;
+function derivateg()
+    syms y x z x_0 y_0 sigma_x sigma_y A a b c;
     
-    z = (  ( sigma_x*((x-x_0)^2) ) + ( sigma_y * ((y-y_0)^2) ) )^0.5;
-    f = A*(   ((  sin(z)   )^2) / ((z)^2 )  ) ;
+    z = A*(1/exp((x - x_0)^2/sigma_x^2 + (y - y_0)^2/sigma_y^2)) + a*x + b*y +c;
     
-    diff(f,A)
-    diff(f,x_0)
-    diff(f,y_0)
-    diff(f,sigma_x)
-    diff(f,sigma_y)
+    diff(z,A)
+    diff(z,x_0)
+    diff(z,y_0)
+    diff(z,sigma_x)
+    diff(z,sigma_y)
+    diff(z,a)
+    diff(z,b)
+    diff(z,c)
 end
