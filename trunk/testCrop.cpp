@@ -51,6 +51,6 @@ int main(int argc,char *argv[]){
 	}
 	printf("\n");
 	writeImage(pred,"pred.tiff",dimx,dimy);
-	iteration(cropped,dimx,dimy,&test_g);
+	iteration(cropped,dimy,dimx,&test_g);
 	return 0;
 }

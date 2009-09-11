@@ -140,7 +140,8 @@ void iteration(const unsigned char* data,int w,int h,fit_t* results){
 	int x,y;
 	gsl_vector *delta = gsl_vector_alloc (8);
 	gsl_vector *vettore = gsl_vector_alloc (8);
-
+	
+	/**
 	for (int i =0; i < npixels; i++){
 		x = i%w;
 		y = i/w;
@@ -150,6 +151,7 @@ void iteration(const unsigned char* data,int w,int h,fit_t* results){
 		if(temp > max) max = temp;
 		if(temp<min) min = temp;
 	}
+	*/
 	
 	double square = 0.0;
 	/** square calculation */
@@ -174,13 +176,19 @@ void iteration(const unsigned char* data,int w,int h,fit_t* results){
 	double diff_x,diff_y;
 	double frac_x,frac_y,sig2x,sig2y,dexp;
 	int base;
+	double test;
 	
+	FILE* fip = fopen("diff.mat","w");
 	for (int i=0; i<npixels; i++){
-		x = i%w;
-		y = i/w;
+		x = (i+1)%w;
+		y = (i+1)/w;
 		
 		base = i*8;
-		 
+		test = evaluateGaussian(results,x,y);
+		diff[i] = data[i] - test;
+		if (i<200){
+			fprintf(fip,"%08f\n",test);
+		}
 		diff_x = x - results->x_0;
 		diff_y = y - results->y_0;
 		sig2x = pow(results->sigma_x,2);
@@ -202,7 +210,7 @@ void iteration(const unsigned char* data,int w,int h,fit_t* results){
 	}
 	printf("TEST\n");
 	FILE* fp = fopen("matrice.mat","w");
-	for (int index1 = 0;index1<10;index1++){
+	for (int index1 = 0;index1<200;index1++){
 		for (int index2=0;index2<8;index2++){
 			fprintf(fp,"%08f\t",M[index1*8+index2]);
 		}
@@ -242,7 +250,7 @@ void iteration(const unsigned char* data,int w,int h,fit_t* results){
 		printf("\n");
 	}
 	*/
-	printf("\nDIFF\n");
+	printf("\nVECTOR\n");
 	/* Compute vector = M'*diff 
 	for (int i =8; i<16 ;i++){
 		for (int k=0;k<npixels;k++){

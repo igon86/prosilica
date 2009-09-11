@@ -41,18 +41,24 @@ function [A,x_0,y_0,sigma_x,sigma_y,a,b,c] = gaussianFit(image,max,min,centro_x,
     mesh(predition);
     title('initialPredition (C++ RMS pre-elaboration)');
     drawnow;
+    fid = fopen('matrice.mat','w');
+    fip = fopen('img.mat','w');
     %lo faccio girare per un po
     for j=1:iterazioni
         %a questo punto calcolo il vettore delle differenze e la matrice M
         %fprintf(1,'Iterazione %d\n',j);
         for i=1:m
-            x = mod(i-1,  dimx);
+            x = mod(i,  dimx);
             y = floor(i/dimx);
             test = valutaPunto(A,x_0,y_0,sigma_x,sigma_y,a,b,c,x,y);
             %tutto il problema e` qui! -> il round e` una vera merda
 %             if mask(i) == 1
                    differenze(i) = img(i) - test;
 %             end
+            if i <=200
+                fprintf(fip,'%8f\n',img(i));
+            end
+            
             M(i,1) = 1/exp((x - x_0)^2/sigma_x^2 + (y - y_0)^2/sigma_y^2);
             M(i,2) = (A*(2*x - 2*x_0))/(sigma_x^2*exp((x - x_0)^2/sigma_x^2 + (y - y_0)^2/sigma_y^2));
             M(i,3) = (A*(2*y - 2*y_0))/(sigma_y^2*exp((x - x_0)^2/sigma_x^2 + (y - y_0)^2/sigma_y^2));
@@ -62,6 +68,10 @@ function [A,x_0,y_0,sigma_x,sigma_y,a,b,c] = gaussianFit(image,max,min,centro_x,
             M(i,6) = x;
             M(i,7) = y;
             M(i,8) = 1;
+             
+            if i <=200
+                fprintf(fid,'%8f\t%8f\t%8f\t%8f\t%8f\t%8f\t%8f\t%8f\t\n',M(i,1),M(i,2),M(i,3),M(i,4),M(i,5),M(i,6),M(i,7),M(i,8));
+            end
         end
         for index1 = 1:8
             fprintf(1,'%f ',M(2,index1));
@@ -76,17 +86,20 @@ function [A,x_0,y_0,sigma_x,sigma_y,a,b,c] = gaussianFit(image,max,min,centro_x,
             title('Predition residual map');
         end
         %calcolo la matrice di iterazione a e b
-        matrix = M'*M
+        matrix = M'*M;
         for k=1:8
         fprintf(1,'%8f\t %8f\t %8f\t %8f\t %8f\t %8f\t %8f\t %8f\n',matrix(k,1),matrix(k,2),matrix(k,3),matrix(k,4),matrix(k,5),matrix(k,6),matrix(k,7),matrix(k,8));
         end
         vector = M'*differenze;
+        fprintf(1,'\nVETTORE\n%8f\t %8f\t %8f\t %8f\t %8f\t %8f\t %8f\t %8f\n',vector(1),vector(2),vector(3),vector(4),vector(5),vector(6),vector(7),vector(8));
 
         %guardo il livello di schifezza
         R(j) = differenze'*differenze;
 
         %risolvo il sistema lineare per avere delta
         delta = matrix\vector;
+        
+%         fprintf(1,'%8f\t %8f\t %8f\t %8f\t %8f\t %8f\t %8f\t %8f\n',delta(1),delta(2),delta(3),delta(4),delta(5),delta(6),delta(7),delta(8));
 
         %aggiungo delta
         A = A+delta(1);
