@@ -31,7 +31,7 @@ function [A,x_0,y_0,sigma_x,sigma_y,a,b,c,B,s_x,s_y] = gaussianPotatoFit(image,m
     m=size(img);
     differenze = zeros(m,1);
     immagine = zeros(m,1);
-    M = zeros(m,11);
+    M = zeros(m,3);
     
     %predition plot
     for i=1:m
@@ -57,19 +57,10 @@ function [A,x_0,y_0,sigma_x,sigma_y,a,b,c,B,s_x,s_y] = gaussianPotatoFit(image,m
 %             if mask(i) == 1
             differenze(i) = img(i) - test;
 %             end
-            M(i,1) = (B*sin(s_x*x + s_y*y) + 1)/exp((x - x_0)^2/sigma_x^2 + (y - y_0)^2/sigma_y^2);
-            M(i,2) = (A*(2*x - 2*x_0)*(B*sin(s_x*x + s_y*y) + 1))/(sigma_x^2*exp((x - x_0)^2/sigma_x^2 + (y - y_0)^2/sigma_y^2));
-            M(i,3) = (A*(2*y - 2*y_0)*(B*sin(s_x*x + s_y*y) + 1))/(sigma_y^2*exp((x - x_0)^2/sigma_x^2 + (y - y_0)^2/sigma_y^2));
-            M(i,4) = (2*A*(B*sin(s_x*x + s_y*y) + 1)*(x - x_0)^2)/(sigma_x^3*exp((x - x_0)^2/sigma_x^2 + (y - y_0)^2/sigma_y^2));
-            M(i,5) = (2*A*(B*sin(s_x*x + s_y*y) + 1)*(y - y_0)^2)/(sigma_y^3*exp((x - x_0)^2/sigma_x^2 + (y - y_0)^2/sigma_y^2));
-            %derivative of the slopePlan!
-            M(i,6) = x;
-            M(i,7) = y;
-            M(i,8) = 1;
             %DERIVATiVE OF THE POTATO EFFECT
-            M(i,9) = (A*sin(s_x*x + s_y*y))/exp((x - x_0)^2/sigma_x^2 + (y - y_0)^2/sigma_y^2);
-            M(i,10) = (A*B*x*cos(s_x*x + s_y*y))/exp((x - x_0)^2/sigma_x^2 + (y - y_0)^2/sigma_y^2);
-            M(i,11) = (A*B*y*cos(s_x*x + s_y*y))/exp((x - x_0)^2/sigma_x^2 + (y - y_0)^2/sigma_y^2);
+            M(i,1) = (A*sin(s_x*x + s_y*y))/exp((x - x_0)^2/sigma_x^2 + (y - y_0)^2/sigma_y^2);
+            M(i,2) = (A*B*x*cos(s_x*x + s_y*y))/exp((x - x_0)^2/sigma_x^2 + (y - y_0)^2/sigma_y^2);
+            M(i,3) = (A*B*y*cos(s_x*x + s_y*y))/exp((x - x_0)^2/sigma_x^2 + (y - y_0)^2/sigma_y^2);
         end
 %         for index1 = 1:8
 %             fprintf(1,'%f ',M(2,index1));
@@ -97,17 +88,9 @@ function [A,x_0,y_0,sigma_x,sigma_y,a,b,c,B,s_x,s_y] = gaussianPotatoFit(image,m
         delta = matrix\vector;
 
         %aggiungo delta
-        A = A+delta(1);
-        x_0 = x_0 + delta(2);
-        y_0 = y_0 + delta(3);
-        sigma_x = sigma_x + delta(4);
-        sigma_y = sigma_y + delta(5);
-        a = a+delta(6);
-        b = b+delta(7);
-        c = c+delta(8);
-        B = B +delta(9);
-        s_x = s_x + delta(10);
-        s_y = s_y + delta(11);
+        B = B +delta(1);
+        s_x = s_x + delta(2);
+        s_y = s_y + delta(3);
     end
     
     
