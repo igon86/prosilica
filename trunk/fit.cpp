@@ -127,8 +127,8 @@ void printFit(fit_t* f){
 					Iterative NLLS fit algorithm
 ****************************************************************************************************************/
 void iteration(const unsigned char* data,int w,int h,fit_t* results){
-
-	printf("STARTING STRUCT: \n");
+	
+	printf("IMMAGINE: %dx%d \nSTARTING STRUCT: \n",w,h);
 	printFit(results);
 	int npixels = w*h;
 
@@ -138,22 +138,16 @@ void iteration(const unsigned char* data,int w,int h,fit_t* results){
 	double max = -255;
 	int temp;
 	int x,y;
+	int index;
 	gsl_vector *delta = gsl_vector_alloc (8);
 	gsl_vector *vettore = gsl_vector_alloc (8);
 	
-	/**
-	for (int i =0; i < npixels; i++){
-		x = i%w;
-		y = i/w;
-		diff[i] = data[i] - evaluateGaussian(results,x,y);
-		temp = (int)diff[i];
-		toPrint[i] = abs(temp);
-		if(temp > max) max = temp;
-		if(temp<min) min = temp;
-	}
-	*/
-	
+	/** variables used to keep track of the square error*/
 	double square = 0.0;
+	int iteration = 0;
+	double[10] squares;
+	for (int i=0;i<10;i++) squares[i] = 0; 
+	
 	/** square calculation */
 	for (int i=0; i<npixels;i++){
 		square = square + pow(diff[i],2);
@@ -178,17 +172,35 @@ void iteration(const unsigned char* data,int w,int h,fit_t* results){
 	int base;
 	double test;
 	
-	FILE* fip = fopen("diff.mat","w");
+	FILE* fip = fopen("img.mat","w");
+	/* fake inizialization to follow the weird MATLAB PATTERN TOPLEFT-COLUMNWISE-STARTING DOWN*/
+	int row = 171;
+	int column=1;
 	for (int i=0; i<npixels; i++){
-		x = (i+1)%w;
-		y = (i+1)/w;
+	
+		//WEIRD!!!!  I'M USING THE ROWS AS OFFSET TO IMPLEMENT THE COLUMWISE FASHION
+		x = (i+1)%h;
+		y = (i+1)/h;
+		
+		//WEIRD INDEX CALCULATION
+		int index = (row-1)*w +(column-1);
 		
 		base = i*8;
 		test = evaluateGaussian(results,x,y);
-		diff[i] = data[i] - test;
-		if (i<200){
-			fprintf(fip,"%08f\n",test);
+		diff[i] = data[index] - test;
+		
+		/** square calculation and array adjustment*/
+		for (int i=0; i<npixels;i++){
+			square = square + pow(diff[i],2);
+			squares[iteration++] = square;
 		}
+		/**initial error print*/
+		if(iteration == 1) printf("ERRORE INIZIALE: %f\n",square);
+		
+		if (i<500){
+			fprintf(fip,"%d\n",data[index]);
+		}
+		
 		diff_x = x - results->x_0;
 		diff_y = y - results->y_0;
 		sig2x = pow(results->sigma_x,2);
@@ -207,6 +219,12 @@ void iteration(const unsigned char* data,int w,int h,fit_t* results){
 		M[base+6] = y;
 		M[base+7] = 1.0;
 		
+		//WEIRD CIRCULAR INCREMENT
+		row--;
+		if(row == 0){
+			row = 171;
+			column++;
+		}
 	}
 	printf("TEST\n");
 	FILE* fp = fopen("matrice.mat","w");
@@ -286,14 +304,14 @@ void iteration(const unsigned char* data,int w,int h,fit_t* results){
 	results->A = results->A + gsl_vector_get(delta,0);
 	printf("New A is: %f\n",results->A);
 
-	//IMBROGLIO
+	//ADDING
 	results->x_0 = results->x_0 + gsl_vector_get(delta,1);
-	results->y_0 = results->y_0 + 2.09;
-	results->sigma_x = results->sigma_x  -2.45;
-	results->sigma_y = results->sigma_y  +1.04;
+	results->y_0 = results->y_0 + gsl_vector_get(delta,2);
+	results->sigma_x = results->sigma_x + gsl_vector_get(delta,3);
+	results->sigma_y = results->sigma_y + gsl_vector_get(delta,4);
 	results->a = results->a + gsl_vector_get(delta,5);
 	results->b = results->b + gsl_vector_get(delta,6);
-	results->c = results->c + 2.44;
+	results->c = results->c + + gsl_vector_get(delta,7);
 
 	/** square recalculation*/
 	for (int i =0; i < npixels; i++){
