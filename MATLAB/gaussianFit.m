@@ -8,10 +8,9 @@ function [A,x_0,y_0,sigma_x,sigma_y,a,b,c] = gaussianFit(image,max,min,centro_x,
     mesh(imag);
     title('toBeFitted');
     
-    %scelgo quanto iterare (ancora non funziona abbastanza bene da poter usare i residui come criterio di areesto)
-    iterazioni = 1;
-    R = zeros(iterazioni,1);
-    data = image(:);
+    % stop criteria parameter and iteration limit
+    iteration_limit = 10;
+    error_threshold = 100;
     
     %parameter inizialization
     A = max;
@@ -26,13 +25,12 @@ function [A,x_0,y_0,sigma_x,sigma_y,a,b,c] = gaussianFit(image,max,min,centro_x,
     %support data arrays inizialization
     [dimx,dimy] = size(image);
     img = imag(:);
-    m=size(img);
+    
+    m=size(img,1);
+    
     differenze = zeros(m,1);
     immagine = zeros(m,1);
-    M = zeros(m,6);
-    %pixel TEST
-    fp = fopen('test.mat','w');
-    fprintf(fp,'%d\n%d\n%d\n%d\n',image(1,1),image(1,2),image(1,3),image(1,4));
+    M = zeros(m,8);
     
     
     %predition plot
@@ -42,27 +40,35 @@ function [A,x_0,y_0,sigma_x,sigma_y,a,b,c] = gaussianFit(image,max,min,centro_x,
         immagine(i) = valutaPunto(A,x_0,y_0,sigma_x,sigma_y,a,b,c,x,y);
     end
     predition = reshape(immagine,dimx,dimy);
+    
     figure(2);
     mesh(predition);
     title('initialPredition (C++ RMS pre-elaboration)');
     drawnow;
-    fid = fopen('matrice.mat','w');
-    fip = fopen('img.mat','w');
-    %lo faccio girare per un po
-    for j=1:iterazioni
-        %a questo punto calcolo il vettore delle differenze e la matrice M
-        %fprintf(1,'Iterazione %d\n',j);
-        for i=1:m
+    
+    %initial error
+    for i=1:m
             x = mod(i,  dimx);
             y = floor(i/dimx);
             test = valutaPunto(A,x_0,y_0,sigma_x,sigma_y,a,b,c,x,y);
-            %tutto il problema e` qui! -> il round e` una vera merda
 %             if mask(i) == 1
                    differenze(i) = img(i) - test;
 %             end
-            if i <=500
-                fprintf(fip,'%d\n',data(i));
-            end
+           
+    end
+    
+    R(1) = differenze'*differenze;
+    initial_error = R(1);
+    current_error = R(1);
+    
+    threshold = initial_error/error_threshold;
+    %lo faccio girare per un po
+    for j=1:iteration_limit
+        %a questo punto calcolo il vettore delle differenze e la matrice M
+
+        for i=1:m
+            x = mod(i,  dimx);
+            y = floor(i/dimx);
             
             M(i,1) = 1/exp((x - x_0)^2/sigma_x^2 + (y - y_0)^2/sigma_y^2);
             M(i,2) = (A*(2*x - 2*x_0))/(sigma_x^2*exp((x - x_0)^2/sigma_x^2 + (y - y_0)^2/sigma_y^2));
@@ -72,41 +78,29 @@ function [A,x_0,y_0,sigma_x,sigma_y,a,b,c] = gaussianFit(image,max,min,centro_x,
             %derivative of the slopePlan!
             M(i,6) = x;
             M(i,7) = y;
-            M(i,8) = 1;
-             
-            if i <=500
-                fprintf(fid,'%8f\t%8f\t%8f\t%8f\t%8f\t%8f\t%8f\t%8f\t\n',M(i,1),M(i,2),M(i,3),M(i,4),M(i,5),M(i,6),M(i,7),M(i,8));
-            end
         end
-        for index1 = 1:8
-            fprintf(1,'%f ',M(2,index1));
-        end
-        fprintf(1,'\n');
+        %derivative of the slopePlan!
+        M(i,8) = 1;
 
-        %plot della differenza della predizione
+        %prediction error plot
         if j == 1
             figure(6);
             diffmap = reshape(differenze,dimx,dimy);
             mesh(diffmap);
             title('Predition residual map');
         end
-        %calcolo la matrice di iterazione a e b
-        matrix = M'*M;
-        for k=1:8
-        %fprintf(1,'%8f\t %8f\t %8f\t %8f\t %8f\t %8f\t %8f\t %8f\n',matrix(k,1),matrix(k,2),matrix(k,3),matrix(k,4),matrix(k,5),matrix(k,6),matrix(k,7),matrix(k,8));
-        end
-        vector = M'*differenze;
-        %fprintf(1,'\nVETTORE\n%8f\t %8f\t %8f\t %8f\t %8f\t %8f\t %8f\t %8f\n',vector(1),vector(2),vector(3),vector(4),vector(5),vector(6),vector(7),vector(8));
-
-        %guardo il livello di schifezza
-        R(j) = differenze'*differenze;
-
-        %risolvo il sistema lineare per avere delta
-        delta = matrix\vector
         
-%         fprintf(1,'%8f\t %8f\t %8f\t %8f\t %8f\t %8f\t %8f\t %8f\n',delta(1),delta(2),delta(3),delta(4),delta(5),delta(6),delta(7),delta(8));
+        %calculating matrix and vector of the fit iteration
+        matrix = M'*M;
+        vector = M'*differenze;
 
-        %aggiungo delta
+        %calculating 
+        R(j+1) = differenze'*differenze;
+
+        %linear system resolution gives delta, vector of adjustments
+        delta = matrix\vector;
+
+        %adjusting results
         A = A+delta(1);
         x_0 = x_0 + delta(2);
         y_0 = y_0 + delta(3);
@@ -115,6 +109,46 @@ function [A,x_0,y_0,sigma_x,sigma_y,a,b,c] = gaussianFit(image,max,min,centro_x,
         a = a+delta(6);
         b = b+delta(7);
         c = c+delta(8);
+        
+        %ERROR RECALCULATION
+        for i=1:m
+            x = mod(i,  dimx);
+            y = floor(i/dimx);
+            test = valutaPunto(A,x_0,y_0,sigma_x,sigma_y,a,b,c,x,y);
+%             if mask(i) == 1
+                   differenze(i) = img(i) - test;
+%             end
+            
+        end
+        
+        R(j+1) = differenze'*differenze;
+        
+        %STOP CRITERIA
+        
+        if(R(j+1) > current_error)
+            
+           %not converging
+           %fprintf(1,'NOT CONVERGING..');
+           if(R(j+1)>2*initial_error)
+               %fprintf(1,'REALLY BAD\n')
+               break;
+           else
+               %fprintf(1,'SAFE\n');
+               current_error = R(j+1);
+           end
+           
+        else
+            
+            %converging
+            if(abs(R(j+1) - current_error) < threshold)
+                %fprintf(1,'STOP AT ITERATION: %d\n',j);
+                iterated = j;
+                break;
+            else
+                current_error = R(j+1);
+            end
+            
+        end
     end
     
     
@@ -132,11 +166,11 @@ function [A,x_0,y_0,sigma_x,sigma_y,a,b,c] = gaussianFit(image,max,min,centro_x,
     
    
     %stampo errore
-    R2 = R(iterazioni);
+    R2 = R(iterated+1);
     
     %plot2D residui
-    figure(4);
-    plot(R);
+    figure(7);
+    plot(linspace(0,iterated,iterated+1),R);
     title(['R2 square residuals, R2 is: ',num2str(R2)]);    
     
     %plot(mappa residui)
