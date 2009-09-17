@@ -17,7 +17,7 @@ function [vA,vx_0,vy_0,vsigma_x,vsigma_y,va,vb,vc] = analyze(massimo,minimo,cent
     
     fp=fopen('results.dat','w');
     
-    s = sprintf('/home/ligo/Desktop/newTest/Image/newtest1%03d.tiff',0);
+    s = sprintf('/home/ligo/Desktop/CrashTest/CrashTest%03d.tiff',0);
     immagine = imread(s,'tif');
     image = immagine(cutx1:cutx2,cuty1:cuty2);
     
