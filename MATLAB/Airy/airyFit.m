@@ -9,7 +9,7 @@ function [A,x_0,y_0,sigma_x,sigma_y,a,b,c] = airyFit(image,massimo,minimo,centro
     title('toBeFitted');
     
     %scelgo quanto iterare (ancora non funziona abbastanza bene da poter usare i residui come criterio di arresto)
-    iterazioni = 10000;
+    iterazioni = 1;
     R = zeros(iterazioni+1,1);
     
     %parameter inizialization

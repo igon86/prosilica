@@ -4,15 +4,8 @@ function [A,x_0,y_0,sigma_x,sigma_y,a,b,c] = fastGaussianFit( image,massimo,mini
 
 imag = double(image);
 
-% %plot della roba da fittare
-% figure(1);
-% mesh(imag);
-% title('toBeFitted');
-
 %scelgo quanto iterare (ancora non funziona abbastanza bene da poter usare i residui come criterio di arresto)
-iterazioni = 5;
-R = zeros(iterazioni+1,1);
-
+iterazioni = 10;
 
 %parameter inizialization
 A = massimo;
@@ -25,24 +18,12 @@ b = 0;
 c = minimo;
 
 %support data arrays inizialization
-[dimx,dimy] = size(image);
+dimx = size(image,1);
 img = imag(:);
-[m,thrash]=size(img);
+m=size(img,1);
 differenze = zeros(m,1);
-immagine = zeros(m,1);
-M = zeros(m,8);
 
-% %predition plot
-% for i=1:m
-%     x = mod(i ,  dimx);
-%     y = floor(i/dimx);
-%     immagine(i) = valutaPunto(A,x_0,y_0,sigma_x,sigma_y,a,b,c,x,y);
-% end
-% predition = reshape(immagine,dimx,dimy);
-% figure(2);
-% mesh(predition);
-% title('initialPredition');
-% drawnow;
+M = zeros(m,8);
 
 %%%%%%%%%%%%%%%%%%%%%%  ITERATION   %%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -84,9 +65,6 @@ for j=1:iterazioni
     
     vector = M'*differenze;
     
-    %guardo il livello di schifezza
-    R(j) = differenze'*differenze;
-    
     %risolvo il sistema lineare per avere delta
     delta = matrix\vector;
     
@@ -100,45 +78,6 @@ for j=1:iterazioni
     b = b+delta(7);
     c = c+delta(8);
 end
-
-%%%%%%%%%%%%%%%%%%%%%%%%%     FINAL PLOTS      %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-%calcolo l'immagine ottenuta dal fit
-for i=1:m
-    x = mod(i ,  dimx);
-    y = floor(i/dimx);
-    immagine(i) = valutaPunto(A,x_0,y_0,sigma_x,sigma_y,a,b,c,x,y);
-end
-
-% %plot3D iterata
-% gaussiana = reshape(immagine,dimx,dimy);
-% 
-% figure(3);
-% mesh(real(gaussiana));
-% title('fittedSolution');
-
-%calcolo mappa residui
-
-differenze = img - immagine;
-
-diffmap = reshape(differenze,dimx,dimy);
-mesh(diffmap);
-% compensated_diff = differenze./(1+alpha*differenze);
-% compensated_diffmap = reshape(compensated_diff,dimx,dimy);
-
-%calcolo SSerr
-R(iterazioni+1) = differenze' * differenze;
-SSerr = R(iterazioni+1);
-
-%calcolo SStot
-f_avg = mean(img);
-SStot = 0;
-for i = 1:m
-    SStot = SStot + (img(i) - f_avg)^2;
-end
-%calcolo R2
-R2 = 1 - (SSerr/SStot);
-
 
 end
 
