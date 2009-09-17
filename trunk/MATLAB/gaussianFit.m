@@ -128,9 +128,10 @@ function [A,x_0,y_0,sigma_x,sigma_y,a,b,c] = gaussianFit(image,max,min,centro_x,
         if(R(j+1) > current_error)
             
            %not converging
-           %fprintf(1,'NOT CONVERGING..');
+           fprintf(1,'NOT CONVERGING..');
            if(R(j+1)>2*initial_error)
-               %fprintf(1,'REALLY BAD\n')
+               fprintf(1,'REALLY BAD\n')
+               iterated = j;
                break;
            else
                %fprintf(1,'SAFE\n');
@@ -141,7 +142,7 @@ function [A,x_0,y_0,sigma_x,sigma_y,a,b,c] = gaussianFit(image,max,min,centro_x,
             
             %converging
             if(abs(R(j+1) - current_error) < threshold)
-                %fprintf(1,'STOP AT ITERATION: %d\n',j);
+                fprintf(1,'STOP AT ITERATION: %d\n',j);
                 iterated = j;
                 break;
             else
@@ -149,6 +150,7 @@ function [A,x_0,y_0,sigma_x,sigma_y,a,b,c] = gaussianFit(image,max,min,centro_x,
             end
             
         end
+        
     end
     
     
@@ -169,7 +171,7 @@ function [A,x_0,y_0,sigma_x,sigma_y,a,b,c] = gaussianFit(image,max,min,centro_x,
     R2 = R(iterated+1);
     
     %plot2D residui
-    figure(7);
+    figure(4);
     plot(linspace(0,iterated,iterated+1),R);
     title(['R2 square residuals, R2 is: ',num2str(R2)]);    
     
