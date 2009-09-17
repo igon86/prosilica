@@ -8,6 +8,9 @@ int main(int argc,char *argv[]){
 	int h;
 	int max;
 	int min;
+	clock_t start,end;
+	double tempo;	
+	start=clock();
 
 	unsigned char* immagine = readTIFF(&w,&h,&max,&min,argv[1]);
 	printf("MAX: %d MIN: %d\n",max,min);
@@ -52,5 +55,9 @@ int main(int argc,char *argv[]){
 	printf("\n");
 	writeImage(pred,"pred.tiff",dimx,dimy);
 	iteration(cropped,dimx,dimy,&test_g);
+	
+	end=clock();
+	tempo=((double)(end-start))/CLOCKS_PER_SEC;
+	printf("CI VUOLE LA BELLEZZA DI: %f\n",tempo);
 	return 0;
 }

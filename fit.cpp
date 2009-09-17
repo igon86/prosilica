@@ -143,12 +143,12 @@ void iteration(const unsigned char* data,int w,int h,fit_t* results){
 	gsl_vector *vettore = gsl_vector_alloc (8);
 	
 	/** variables used to keep track of the square error*/
-	double square = 0.0;
+	double square;
 	int iteration = 0;
-	double[10] squares;
+	double squares[10];
 	for (int i=0;i<10;i++) squares[i] = 0; 
 	
-	/** square calculation */
+	/** square calculation 
 	for (int i=0; i<npixels;i++){
 		square = square + pow(diff[i],2);
 	}	
@@ -157,6 +157,8 @@ void iteration(const unsigned char* data,int w,int h,fit_t* results){
 	printf("Errore massimo: %f \nErrore minimo: %f\n\n",max,min);	
 	// display the residuals
 	writeImage(toPrint,"diff.tiff",w,h);
+	*/
+	
 	
 	/* consider that M is M' in reality*/
 	int dimension = 8*npixels;
@@ -173,164 +175,196 @@ void iteration(const unsigned char* data,int w,int h,fit_t* results){
 	double test;
 	
 	FILE* fip = fopen("img.mat","w");
-	/* fake inizialization to follow the weird MATLAB PATTERN TOPLEFT-COLUMNWISE-STARTING DOWN*/
-	int row = 171;
-	int column=1;
-	for (int i=0; i<npixels; i++){
 	
-		//WEIRD!!!!  I'M USING THE ROWS AS OFFSET TO IMPLEMENT THE COLUMWISE FASHION
-		x = (i+1)%h;
-		y = (i+1)/h;
-		
-		//WEIRD INDEX CALCULATION
-		int index = (row-1)*w +(column-1);
-		
-		base = i*8;
-		test = evaluateGaussian(results,x,y);
-		diff[i] = data[index] - test;
-		
-		/** square calculation and array adjustment*/
-		for (int i=0; i<npixels;i++){
-			square = square + pow(diff[i],2);
-			squares[iteration++] = square;
-		}
-		/**initial error print*/
-		if(iteration == 1) printf("ERRORE INIZIALE: %f\n",square);
-		
-		if (i<500){
-			fprintf(fip,"%d\n",data[index]);
-		}
-		
-		diff_x = x - results->x_0;
-		diff_y = y - results->y_0;
-		sig2x = pow(results->sigma_x,2);
-		sig2y = pow(results->sigma_y,2);
-		frac_x = pow(diff_x,2)/sig2x;
-		frac_y = pow(diff_y,2)/sig2y;
-		dexp = exp(frac_x + frac_y);
-						
-		M[base] = 1/dexp;
-		M[base+1] = (results->A*(2*x - 2*results->x_0)) / (sig2x*dexp);
-		M[base+2] = (results->A*(2*y - 2*results->y_0)) / (sig2y*dexp);
-		M[base+3] = (2*results->A*pow(diff_x,2)) /  (pow(results->sigma_x,3) * dexp );
-		M[base+4] = (2*results->A*pow(diff_y,2)) /  (pow(results->sigma_y,3) * dexp );
-		//derivative of the slopePlan!
-		M[base+5] = x;
-		M[base+6] = y;
-		M[base+7] = 1.0;
-		
-		//WEIRD CIRCULAR INCREMENT
-		row--;
-		if(row == 0){
-			row = 171;
-			column++;
-		}
-	}
-	printf("TEST\n");
-	FILE* fp = fopen("matrice.mat","w");
-	for (int index1 = 0;index1<200;index1++){
-		for (int index2=0;index2<8;index2++){
-			fprintf(fp,"%08f\t",M[index1*8+index2]);
-		}
-		fprintf(fp,"\n");
-	}
 	
-	gsl_matrix_view gsl_M = gsl_matrix_view_array(M, npixels, 8);
-	gsl_matrix_view matrice = gsl_matrix_view_array(matrix,8, 8);
-	
-	gsl_vector_view differenze = gsl_vector_view_array(diff, npixels);
-	
-	printf("\nMM\n");
-
-	/* Compute matrix = M'*M */
-	gsl_blas_dgemm (CblasTrans, CblasNoTrans,1.0, &gsl_M.matrix, &gsl_M.matrix,0.0,&matrice.matrix);
+	/**ITERATION LOOP */
+	while (iteration < 3){
+		/*
+		printf("LOOP %d\n",iteration+1);
+		fflush(stdout);
+		*/
 		
-	for (int index1 = 0;index1<8;index1++){
-		for (int index2 =0;index2<8;index2++){
-			printf("%8f\t",matrix[index1*8 + index2]);
-		}
-		printf("\n");
-	}
-	/** Compute matrix = M'*M
-	printf("MM2\n");
-	for (int index1 = 0;index1<8;index1++){
-		for(int index2 = 0;index2<8;index2++){
-			matrix[index1*8 + index2] = 0;
-			for (int index3 = 0;index3<npixels;index3++){
-				matrix[index1*8 + index2] = matrix[index1*8 + index2] + M[index3*8+index1]*M[index3*8+index2];
+		/* fake inizialization to follow the weird MATLAB PATTERN TOPLEFT-COLUMNWISE-STARTING DOWN*/
+		int row = h;
+		int column=1;
+		/** ITERATIVE PROCEDURE OVER THE IMAGE*/
+		for (int i=0; i<npixels; i++){
+			
+			//WEIRD!!!!  I'M USING THE ROWS AS OFFSET TO IMPLEMENT THE COLUMWISE FASHION
+			x = (i+1)%h;
+			y = (i+1)/h;
+			
+			//WEIRD INDEX CALCULATION
+			int index = (row-1)*w +(column-1);
+			
+			base = i*8;
+			test = evaluateGaussian(results,x,y);
+			diff[i] = data[index] - test;
+			
+			
+			if (i<500){
+				fprintf(fip,"%d\n",data[index]);
+			}
+			
+			
+			diff_x = x - results->x_0;
+			diff_y = y - results->y_0;
+			sig2x = pow(results->sigma_x,2);
+			sig2y = pow(results->sigma_y,2);
+			frac_x = pow(diff_x,2)/sig2x;
+			frac_y = pow(diff_y,2)/sig2y;
+			dexp = exp(frac_x + frac_y);
+			
+			M[base] = 1/dexp;
+			M[base+1] = (results->A*(2*x - 2*results->x_0)) / (sig2x*dexp);
+			M[base+2] = (results->A*(2*y - 2*results->y_0)) / (sig2y*dexp);
+			M[base+3] = (2*results->A*pow(diff_x,2)) /  (pow(results->sigma_x,3) * dexp );
+			M[base+4] = (2*results->A*pow(diff_y,2)) /  (pow(results->sigma_y,3) * dexp );
+			//derivative of the slopePlan!
+			M[base+5] = x;
+			M[base+6] = y;
+			M[base+7] = 1.0;
+			
+			//WEIRD CIRCULAR INCREMENT
+			row--;
+			if(row == 0){
+				row = h;
+				column++;
 			}
 		}
-	}
-	for (int index1 = 0;index1<8;index1++){
-		for (int index2 =0;index2<8;index2++){
-			printf("%08.2f\t",matrix[index1*8 + index2]);
-		}
-		printf("\n");
-	}
-	*/
-	printf("\nVECTOR\n");
-	/* Compute vector = M'*diff 
-	for (int i =8; i<16 ;i++){
-		for (int k=0;k<npixels;k++){
-			vector[i] = vector[i] + M[k*8 + i]*diff[k];
-		}
-	}
-	for (int index1 = 0;index1<8;index1++){
-		printf("%08.2f\t",vector[index1]);
-	}
-	printf("\n");
-	*/
-	/* Compute vector = M'*diff */
-	gsl_blas_dgemv (CblasTrans, 1.0,&gsl_M.matrix, &differenze.vector, 0.0,vettore);
-
-	gsl_vector_fprintf (stdout, vettore, "%g");
-
-	printf("\n");
-
-	/* Compute the delta vector of deviation */
 		
-	
-	int s;
-     
-	gsl_permutation * p = gsl_permutation_alloc (8);
-     
-	gsl_linalg_LU_decomp (&matrice.matrix, p, &s);
-     
-	gsl_linalg_LU_solve (&matrice.matrix, p, vettore, delta);
-	printf ("delta = \n");
-	gsl_vector_fprintf (stdout, delta, "%g");
-	
-	/** result adjustment */
-	results->A = results->A + gsl_vector_get(delta,0);
-	printf("New A is: %f\n",results->A);
-
-	//ADDING
-	results->x_0 = results->x_0 + gsl_vector_get(delta,1);
-	results->y_0 = results->y_0 + gsl_vector_get(delta,2);
-	results->sigma_x = results->sigma_x + gsl_vector_get(delta,3);
-	results->sigma_y = results->sigma_y + gsl_vector_get(delta,4);
-	results->a = results->a + gsl_vector_get(delta,5);
-	results->b = results->b + gsl_vector_get(delta,6);
-	results->c = results->c + + gsl_vector_get(delta,7);
-
-	/** square recalculation*/
-	for (int i =0; i < npixels; i++){
-		x = i%w;
-		y = i/w;
-		diff[i] = data[i] - evaluateGaussian(results,x,y);
-		temp = (int)diff[i];
-		toPrint[i] = abs(temp);
-		if(temp > max) max = temp;
-		if(temp<min) min = temp;
+		square=0.0;
+		/* square calculation and array adjustment */ 
+			for (int index1=0; index1<npixels;index1++){
+				square = square + pow(diff[index1],2);
+			}
+			squares[iteration] = square;
+			
+			
+		
+			iteration++;
+			
+			/**initial error print*/
+			if(iteration == 1) printf("ERRORE INIZIALE: %f\n",square);
+		
+		
+		printf("TEST\n");
+		fflush(stdout);
+		
+		FILE* fp = fopen("matrice.mat","w");
+		for (int index1 = 0;index1<500;index1++){
+			for (int index2=0;index2<8;index2++){
+				fprintf(fp,"%08f\t",M[index1*8+index2]);
+			}
+			fprintf(fp,"\n");
+		}
+		
+		
+		gsl_matrix_view gsl_M = gsl_matrix_view_array(M, npixels, 8);
+		gsl_matrix_view matrice = gsl_matrix_view_array(matrix,8, 8);
+		
+		gsl_vector_view differenze = gsl_vector_view_array(diff, npixels);
+		
+		//printf("\nMM\n");
+		
+		/* Compute matrix = M'*M */
+		gsl_blas_dgemm (CblasTrans, CblasNoTrans,1.0, &gsl_M.matrix, &gsl_M.matrix,0.0,&matrice.matrix);
+		
+		for (int index1 = 0;index1<8;index1++){
+			for (int index2 =0;index2<8;index2++){
+//				printf("%8f\t",matrix[index1*8 + index2]);
+			}
+//			printf("\n");
+		}
+		/** Compute matrix = M'*M
+		 printf("MM2\n");
+		 for (int index1 = 0;index1<8;index1++){
+		 for(int index2 = 0;index2<8;index2++){
+		 matrix[index1*8 + index2] = 0;
+		 for (int index3 = 0;index3<npixels;index3++){
+		 matrix[index1*8 + index2] = matrix[index1*8 + index2] + M[index3*8+index1]*M[index3*8+index2];
+		 }
+		 }
+		 }
+		 for (int index1 = 0;index1<8;index1++){
+		 for (int index2 =0;index2<8;index2++){
+		 printf("%08.2f\t",matrix[index1*8 + index2]);
+		 }
+		 printf("\n");
+		 }
+		 */
+		 
+		//printf("\nVECTOR\n");
+		
+		/* Compute vector = M'*diff 
+		 for (int i =8; i<16 ;i++){
+		 for (int k=0;k<npixels;k++){
+		 vector[i] = vector[i] + M[k*8 + i]*diff[k];
+		 }
+		 }
+		 for (int index1 = 0;index1<8;index1++){
+		 printf("%08.2f\t",vector[index1]);
+		 }
+		 printf("\n");
+		 */
+		/* Compute vector = M'*diff */
+		gsl_blas_dgemv (CblasTrans, 1.0,&gsl_M.matrix, &differenze.vector, 0.0,vettore);
+		
+		//gsl_vector_fprintf (stdout, vettore, "%g");
+		
+		//printf("\n");
+		
+		/* Compute the delta vector of deviation */
+		
+		
+		int s;
+		
+		gsl_permutation * p = gsl_permutation_alloc (8);
+		
+		gsl_linalg_LU_decomp (&matrice.matrix, p, &s);
+		
+		gsl_linalg_LU_solve (&matrice.matrix, p, vettore, delta);
+		//printf ("delta = \n");
+		//gsl_vector_fprintf (stdout, delta, "%g");
+		
+		/** result adjustment */
+		results->A = results->A + gsl_vector_get(delta,0);
+		//printf("New A is: %f\n",results->A);
+		
+		//ADDING
+		results->x_0 = results->x_0 + gsl_vector_get(delta,1);
+		results->y_0 = results->y_0 + gsl_vector_get(delta,2);
+		results->sigma_x = results->sigma_x + gsl_vector_get(delta,3);
+		results->sigma_y = results->sigma_y + gsl_vector_get(delta,4);
+		results->a = results->a + gsl_vector_get(delta,5);
+		results->b = results->b + gsl_vector_get(delta,6);
+		results->c = results->c + + gsl_vector_get(delta,7);
+		
+		
+		//RIPROVA!!!
+		//printf("New x_0 is %f\n",results->x_0);
 	}
 	
-	square = 0.0;
-	/** square calculation */
-	for (int i=0; i<npixels;i++){
-		square = square + pow(diff[i],2);
-	}	
+	
 	printf("ERRORE FINALE: %f\n",square);
 	printf("STRUCT FINALE: \n");
 	printFit(results);
 }
 
+/***************************************************************************************************************
+							Calculate Max & Min of an image
+****************************************************************************************************************/
+
+void maxmin(const unsigned char* image,int w,int h,int* max,int* min){
+
+	int npixels = w*h;
+	*max = 0;
+	*min = 255;
+	unsigned char temp;
+	
+	for(int i =0 ;i<npixels; i++){
+		temp = image[i];
+		if(temp > *max) *max = temp;
+		if(temp < *min) *min = temp;
+	}
+}
