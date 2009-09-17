@@ -14,7 +14,7 @@ int main(int argc, char* argv[])
     { 
 	printf("INIT\n");
 	fflush(stdout);
-        tCamera Camera;
+	tCamera Camera;
 
 	/* this is basically taken from example.py */
 
@@ -42,6 +42,14 @@ int main(int argc, char* argv[])
 						char file[len];
 						file[len-1]='\0';
 						
+						//INIZIALIZATION SHOT -> it comes out bad for some reason
+						snapCamera(&Camera);
+						
+						//FIT VARIABLES
+						/* frame dimension*/
+						int tempsize;
+						
+						
 						for (int i=0;i<iter;i++){
 							snprintf(file,len,"./Image/stream%03d.tiff",i);
 							int w = (&Camera)->Frame.Width;
@@ -49,13 +57,21 @@ int main(int argc, char* argv[])
 
 							/**direct snap on file tiff*/
 							snapCamera(&Camera);
-							int tempsize;
+							
 							unsigned char* temp = getFrame(&Camera,&tempsize);
 
 							/**write the test image*/
 							printf("\n\n%s\n",file);
 							writeImage(temp,file,w,h);
+
 							//Sleep(delay);
+							
+							/** REAL TIME FITTING */
+							
+							//unsigned char* mask = createMask(immagine,w,h,max,min,0.5);
+							
+							
+							//centroid(mask,w,h,&x0,&y0,&FWHM_x,&FWHM_y);
 						}
 						end = clock();
 						double diff = ((double) (end - start))/ CLOCKS_PER_SEC;

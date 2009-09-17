@@ -74,7 +74,7 @@ function [A,x_0,y_0,sigma_x,sigma_y,a,b,c] = gaussianFit(image,max,min,centro_x,
             M(i,7) = y;
             M(i,8) = 1;
              
-            if i <=200
+            if i <=500
                 fprintf(fid,'%8f\t%8f\t%8f\t%8f\t%8f\t%8f\t%8f\t%8f\t\n',M(i,1),M(i,2),M(i,3),M(i,4),M(i,5),M(i,6),M(i,7),M(i,8));
             end
         end

@@ -1,4 +1,6 @@
 #include "mysnap.hpp"
+#include <math.h>
+
 
 int main(int argc, char* argv[])
 {
@@ -30,6 +32,19 @@ int main(int argc, char* argv[])
 	}
 	if(dest == NULL) dest="snap";
 
+	int pad=0;
+	char padstring[21];
+	if(iter>1){
+		//Determining the number of 0-padding
+		
+		while(iter/pow(10,pad)>1){
+			pad++;
+		}
+		
+		sprintf(padstring,"%s%d%s","./Image/%s%0",pad,"d.tiff");
+	}
+	
+
     // initialise the Prosilica API
     if(!PvInitialize())
     { 
@@ -58,13 +73,16 @@ int main(int argc, char* argv[])
 						clock_t start,end;
 						start = clock();
 						
-						int len = strlen(dest) + 17;
+						int len = strlen(dest) + 14 + pad;
 						char file[len];
 						file[len-1]='\0';
 						
 						for (int i=0;i<iter;i++){
-							snprintf(file,len,"./Image/%s%03d.tiff",dest,i);
-							
+						 	if(iter > 1)
+								snprintf(file,len,padstring,dest,i);
+							else
+								sprintf(file,"%s",dest);
+
 							/**direct snap on file tiff*/
 							CameraSnapFile(&Camera,file);
 							Sleep(delay);

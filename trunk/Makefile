@@ -3,7 +3,7 @@
 #configuration file
 include ./conf
 
-.PHONY : clean sample install snap post stream crop
+.PHONY : clean sample install snap post stream crop live
 
 clean:
 	rm -f $(EXE)
@@ -30,3 +30,9 @@ stream:
 
 crop:
 	$(CC) $(RPATH) $(TARGET) -I/opt/local/var/macports/software/gsl/1.12_0/opt/local/include/ $(CFLAGS) $(LTIFF) $(MAT) testCrop.cpp fit.cpp tiffPostElaboration.cpp -o crop $(LIB) -lgsl -lgslcblas -L/opt/local/var/macports/software/gsl/1.12_0/opt/local/lib
+
+live:
+	$(CC) $(RPATH) $(TARGET) -I/opt/local/var/macports/software/gsl/1.12_0/opt/local/include/ $(CFLAGS) $(LTIFF) $(MAT) -DDEBUG streamFit.cpp fit.cpp mysnap.cpp psnap.cpp tiffPostElaboration.cpp -o live $(LIB) -lgsl -lgslcblas -L/opt/local/var/macports/software/gsl/1.12_0/opt/local/lib
+
+newlive:
+	$(CC) $(RPATH) $(TARGET) -I/opt/local/var/macports/software/gsl/1.12_0/opt/local/include/ $(CFLAGS) $(LTIFF) $(MAT) streamCpy.cpp fitCpy.cpp mysnap.cpp psnap.cpp tiffPostElaboration.cpp -o live $(LIB) -lgsl -lgslcblas -L/opt/local/var/macports/software/gsl/1.12_0/opt/local/lib

@@ -390,8 +390,8 @@ unsigned char* getFrame(tCamera * Camera,int* s)
   int  size = 0;
       if (Camera->Frame.Format == ePvFmtMono8)
 	{
-	  size = Camera->Frame.Width * Camera->Frame.Height;
-	  unsigned char * newFrame = (unsigned char*) malloc(size);
+		size = Camera->Frame.Width * Camera->Frame.Height;
+		unsigned char * newFrame = (unsigned char*) malloc(size);
 		memcpy(newFrame,Camera->Frame.ImageBuffer,size);
 		*s = size;
 	  return newFrame;
