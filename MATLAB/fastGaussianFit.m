@@ -33,7 +33,7 @@ for j=1:iterazioni
         x = mod(i ,  dimx);
         y = floor(i/dimx);
         
-        test = valutaPunto(A,x_0,y_0,sigma_x,sigma_y,a,b,c,x,y);
+        test = evaluateGaussian(A,x_0,y_0,sigma_x,sigma_y,a,b,c,x,y);
         
         differenze(i) = img(i) - test;
         
@@ -78,6 +78,7 @@ for j=1:iterazioni
     b = b+delta(7);
     c = c+delta(8);
 end
+
 
 end
 

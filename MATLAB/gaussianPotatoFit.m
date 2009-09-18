@@ -38,7 +38,7 @@ function [A,x_0,y_0,sigma_x,sigma_y,a,b,c,B,alpha,beta] = gaussianPotatoFit(imag
         x = mod(i ,  dimx);
         y = floor(i/dimx);
         z = img(i);
-        immagine(i) = valutaPuntoPotato(A,x_0,y_0,sigma_x,sigma_y,a,b,c,B,alpha,beta,x,y,z);
+        immagine(i) = evaluateGaussianPotatoPotato(A,x_0,y_0,sigma_x,sigma_y,a,b,c,B,alpha,beta,x,y,z);
     end
     predition = reshape(immagine,dimx,dimy);
     figure(2);
@@ -53,7 +53,7 @@ function [A,x_0,y_0,sigma_x,sigma_y,a,b,c,B,alpha,beta] = gaussianPotatoFit(imag
             x = mod(i-1,  dimx);
             y = floor(i/dimx);
             z = img(i);
-            test = valutaPuntoPotato(A,x_0,y_0,sigma_x,sigma_y,a,b,c,B,alpha,beta,x,y,z);
+            test = evaluateGaussianPotatoPotato(A,x_0,y_0,sigma_x,sigma_y,a,b,c,B,alpha,beta,x,y,z);
             %tutto il problema e` qui! -> il round e` una vera merda
 %             if mask(i) == 1
                    differenze(i) = img(i) - test;
@@ -124,7 +124,7 @@ function [A,x_0,y_0,sigma_x,sigma_y,a,b,c,B,alpha,beta] = gaussianPotatoFit(imag
         x = mod(i ,  dimx);
         y = floor(i/dimx);
         z = img(i);
-        immagine(i) = valutaPuntoPotato(A,x_0,y_0,sigma_x,sigma_y,a,b,c,B,alpha,beta,x,y,z);
+        immagine(i) = evaluateGaussianPotatoPotato(A,x_0,y_0,sigma_x,sigma_y,a,b,c,B,alpha,beta,x,y,z);
     end
     gaussiana = reshape(immagine,dimx,dimy);
     figure(3);
