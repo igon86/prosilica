@@ -204,7 +204,7 @@ int iteration(const unsigned char* data,int w,int h,fit_t* results){
 	fflush(fitDebug);
 	
 	/**ITERATION LOOP */
-	while (iteration < 3){
+	while (iteration < 10){
 		/*
 		printf("LOOP %d\n",iteration+1);
 		fflush(stdout);

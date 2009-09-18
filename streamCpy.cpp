@@ -5,7 +5,7 @@
 #include "tiffPostElaboration.hpp"
 #include "fit.hpp" 
 
-#define iter 10
+#define iter 100
 #define len 30
 
 extern FILE* fitDebug;
@@ -152,8 +152,9 @@ int main(int argc, char* argv[])
 							unsigned char* cropped = cropImage(image,w,h,x-span_x,x+span_x,y-span_y,y+span_y);
 							
 							
-#if DEBUG
-							writeImage(cropped,"crop.tiff",dimx,dimy);
+#if DEBUG					
+							sprintf(file,"./Image/CROP%03d.tiff",i);
+							writeImage(cropped,file,dimx,dimy);
 #endif
 							
 
@@ -186,6 +187,8 @@ int main(int argc, char* argv[])
 							x = (int) test_g.x_0;
 							y = (int) test_g.y_0;
 							*/
+							
+							sleep(30);
 						}
 						end = clock();
 						double diff = ((double) (end - start))/ CLOCKS_PER_SEC;
