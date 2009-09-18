@@ -1,6 +1,6 @@
 function [vA,vx_0,vy_0,vsigma_x,vsigma_y,va,vb,vc] = analyze(massimo,minimo,centro_x,centro_y,var_x,var_y,cutx1,cutx2,cuty1,cuty2)
 %ANALYZE Function which ANALYZE pictures of a laser beam
-%    Using both gaussian and airydisk fitting for every image
+%    Using a gaussian fitting algorithm for every image
 
     iterazioni = 1000;
     
@@ -21,7 +21,7 @@ function [vA,vx_0,vy_0,vsigma_x,vsigma_y,va,vb,vc] = analyze(massimo,minimo,cent
     immagine = imread(s,'tif');
     image = immagine(cutx1:cutx2,cuty1:cuty2);
     
-    tic,[vA(1),vx_0(1),vy_0(1),vsigma_x(1),vsigma_y(1),va(1),vb(1),vc(1)] = fastGaussianFit(image,massimo,minimo,centro_x,centro_y,var_x,var_y),toc;
+    tic,[vA(1),vx_0(1),vy_0(1),vsigma_x(1),vsigma_y(1),va(1),vb(1),vc(1)] = gaussianFastFit(image,massimo,minimo,centro_x,centro_y,var_x,var_y),toc;
     
     fprintf(1,'INITIAL GAUSSIAN FIT COMPLETED\n');
           

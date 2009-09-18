@@ -30,7 +30,7 @@ typedef struct fit {
   	double c;
 } fit_t;
 
-void iteration(const unsigned char* data,int x,int y,fit_t* results);
+int iteration(const unsigned char* data,int x,int y,fit_t* results);
 
 void iteration2(const unsigned char* data,int x,int y,fit_t* results);
 

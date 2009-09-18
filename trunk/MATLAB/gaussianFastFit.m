@@ -1,4 +1,4 @@
-function [A,x_0,y_0,sigma_x,sigma_y,a,b,c] = fastGaussianFit( image,massimo,minimo,centro_x,centro_y,var_x,var_y)
+function [A,x_0,y_0,sigma_x,sigma_y,a,b,c] = gaussianFastFit( image,massimo,minimo,centro_x,centro_y,var_x,var_y)
 %FASTGAUSSIANFIT 
 %   Detailed explanation goes here -> un cio voglia
 

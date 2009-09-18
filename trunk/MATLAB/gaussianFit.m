@@ -8,9 +8,17 @@ function [A,x_0,y_0,sigma_x,sigma_y,a,b,c] = gaussianFit(image,max,min,centro_x,
     mesh(imag);
     title('toBeFitted');
     
-    % stop criteria parameter and iteration limit
-    iteration_limit = 10;
+    % STOP CRITERIA parameter and iteration limit
+    iteration_limit = 100;
     error_threshold = 100;
+    
+    %STATISTICAL parameters
+    %percentage of error for the threshold
+    stat_thres = 5;
+    %area around the threshold
+    stat_accuracy = 100;
+    %number of points in the statistical plots
+    stat_plot_precision = 100;
     
     %parameter inizialization
     A = max;
@@ -94,9 +102,6 @@ function [A,x_0,y_0,sigma_x,sigma_y,a,b,c] = gaussianFit(image,max,min,centro_x,
         matrix = M'*M;
         vector = M'*differenze;
 
-        %calculating 
-        R(j+1) = differenze'*differenze;
-
         %linear system resolution gives delta, vector of adjustments
         delta = matrix\vector;
 
@@ -114,7 +119,7 @@ function [A,x_0,y_0,sigma_x,sigma_y,a,b,c] = gaussianFit(image,max,min,centro_x,
         for i=1:m
             x = mod(i,  dimx);
             y = floor(i/dimx);
-            test = valutaPunto(A,x_0,y_0,sigma_x,sigma_y,a,b,c,x,y);
+            test = evaluateGaussian(A,x_0,y_0,sigma_x,sigma_y,a,b,c,x,y);
 %             if mask(i) == 1
                    differenze(i) = img(i) - test;
 %             end
@@ -153,7 +158,7 @@ function [A,x_0,y_0,sigma_x,sigma_y,a,b,c] = gaussianFit(image,max,min,centro_x,
         
     end
     
-    
+    %%%%%%%%%%%%%%%%%%%%%%%%%     FINAL PLOTS    %%%%%%%%%%%%%%%%%%%%%%%%%
     
     %plot3D iterata
     for i=1:m
@@ -168,12 +173,26 @@ function [A,x_0,y_0,sigma_x,sigma_y,a,b,c] = gaussianFit(image,max,min,centro_x,
     
    
     %stampo errore
-    R2 = R(iterated+1);
+    SSerr = R(iterated+1);
     
-    %plot2D residui
+    %plot2D square residuals
     figure(4);
-    plot(linspace(0,iterated,iterated+1),R);
-    title(['R2 square residuals, R2 is: ',num2str(R2)]);    
+    if iterated < 10
+        plot(linspace(0,iterated,iterated+1),R);
+    else
+        semilogy(linspace(0,iterated,iterated+1),R);
+    end
+    title(['R2 square residuals, R2 is: ',num2str(SSerr)]);    
+    
+    
+    %calcolo SStot
+    f_avg = mean(img);
+    SStot = 0;
+    for i = 1:m
+        SStot = SStot + (img(i) - f_avg)^2;
+    end
+    %calcolo R2
+    R2 = 1 - (SSerr/SStot);
     
     %plot(mappa residui)
     figure(5);
@@ -181,5 +200,426 @@ function [A,x_0,y_0,sigma_x,sigma_y,a,b,c] = gaussianFit(image,max,min,centro_x,
     differenze = img - immagine;
     diffmap = reshape(differenze,dimx,dimy);
     mesh(diffmap);
-    title('Residua map');
+    title(['Residuals map, goodness of fit is: ',num2str(R2)]);
+    
+    %%%%%%%%%%%%%%%%%%%%%%%%%     STATISTICS  x_0    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    
+    
+    %confidence of x
+    
+    threshold = SSerr*((100+stat_thres)/100);
+    epsilon = SSerr/stat_accuracy;
+    upthreshold = threshold + epsilon;
+    lowthreshold = threshold - epsilon;
+    
+    %left border -> algoritmo di bisezione
+    
+    left = 0;
+    right = x_0;
+    center = x_0/2;
+    quadrati = 2*SSerr;
+    
+    iterazione=1;
+    
+    while quadrati > upthreshold || quadrati < lowthreshold
+        %fprintf(1,'Iterazione %d con residuo %d che lavora su %d   %d  %d\n',iterazione,quadrati,left,center,right);
+        %adjustment of the section
+        if quadrati > upthreshold
+            left = center;
+            center = left + ((right - left)/2);
+        else
+            right = center;
+            center = left + ((right - left)/2);
+        end
+        
+        %new error calculation
+        for i=1:m
+            x = mod(i ,  dimx);
+            y = floor(i/dimx);
+            immagine(i) = evaluateGaussian(A,center,y_0,sigma_x,sigma_y,a,b,c,x,y);
+        end
+        
+        differenze = img - immagine;
+        quadrati = differenze' * differenze;
+        
+        iterazione = iterazione +1;
+    end
+    
+    left_confidence_x = center;
+    left_spot_x = quadrati;
+    
+    fprintf(1,'Analyzing X_0\n');
+    
+    %right border -> algoritmo di bisezione
+    
+    left = x_0;
+    right = dimx;
+    center = left + (right-left)/2;
+    quadrati = 2*SSerr;
+    
+    
+    
+    while quadrati > upthreshold || quadrati < lowthreshold
+        %fprintf(1,'Iterazione %d con residuo %d che lavora su %d   %d  %d\n',iterazione,quadrati,left,center,right);
+        %adjustment of the section
+        if quadrati > upthreshold
+            right = center;
+            center = left + (right - left)/2;
+        else
+            left = center;
+            center = left + (right - left)/2;
+        end
+        
+        %new error calculation
+        for i=1:m
+            x = mod(i ,  dimx);
+            y = floor(i/dimx);
+            immagine(i) = evaluateGaussian(A,center,y_0,sigma_x,sigma_y,a,b,c,x,y);
+        end
+        
+        differenze = img - immagine;
+        quadrati = differenze' * differenze;
+    end
+    
+    right_confidence_x = center;
+    right_spot_x = quadrati;
+    
+    % plot su x
+    s = 100;
+    x_s = linspace(x_0 -10,x_0 +10,s);
+    
+    stat_x = zeros(s,1);
+    for j=1:s
+        %calcolo l'immagine shiftata
+        for i=1:m
+            x = mod(i ,  dimx);
+            y = floor(i/dimx);
+            immagine(i) = evaluateGaussian(A,x_s(j),y_0,sigma_x,sigma_y,a,b,c,x,y);
+        end
+        
+        differenze = img - immagine;
+        quadrati = differenze' * differenze;
+        stat_x(j) = quadrati;
+        %         if(quadrati < R2)
+        %             fprintf('Non ha convergiuto completamente, R: %d',quadrati);
+        %         end
+    end
+    
+    x_0_width = right_confidence_x - left_confidence_x;
+    
+     figure(7);
+     plot(x_s,stat_x,left_confidence_x,left_spot_x,'ro',right_confidence_x,right_spot_x,'ro')
+     title({['X_0 is: ',num2str(x_0),' and is between ',num2str(left_confidence_x),' and ',num2str(right_confidence_x),' with ',num2str(x_0_width),' width.'];});
+    
+
+    
+    
+    
+%%%%%%%%%%%%%%%%%%%%%%%%%     STATISTICS  y_0    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%    
+    
+    
+    
+    %confidence of y
+    
+    stat_thres = 5;
+    threshold = SSerr*((100+stat_thres)/100);
+    epsilon = SSerr/100;
+    upthreshold = threshold + epsilon;
+    lowthreshold = threshold - epsilon;
+    
+    %left border -> algoritmo di bisezione
+    
+    left = 0;
+    right = y_0;
+    center = y_0/2;
+    quadrati = 2*SSerr;
+    
+    iterazione=1;
+    
+    while quadrati > upthreshold || quadrati < lowthreshold
+        %fprintf(1,'Iterazione %d con residuo %d che lavora su %d   %d  %d\n',iterazione,quadrati,left,center,right);
+        %adjustment of the section
+        if quadrati > upthreshold
+            left = center;
+            center = left + ((right - left)/2);
+        else
+            right = center;
+            center = left + ((right - left)/2);
+        end
+        
+        %new error calculation
+        for i=1:m
+            x = mod(i ,  dimx);
+            y = floor(i/dimx);
+            immagine(i) = evaluateGaussian(A,x_0,center,sigma_x,sigma_y,a,b,c,x,y);
+        end
+        
+        differenze = img - immagine;
+        quadrati = differenze' * differenze;
+        
+        iterazione = iterazione +1;
+    end
+    
+    left_confidence_y = center;
+    left_spot_y = quadrati;
+    
+    fprintf(1,'Analyzing Y_0\n');
+    
+    %right border -> algoritmo di bisezione
+    
+    left = y_0;
+    right = dimy;
+    center = left + (right-left)/2;
+    quadrati = 2*SSerr;
+    
+    
+    while quadrati > upthreshold || quadrati < lowthreshold
+        %fprintf(1,'Iterazione %d con residuo %d che lavora su %d   %d  %d\n',iterazione,quadrati,left,center,right);
+        %adjustment of the section
+        if quadrati > upthreshold
+            right = center;
+            center = left + (right - left)/2;
+        else
+            left = center;
+            center = left + (right - left)/2;
+        end
+        
+        %new error calculation
+        for i=1:m
+            x = mod(i ,  dimx);
+            y = floor(i/dimx);
+            immagine(i) = evaluateGaussian(A,x_0,center,sigma_x,sigma_y,a,b,c,x,y);
+        end
+        
+        differenze = img - immagine;
+        quadrati = differenze' * differenze;
+    end
+    
+    right_confidence_y = center;
+    right_spot_y = quadrati;
+    
+    % plot su y
+    y_s = linspace(y_0 -10,y_0 +10,stat_plot_precision);
+    
+    stat_y = zeros(stat_plot_precision,1);
+    for j=1:s
+        %calcolo l'immagine shiftata
+        for i=1:m
+            x = mod(i ,  dimx);
+            y = floor(i/dimx);
+            immagine(i) = evaluateGaussian(A,x_0,y_s(j),sigma_x,sigma_y,a,b,c,x,y);
+        end
+        
+        differenze = img - immagine;
+        quadrati = differenze' * differenze;
+        stat_y(j) = quadrati;
+        %         if(quadrati < R2)
+        %             fprintf('Non ha convergiuto completamente, R: %d',quadrati);
+        %         end
+    end
+    
+    y_0_width = right_confidence_y - left_confidence_y;
+    
+    figure(8);
+    plot(y_s,stat_y,left_confidence_y,left_spot_y,'ro',right_confidence_y,right_spot_y,'ro')
+    title({['Y_0 is: ',num2str(y_0),' and is between ',num2str(left_confidence_y),' and ',num2str(right_confidence_y),' with ',num2str(y_0_width),' width.\linebreak'];''});
+    
+%%%%%%%%%%%%%%%%%%%%%%%%%     STATISTICS  sigma_x    %%%%%%%%%%%%%%%%%%%%%%%%%
+
+    %left border -> algoritmo di bisezione
+    
+    left = 0;
+    right = sigma_x;
+    center = left + (right-left)/2 ;
+    quadrati = 2*SSerr;
+    
+    iterazione=1;
+    
+    while quadrati > upthreshold || quadrati < lowthreshold
+
+        %adjustment of the section
+        
+        if quadrati > upthreshold
+            left = center;
+            center = left + ((right - left)/2);
+        else
+            right = center;
+            center = left + ((right - left)/2);
+        end
+        
+        %new error calculation
+        for i=1:m
+            x = mod(i ,  dimx);
+            y = floor(i/dimx);
+            immagine(i) = evaluateGaussian(A,x_0,y_0,center,sigma_y,a,b,c,x,y);
+        end
+        
+        differenze = img - immagine;
+        quadrati = differenze' * differenze;
+        
+        iterazione = iterazione +1;
+    end
+    
+    left_confidence_sigma_x = center;
+    left_spot_sigma_x = quadrati;
+    
+    
+    fprintf(1,'Analyzing sigma_x\n');
+    
+    %right border -> algoritmo di bisezione
+    
+    left = sigma_x;
+    right = 10*sigma_x;
+    center = left + (right-left)/2;
+    quadrati = 2*SSerr;
+    
+    
+    while quadrati > upthreshold || quadrati < lowthreshold
+
+        %adjustment of the section
+        if quadrati > upthreshold
+            right = center;
+            center = left + (right - left)/2;
+        else
+            left = center;
+            center = left + (right - left)/2;
+        end
+        
+        %new error calculation
+        for i=1:m
+            x = mod(i ,  dimx);
+            y = floor(i/dimx);
+            immagine(i) = evaluateGaussian(A,x_0,y_0,center,sigma_y,a,b,c,x,y);
+        end
+        
+        
+        differenze = img - immagine;
+        quadrati = differenze' * differenze;
+    end
+    
+    right_confidence_sigma_x = center;
+    right_spot_sigma_x = quadrati;
+    
+    % plot su x
+    sigma_x_s = linspace(sigma_x -10,sigma_x +10,stat_plot_precision);
+    
+    stat_sigma_x = zeros(stat_plot_precision,1);
+    for j=1:stat_plot_precision
+        %calcolo l'immagine shiftata
+        for i=1:m
+            x = mod(i ,  dimx);
+            y = floor(i/dimx);
+            immagine(i) = evaluateGaussian(A,x_0,y_0,sigma_x_s(j),sigma_y,a,b,c,x,y);
+        end
+        
+        differenze = img - immagine;
+        quadrati = differenze' * differenze;
+        stat_sigma_x(j) = quadrati;
+    end
+    
+    figure(9);
+    plot(sigma_x_s,stat_sigma_x,left_confidence_sigma_x,left_spot_sigma_x,'ro',right_confidence_sigma_x,right_spot_sigma_x,'ro')
+    title({[' sigma_x is: ',num2str(sigma_x),' and is between',num2str(left_confidence_sigma_x),' and ',num2str(right_confidence_sigma_x)],});
+
+    
+    
+    
+    %%%%%%%%%%%%%%%%%%%%%%%%%     STATISTICS  sigma_y    %%%%%%%%%%%%%%%%%%%%%%%%%
+
+    %left border -> algoritmo di bisezione
+    
+    left = 0;
+    right = sigma_y;
+    center = left + (right-left)/2 ;
+    quadrati = 2*SSerr;
+    
+    iterazione=1;
+    
+    while quadrati > upthreshold || quadrati < lowthreshold
+        fprintf(1,'Iterazione %d con residuo %d che lavora su %d   %d  %d\n',iterazione,quadrati,left,center,right);
+        %adjustment of the section
+        
+        if quadrati > upthreshold
+            left = center;
+            center = left + ((right - left)/2);
+        else
+            right = center;
+            center = left + ((right - left)/2);
+        end
+        
+        %new error calculation
+        for i=1:m
+            x = mod(i ,  dimx);
+            y = floor(i/dimx);
+            immagine(i) = evaluateGaussian(A,x_0,y_0,sigma_x,center,a,b,c,x,y);
+        end
+        
+        differenze = img - immagine;
+        quadrati = differenze' * differenze;
+        
+        iterazione = iterazione +1;
+    end
+    
+    left_confidence_sigma_y = center;
+    left_spot_sigma_y = quadrati;
+    
+    
+    fprintf(1,'Analyzing sigma_y\n');
+    
+    %right border
+    
+    left = sigma_y;
+    right = 10*sigma_y;
+    center = left + (right-left)/2;
+    quadrati = 2*SSerr;
+    
+    iterazione=1;
+    
+    while quadrati > upthreshold || quadrati < lowthreshold
+        fprintf(1,'Iterazione %d con residuo %d che lavora su %d   %d  %d\n',iterazione,quadrati,left,center,right);
+        %adjustment of the section
+        if quadrati > upthreshold
+            right = center;
+            center = left + (right - left)/2;
+        else
+            left = center;
+            center = left + (right - left)/2;
+        end
+        
+        %new error calculation
+        for i=1:m
+            x = mod(i ,  dimx);
+            y = floor(i/dimx);
+            immagine(i) = evaluateGaussian(A,x_0,y_0,sigma_x,center,a,b,c,x,y);
+        end
+        
+        
+        differenze = img - immagine;
+        quadrati = differenze' * differenze;
+    end
+    
+    right_confidence_sigma_y = center;
+    right_spot_sigma_y = quadrati;
+    
+    % plot OF SIGMA_Y
+    sigma_y_s = linspace(sigma_y -10,sigma_y +10,stat_plot_precision);
+    
+    stat_sigma_y = zeros(stat_plot_precision,1);
+    for j=1:stat_plot_precision
+        %calcolo l'immagine shiftata
+        for i=1:m
+            x = mod(i ,  dimx);
+            y = floor(i/dimx);
+            immagine(i) = evaluateGaussian(A,x_0,y_0,sigma_x,sigma_y_s(j),a,b,c,x,y);
+        end
+        
+        differenze = img - immagine;
+        quadrati = differenze' * differenze;
+        stat_sigma_y(j) = quadrati;
+
+    end
+    
+    figure(10);
+    plot(sigma_y_s,stat_sigma_y,left_confidence_sigma_y,left_spot_sigma_y,'ro',right_confidence_sigma_y,right_spot_sigma_y,'ro')
+    title({[' sigma_x is: ',num2str(sigma_y),' and is between',num2str(left_confidence_sigma_y),' and ',num2str(right_confidence_sigma_y)],});
 end
