@@ -37,7 +37,7 @@ function [A,x_0,y_0,sigma_x,sigma_y,a,b,c] = gaussianFit(image,max,min,centro_x,
     for i=1:m
         x = mod(i ,  dimx);
         y = floor(i/dimx);
-        immagine(i) = valutaPunto(A,x_0,y_0,sigma_x,sigma_y,a,b,c,x,y);
+        immagine(i) = evaluateGaussian(A,x_0,y_0,sigma_x,sigma_y,a,b,c,x,y);
     end
     predition = reshape(immagine,dimx,dimy);
     
@@ -50,7 +50,7 @@ function [A,x_0,y_0,sigma_x,sigma_y,a,b,c] = gaussianFit(image,max,min,centro_x,
     for i=1:m
             x = mod(i,  dimx);
             y = floor(i/dimx);
-            test = valutaPunto(A,x_0,y_0,sigma_x,sigma_y,a,b,c,x,y);
+            test = evaluateGaussian(A,x_0,y_0,sigma_x,sigma_y,a,b,c,x,y);
 %             if mask(i) == 1
                    differenze(i) = img(i) - test;
 %             end
@@ -159,7 +159,7 @@ function [A,x_0,y_0,sigma_x,sigma_y,a,b,c] = gaussianFit(image,max,min,centro_x,
     for i=1:m
         x = mod(i ,  dimx);
         y = floor(i/dimx);
-        immagine(i) = valutaPunto(A,x_0,y_0,sigma_x,sigma_y,a,b,c,x,y);
+        immagine(i) = evaluateGaussian(A,x_0,y_0,sigma_x,sigma_y,a,b,c,x,y);
     end
     gaussiana = reshape(immagine,dimx,dimy);
     figure(3);
