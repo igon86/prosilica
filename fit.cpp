@@ -1,6 +1,11 @@
 #include "fit.hpp"
 #include "tiffPostElaboration.hpp"
 
+#if DEBUG
+FILE* centroidDebug = fopen("Centroid","w");
+FILE* fitDebug = fopen("FIT","w");
+FILE* risultati = fopen("RESULTS","w");
+#endif
 /***************************************************************************************************************
 									Centroid
 ****************************************************************************************************************/
@@ -60,8 +65,7 @@ void centroid(unsigned char* image,int w,int h,double* x,double* y,double* sigma
 
 unsigned char* createMask(unsigned char* image,int w,int h,int max,int min,double filter){
 	int threshold = (int) (filter*(max-min));
-	//printf("CENTROID: Il limite e` a %d pixel\n",threshold);
-	fflush(stdout);
+
 	int npixels = w*h;
 	unsigned char* cookie = new unsigned char [npixels];
 	for(int i=0;i<npixels;i++){
@@ -77,8 +81,12 @@ unsigned char* createMask(unsigned char* image,int w,int h,int max,int min,doubl
 ****************************************************************************************************************/
 
 unsigned char* cropImage(const unsigned char *input, int w,int h,int x1,int x2,int y1,int y2){
-	printf("CROP: %d - %d   %d - %d\nsu immagine %dx%d\n",x1,x2,y1,y2,w,h);
+
+#if DEBUG
+	fprintf(fitDebug,"CROP: %d - %d   %d - %d su immagine %dx%d\n",x1,x2,y1,y2,w,h);
 	fflush(stdout);
+#endif
+
 	int count = 0;
 	int limit = w*(y2+1);
 	int dimension = (x2-x1+1)*(y2-y1+1);
@@ -111,8 +119,18 @@ double evaluateGaussian(fit_t* gaussian,int x, int y){
 					Print fit struct
 ****************************************************************************************************************/
 
-void printFit(fit_t* f){
-	printf("A: %f\nx_0: %f\ty_0: %f\nsigma_x: %f\tsigma_y: %f\na: %f\tb: %f\tc: %f\n",f->A,f->x_0,f->y_0,f->sigma_x,f->sigma_y,f->a,f->b,f->c);
+void printFit(FILE* fp,fit_t* f){
+
+	fprintf(fp,"A: %f\nx_0: %f\ty_0: %f\nsigma_x: %f\tsigma_y: %f\na: %f\tb: %f\tc: %f\n",f->A,f->x_0,f->y_0,f->sigma_x,f->sigma_y,f->a,f->b,f->c);
+}
+
+/***************************************************************************************************************
+					Print fit struct
+****************************************************************************************************************/
+
+void printResults(fit_t* f){
+
+	fprintf(risultati,"%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\n",f->A,f->x_0,f->y_0,f->sigma_x,f->sigma_y,f->a,f->b,f->c);
 }
 
 /***************************************************************************************************************
@@ -126,10 +144,11 @@ void printFit(fit_t* f){
 /***************************************************************************************************************
 					Iterative NLLS fit algorithm
 ****************************************************************************************************************/
-void iteration(const unsigned char* data,int w,int h,fit_t* results){
+int iteration(const unsigned char* data,int w,int h,fit_t* results){
 	
-	printf("IMMAGINE: %dx%d \nSTARTING STRUCT: \n",w,h);
-	printFit(results);
+	fprintf(fitDebug,"IMMAGINE: %dx%d \nSTARTING STRUCT: \n",w,h);
+	printFit(fitDebug,results);
+	fflush(fitDebug);
 	int npixels = w*h;
 
 	double* diff = new double [npixels];
@@ -142,40 +161,47 @@ void iteration(const unsigned char* data,int w,int h,fit_t* results){
 	gsl_vector *delta = gsl_vector_alloc (8);
 	gsl_vector *vettore = gsl_vector_alloc (8);
 	
+	fprintf(fitDebug,"Done most of it\n");
+	fflush(fitDebug);
+	
 	/** variables used to keep track of the square error*/
 	double square;
 	int iteration = 0;
 	double squares[10];
 	for (int i=0;i<10;i++) squares[i] = 0; 
 	
-	/** square calculation 
-	for (int i=0; i<npixels;i++){
-		square = square + pow(diff[i],2);
-	}	
-	printf("ERRORE INIZIALE: %f\n",square);
+	fprintf(fitDebug,"Starting with with algebra stuff..");
+	fflush(fitDebug);
 
-	printf("Errore massimo: %f \nErrore minimo: %f\n\n",max,min);	
-	// display the residuals
-	writeImage(toPrint,"diff.tiff",w,h);
-	*/
-	
-	
-	/* consider that M is M' in reality*/
 	int dimension = 8*npixels;
 	
-	double M[dimension];
+	fprintf(fitDebug,"dimension..");
+	fflush(fitDebug);
+	
+	double* M = new double[dimension];
+	
+	fprintf(fitDebug,"M..");
+	fflush(fitDebug);
+	
 	double matrix[8*8];
+	
+		fprintf(fitDebug,"matrix..");
+	fflush(fitDebug);
+	
 	double vector[8];
 	
+	fprintf(fitDebug,"Done with algebra stuff\n");
+	fflush(fitDebug);
 	
+	double initial_error=0;
 	
 	double diff_x,diff_y;
 	double frac_x,frac_y,sig2x,sig2y,dexp;
 	int base;
 	double test;
-	
-	FILE* fip = fopen("img.mat","w");
-	
+		
+	fprintf(fitDebug,"Done with inizialization\n");
+	fflush(fitDebug);
 	
 	/**ITERATION LOOP */
 	while (iteration < 3){
@@ -188,6 +214,8 @@ void iteration(const unsigned char* data,int w,int h,fit_t* results){
 		int row = h;
 		int column=1;
 		/** ITERATIVE PROCEDURE OVER THE IMAGE*/
+		fprintf(fitDebug,"Iteration: %d\n",iteration);
+		fflush(fitDebug);
 		for (int i=0; i<npixels; i++){
 			
 			//WEIRD!!!!  I'M USING THE ROWS AS OFFSET TO IMPLEMENT THE COLUMWISE FASHION
@@ -200,11 +228,6 @@ void iteration(const unsigned char* data,int w,int h,fit_t* results){
 			base = i*8;
 			test = evaluateGaussian(results,x,y);
 			diff[i] = data[index] - test;
-			
-			
-			if (i<500){
-				fprintf(fip,"%d\n",data[index]);
-			}
 			
 			
 			diff_x = x - results->x_0;
@@ -239,18 +262,19 @@ void iteration(const unsigned char* data,int w,int h,fit_t* results){
 				square = square + pow(diff[index1],2);
 			}
 			squares[iteration] = square;
-			
-			
 		
 			iteration++;
 			
 			/**initial error print*/
-			if(iteration == 1) printf("ERRORE INIZIALE: %f\n",square);
+			if(iteration == 1){
+				initial_error = square;
+				fprintf(fitDebug,"ERRORE INIZIA: %09.0f\n",initial_error);
+				fflush(fitDebug);
+			}
 		
-		
-		printf("TEST\n");
 		fflush(stdout);
 		
+		/**
 		FILE* fp = fopen("matrice.mat","w");
 		for (int index1 = 0;index1<500;index1++){
 			for (int index2=0;index2<8;index2++){
@@ -258,7 +282,7 @@ void iteration(const unsigned char* data,int w,int h,fit_t* results){
 			}
 			fprintf(fp,"\n");
 		}
-		
+		*/
 		
 		gsl_matrix_view gsl_M = gsl_matrix_view_array(M, npixels, 8);
 		gsl_matrix_view matrice = gsl_matrix_view_array(matrix,8, 8);
@@ -269,13 +293,14 @@ void iteration(const unsigned char* data,int w,int h,fit_t* results){
 		
 		/* Compute matrix = M'*M */
 		gsl_blas_dgemm (CblasTrans, CblasNoTrans,1.0, &gsl_M.matrix, &gsl_M.matrix,0.0,&matrice.matrix);
-		
+		/**
 		for (int index1 = 0;index1<8;index1++){
 			for (int index2 =0;index2<8;index2++){
 //				printf("%8f\t",matrix[index1*8 + index2]);
 			}
 //			printf("\n");
 		}
+		*/
 		/** Compute matrix = M'*M
 		 printf("MM2\n");
 		 for (int index1 = 0;index1<8;index1++){
@@ -346,9 +371,17 @@ void iteration(const unsigned char* data,int w,int h,fit_t* results){
 	}
 	
 	
-	printf("ERRORE FINALE: %f\n",square);
-	printf("STRUCT FINALE: \n");
-	printFit(results);
+	fprintf(fitDebug,"ERRORE FINALE: %09.0f\n",square);
+	fprintf(fitDebug,"STRUCT FINALE: \n");
+	printFit(fitDebug,results);
+	printResults(results);
+	fflush(fitDebug);
+	if(square>initial_error){
+		return 0;
+	}
+	else{
+		return 1;
+	}
 }
 
 /***************************************************************************************************************
