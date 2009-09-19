@@ -5,7 +5,7 @@
 #include "tiffPostElaboration.hpp"
 #include "fit.hpp" 
 
-#define iter 100
+#define iter 100000
 #define len 30
 
 extern FILE* fitDebug;
@@ -96,9 +96,7 @@ int main(int argc, char* argv[])
 						
 						maxmin(image,w,h,&max,&min);
 							
-#if DEBUG
 						printf("MAX: %d MIN: %d\n",max,min);
-#endif
 							
 						unsigned char* mask = createMask(image,w,h,max,min,0.5);
 							
@@ -111,6 +109,8 @@ int main(int argc, char* argv[])
 #if DEBUG
 						printf("centro in %f - %f\nCon ampiezza %f e %f\n",x0,y0,FWHM_x,FWHM_y);
 #endif
+
+						delete mask;
 							
 						span_x = (int) (2*FWHM_x);
 						span_y = (int) (2*FWHM_y);
@@ -135,6 +135,7 @@ int main(int argc, char* argv[])
 #if DEBUG
 							fprintf(fitDebug,"\n\nIMMAGINE: %d\n\n",i);
 #endif
+							printf("IMAGE: %d\n",i);
 							/**snap a picture*/
 							snapCamera(&Camera);
 							
@@ -188,7 +189,6 @@ int main(int argc, char* argv[])
 							y = (int) test_g.y_0;
 							*/
 							
-							sleep(30);
 						}
 						end = clock();
 						double diff = ((double) (end - start))/ CLOCKS_PER_SEC;

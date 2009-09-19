@@ -1,6 +1,6 @@
 %max,x_0,y_0 vengono dalla preelaborazione in C, sigma_x e sigma_y si
 %possono ricavare dall'immagine come bordi della maschera (forse...)
-function [A,x_0,y_0,sigma_x,sigma_y,a,b,c] = gaussianFit(image,max,min,centro_x,centro_y,var_x,var_y)
+function [A,x_0,y_0,sigma_x,sigma_y,a,b,c] = gaussianFit(image,max,min,center_x,center_y,var_x,var_y)
     
     %plot della roba da fittare
     figure(1);
@@ -22,8 +22,8 @@ function [A,x_0,y_0,sigma_x,sigma_y,a,b,c] = gaussianFit(image,max,min,centro_x,
     
     %parameter inizialization
     A = max;
-    x_0 = centro_x;
-    y_0 = centro_y;
+    x_0 = center_x;
+    y_0 = center_y;
     sigma_x = var_x;
     sigma_y = var_y;
     a = 0;
@@ -36,7 +36,7 @@ function [A,x_0,y_0,sigma_x,sigma_y,a,b,c] = gaussianFit(image,max,min,centro_x,
     
     m=size(img,1);
     
-    differenze = zeros(m,1);
+    diff = zeros(m,1);
     immagine = zeros(m,1);
     M = zeros(m,8);
     
@@ -60,19 +60,19 @@ function [A,x_0,y_0,sigma_x,sigma_y,a,b,c] = gaussianFit(image,max,min,centro_x,
             y = floor(i/dimx);
             test = evaluateGaussian(A,x_0,y_0,sigma_x,sigma_y,a,b,c,x,y);
 %             if mask(i) == 1
-                   differenze(i) = img(i) - test;
+                   diff(i) = img(i) - test;
 %             end
            
     end
     
-    R(1) = differenze'*differenze;
+    R(1) = diff'*diff;
     initial_error = R(1);
     current_error = R(1);
     
     threshold = initial_error/error_threshold;
     %lo faccio girare per un po
     for j=1:iteration_limit
-        %a questo punto calcolo il vettore delle differenze e la matrice M
+        %a questo punto calcolo il vettore delle diff e la matrice M
 
         for i=1:m
             x = mod(i,  dimx);
@@ -93,14 +93,14 @@ function [A,x_0,y_0,sigma_x,sigma_y,a,b,c] = gaussianFit(image,max,min,centro_x,
         %prediction error plot
         if j == 1
             figure(6);
-            diffmap = reshape(differenze,dimx,dimy);
+            diffmap = reshape(diff,dimx,dimy);
             mesh(diffmap);
             title('Predition residual map');
         end
         
         %calculating matrix and vector of the fit iteration
         matrix = M'*M;
-        vector = M'*differenze;
+        vector = M'*diff;
 
         %linear system resolution gives delta, vector of adjustments
         delta = matrix\vector;
@@ -121,12 +121,12 @@ function [A,x_0,y_0,sigma_x,sigma_y,a,b,c] = gaussianFit(image,max,min,centro_x,
             y = floor(i/dimx);
             test = evaluateGaussian(A,x_0,y_0,sigma_x,sigma_y,a,b,c,x,y);
 %             if mask(i) == 1
-                   differenze(i) = img(i) - test;
+                   diff(i) = img(i) - test;
 %             end
             
         end
         
-        R(j+1) = differenze'*differenze;
+        R(j+1) = diff'*diff;
         
         %STOP CRITERIA
         
@@ -197,8 +197,8 @@ function [A,x_0,y_0,sigma_x,sigma_y,a,b,c] = gaussianFit(image,max,min,centro_x,
     %plot(mappa residui)
     figure(5);
     %calcolo per l'ultima volta
-    differenze = img - immagine;
-    diffmap = reshape(differenze,dimx,dimy);
+    diff = img - immagine;
+    diffmap = reshape(diff,dimx,dimy);
     mesh(diffmap);
     title(['Residuals map, goodness of fit is: ',num2str(R2)]);
     
@@ -239,8 +239,8 @@ function [A,x_0,y_0,sigma_x,sigma_y,a,b,c] = gaussianFit(image,max,min,centro_x,
             immagine(i) = evaluateGaussian(A,center,y_0,sigma_x,sigma_y,a,b,c,x,y);
         end
         
-        differenze = img - immagine;
-        quadrati = differenze' * differenze;
+        diff = img - immagine;
+        quadrati = diff' * diff;
         
         iterazione = iterazione +1;
     end
@@ -277,8 +277,8 @@ function [A,x_0,y_0,sigma_x,sigma_y,a,b,c] = gaussianFit(image,max,min,centro_x,
             immagine(i) = evaluateGaussian(A,center,y_0,sigma_x,sigma_y,a,b,c,x,y);
         end
         
-        differenze = img - immagine;
-        quadrati = differenze' * differenze;
+        diff = img - immagine;
+        quadrati = diff' * diff;
     end
     
     right_confidence_x = center;
@@ -297,8 +297,8 @@ function [A,x_0,y_0,sigma_x,sigma_y,a,b,c] = gaussianFit(image,max,min,centro_x,
             immagine(i) = evaluateGaussian(A,x_s(j),y_0,sigma_x,sigma_y,a,b,c,x,y);
         end
         
-        differenze = img - immagine;
-        quadrati = differenze' * differenze;
+        diff = img - immagine;
+        quadrati = diff' * diff;
         stat_x(j) = quadrati;
         %         if(quadrati < R2)
         %             fprintf('Non ha convergiuto completamente, R: %d',quadrati);
@@ -354,8 +354,8 @@ function [A,x_0,y_0,sigma_x,sigma_y,a,b,c] = gaussianFit(image,max,min,centro_x,
             immagine(i) = evaluateGaussian(A,x_0,center,sigma_x,sigma_y,a,b,c,x,y);
         end
         
-        differenze = img - immagine;
-        quadrati = differenze' * differenze;
+        diff = img - immagine;
+        quadrati = diff' * diff;
         
         iterazione = iterazione +1;
     end
@@ -391,8 +391,8 @@ function [A,x_0,y_0,sigma_x,sigma_y,a,b,c] = gaussianFit(image,max,min,centro_x,
             immagine(i) = evaluateGaussian(A,x_0,center,sigma_x,sigma_y,a,b,c,x,y);
         end
         
-        differenze = img - immagine;
-        quadrati = differenze' * differenze;
+        diff = img - immagine;
+        quadrati = diff' * diff;
     end
     
     right_confidence_y = center;
@@ -410,8 +410,8 @@ function [A,x_0,y_0,sigma_x,sigma_y,a,b,c] = gaussianFit(image,max,min,centro_x,
             immagine(i) = evaluateGaussian(A,x_0,y_s(j),sigma_x,sigma_y,a,b,c,x,y);
         end
         
-        differenze = img - immagine;
-        quadrati = differenze' * differenze;
+        diff = img - immagine;
+        quadrati = diff' * diff;
         stat_y(j) = quadrati;
         %         if(quadrati < R2)
         %             fprintf('Non ha convergiuto completamente, R: %d',quadrati);
@@ -454,8 +454,8 @@ function [A,x_0,y_0,sigma_x,sigma_y,a,b,c] = gaussianFit(image,max,min,centro_x,
             immagine(i) = evaluateGaussian(A,x_0,y_0,center,sigma_y,a,b,c,x,y);
         end
         
-        differenze = img - immagine;
-        quadrati = differenze' * differenze;
+        diff = img - immagine;
+        quadrati = diff' * diff;
         
         iterazione = iterazione +1;
     end
@@ -493,8 +493,8 @@ function [A,x_0,y_0,sigma_x,sigma_y,a,b,c] = gaussianFit(image,max,min,centro_x,
         end
         
         
-        differenze = img - immagine;
-        quadrati = differenze' * differenze;
+        diff = img - immagine;
+        quadrati = diff' * diff;
     end
     
     right_confidence_sigma_x = center;
@@ -512,8 +512,8 @@ function [A,x_0,y_0,sigma_x,sigma_y,a,b,c] = gaussianFit(image,max,min,centro_x,
             immagine(i) = evaluateGaussian(A,x_0,y_0,sigma_x_s(j),sigma_y,a,b,c,x,y);
         end
         
-        differenze = img - immagine;
-        quadrati = differenze' * differenze;
+        diff = img - immagine;
+        quadrati = diff' * diff;
         stat_sigma_x(j) = quadrati;
     end
     
@@ -536,7 +536,7 @@ function [A,x_0,y_0,sigma_x,sigma_y,a,b,c] = gaussianFit(image,max,min,centro_x,
     iterazione=1;
     
     while quadrati > upthreshold || quadrati < lowthreshold
-        fprintf(1,'Iterazione %d con residuo %d che lavora su %d   %d  %d\n',iterazione,quadrati,left,center,right);
+
         %adjustment of the section
         
         if quadrati > upthreshold
@@ -554,8 +554,8 @@ function [A,x_0,y_0,sigma_x,sigma_y,a,b,c] = gaussianFit(image,max,min,centro_x,
             immagine(i) = evaluateGaussian(A,x_0,y_0,sigma_x,center,a,b,c,x,y);
         end
         
-        differenze = img - immagine;
-        quadrati = differenze' * differenze;
+        diff = img - immagine;
+        quadrati = diff' * diff;
         
         iterazione = iterazione +1;
     end
@@ -576,7 +576,7 @@ function [A,x_0,y_0,sigma_x,sigma_y,a,b,c] = gaussianFit(image,max,min,centro_x,
     iterazione=1;
     
     while quadrati > upthreshold || quadrati < lowthreshold
-        fprintf(1,'Iterazione %d con residuo %d che lavora su %d   %d  %d\n',iterazione,quadrati,left,center,right);
+
         %adjustment of the section
         if quadrati > upthreshold
             right = center;
@@ -594,8 +594,8 @@ function [A,x_0,y_0,sigma_x,sigma_y,a,b,c] = gaussianFit(image,max,min,centro_x,
         end
         
         
-        differenze = img - immagine;
-        quadrati = differenze' * differenze;
+        diff = img - immagine;
+        quadrati = diff' * diff;
     end
     
     right_confidence_sigma_y = center;
@@ -613,8 +613,8 @@ function [A,x_0,y_0,sigma_x,sigma_y,a,b,c] = gaussianFit(image,max,min,centro_x,
             immagine(i) = evaluateGaussian(A,x_0,y_0,sigma_x,sigma_y_s(j),a,b,c,x,y);
         end
         
-        differenze = img - immagine;
-        quadrati = differenze' * differenze;
+        diff = img - immagine;
+        quadrati = diff' * diff;
         stat_sigma_y(j) = quadrati;
 
     end

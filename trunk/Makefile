@@ -35,4 +35,4 @@ live:
 	$(CC) $(RPATH) $(TARGET) -I/opt/local/var/macports/software/gsl/1.12_0/opt/local/include/ $(CFLAGS) $(LTIFF) $(MAT) -DDEBUG streamFit.cpp fit.cpp mysnap.cpp psnap.cpp tiffPostElaboration.cpp -o live $(LIB) -lgsl -lgslcblas -L/opt/local/var/macports/software/gsl/1.12_0/opt/local/lib
 
 newlive:
-	$(CC) $(RPATH) $(TARGET) -DDEBUG -I/opt/local/var/macports/software/gsl/1.12_0/opt/local/include/ $(CFLAGS) $(LTIFF) $(MAT) streamCpy.cpp fit.cpp mysnap.cpp psnap.cpp tiffPostElaboration.cpp -o live $(LIB) -lgsl -lgslcblas -L/opt/local/var/macports/software/gsl/1.12_0/opt/local/lib
+	$(CC) $(RPATH) $(TARGET) -I/opt/local/var/macports/software/gsl/1.12_0/opt/local/include/ $(CFLAGS) $(LTIFF) $(MAT) streamCpy.cpp fit.cpp mysnap.cpp psnap.cpp tiffPostElaboration.cpp -o live $(LIB) -lgsl -lgslcblas -L/opt/local/var/macports/software/gsl/1.12_0/opt/local/lib

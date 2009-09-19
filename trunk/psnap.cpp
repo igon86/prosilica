@@ -10,6 +10,8 @@
 //Basic Includes
 #include "psnap.hpp"
 
+static unsigned char * newFrame = NULL;
+
 /***************************************************************************************************************
 Function which assigns the first camera found to the tCamera object it was passed
 ****************************************************************************************************************/
@@ -391,7 +393,10 @@ unsigned char* getFrame(tCamera * Camera,int* s)
       if (Camera->Frame.Format == ePvFmtMono8)
 	{
 		size = Camera->Frame.Width * Camera->Frame.Height;
-		unsigned char * newFrame = (unsigned char*) malloc(size);
+		if(newFrame == NULL){
+			newFrame = new unsigned char [size];
+			printf("IMAGE-FRAME-INITIALIZED\n");
+		}
 		memcpy(newFrame,Camera->Frame.ImageBuffer,size);
 		*s = size;
 	  return newFrame;
@@ -399,7 +404,10 @@ unsigned char* getFrame(tCamera * Camera,int* s)
       else if (Camera->Frame.Format == ePvFmtMono16)
 	{
 	  size = Camera->Frame.Width * Camera->Frame.Height * 2;
-	  unsigned char * newFrame = (unsigned char*) malloc(size);
+		if(newFrame == NULL){
+			newFrame = new unsigned char [size];
+			printf("IMAGE-FRAME-INITIALIZED\n");
+		}
 		memcpy(newFrame,Camera->Frame.ImageBuffer,size);
 		*s = size;
 	  return newFrame;
