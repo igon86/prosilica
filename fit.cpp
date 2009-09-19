@@ -1,11 +1,20 @@
 #include "fit.hpp"
 #include "tiffPostElaboration.hpp"
 
-#if DEBUG
 FILE* centroidDebug = fopen("Centroid","w");
 FILE* fitDebug = fopen("FIT","w");
 FILE* risultati = fopen("RESULTS","w");
-#endif
+
+static unsigned char* crop=NULL;
+
+/***************************************************************************************************************
+							Cookie cutter initialization
+****************************************************************************************************************/
+
+static void cropInitialize(int dimension){
+	crop = new unsigned char[dimension];
+}
+
 /***************************************************************************************************************
 									Centroid
 ****************************************************************************************************************/
@@ -90,15 +99,18 @@ unsigned char* cropImage(const unsigned char *input, int w,int h,int x1,int x2,i
 	int count = 0;
 	int limit = w*(y2+1);
 	int dimension = (x2-x1+1)*(y2-y1+1);
-	unsigned char * result = new unsigned char [dimension];
+	if(crop == NULL){
+		printf("CROP INITIALIZED!!\n");
+		cropInitialize(dimension);
+	}
 	for (int i = 0;i<limit;i++){
 		int a = i%w;
 		int b = i/w;
 		if(a >= x1 && a <= x2 && b >= y1 && b <= y2){
-			result[count++] = input[i];
+			crop[count++] = input[i];
 		}
 	}
-	return result;
+	return crop;
 }
 
 /***************************************************************************************************************
@@ -131,6 +143,7 @@ void printFit(FILE* fp,fit_t* f){
 void printResults(fit_t* f){
 
 	fprintf(risultati,"%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\n",f->A,f->x_0,f->y_0,f->sigma_x,f->sigma_y,f->a,f->b,f->c);
+	fflush(risultati);
 }
 
 /***************************************************************************************************************
@@ -149,10 +162,9 @@ int iteration(const unsigned char* data,int w,int h,fit_t* results){
 	fprintf(fitDebug,"IMMAGINE: %dx%d \nSTARTING STRUCT: \n",w,h);
 	printFit(fitDebug,results);
 	fflush(fitDebug);
+	
 	int npixels = w*h;
-
 	double* diff = new double [npixels];
-	unsigned char* toPrint = new unsigned char[npixels];
 	double min = 255;
 	double max = -255;
 	int temp;
@@ -204,7 +216,7 @@ int iteration(const unsigned char* data,int w,int h,fit_t* results){
 	fflush(fitDebug);
 	
 	/**ITERATION LOOP */
-	while (iteration < 10){
+	while (iteration < 1){
 		/*
 		printf("LOOP %d\n",iteration+1);
 		fflush(stdout);
@@ -370,12 +382,22 @@ int iteration(const unsigned char* data,int w,int h,fit_t* results){
 		//printf("New x_0 is %f\n",results->x_0);
 	}
 	
-	
+#if DEBUG	
 	fprintf(fitDebug,"ERRORE FINALE: %09.0f\n",square);
 	fprintf(fitDebug,"STRUCT FINALE: \n");
 	printFit(fitDebug,results);
-	printResults(results);
 	fflush(fitDebug);
+#endif
+	printResults(results);
+	
+	/*FREE!!!!!!!!*/
+	if(M) delete M;
+	if(diff) delete diff;
+	gsl_vector_free(vettore);
+	gsl_vector_free(delta);
+	
+	
+	
 	if(square>initial_error){
 		return 0;
 	}
