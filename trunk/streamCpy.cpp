@@ -4,24 +4,43 @@
 #include "mysnap.hpp"
 #include "tiffPostElaboration.hpp"
 #include "fit.hpp" 
+#include "macro.hpp"
+#include <signal.h>
 
 #define iter 0
 #define len 30
 
 extern FILE* fitDebug;
+extern FILE* risultati; 
 
+static int working = 1;
+
+static void terminate(int boh){
+	write(1,"SIGTERM\n",8);
+	working=0;
+}
 
 int main(int argc, char* argv[])
 {
     // initialise the Prosilica API
     if(!PvInitialize())
-    { 
-	printf("INIT\n");
-	fflush(stdout);
-	tCamera Camera;
+	{ 
+		struct sigaction term;
 
-	/* this is basically taken from example.py */
-
+		printf("INIT\n");
+		fflush(stdout);
+		tCamera Camera;
+		
+		time_t tempo;
+		
+		/* installazione del gestore di SIGTERM e SIGINT*/
+		bzero(&term,sizeof(term));
+		term.sa_handler = terminate;
+	
+		ec_meno1(sigaction ( SIGTERM, &term, NULL ), "problema nell'installazione del gestore di SIGTERM");
+		ec_meno1(sigaction ( SIGINT, &term, NULL ), "problema nell'installazione del gestore di SIGINT");	
+	
+		
         memset(&Camera,0,sizeof(tCamera));
 
         // wait for a camera to be plugged
@@ -40,6 +59,9 @@ int main(int argc, char* argv[])
                     // wait for the user to quit or snap
                     if(WaitForUserToQuitOrSnap())
                     {
+						time(&tempo);
+						fprintf(risultati,"%s\n",ctime(&tempo));
+						
 						clock_t start,end;
 						start = clock();
 						
@@ -131,7 +153,7 @@ int main(int argc, char* argv[])
 						dimy = 2*span_y+1;
 
 						int i=0;
-						while(true){
+						while(working){
 #if DEBUG
 							fprintf(fitDebug,"\n\nIMMAGINE: %d\n\n",i);
 #endif
@@ -199,6 +221,11 @@ int main(int argc, char* argv[])
 
                     // stop the streaming
                     CameraStop(&Camera);
+					
+					//write date
+					time(&tempo);
+					fprintf(risultati,"%s\n",ctime(&tempo));
+
                 }
                 else
                     printf("failed to start streaming\n");
