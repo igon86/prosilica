@@ -20,7 +20,7 @@ LIB         = -Bstatic $(LIB_DIR)/$(CVER)/libImagelib.a -Bdynamic $(SOLIB)
 CFLAGS  = $(OPT) $(FLAGS) -I$(INC_DIR) -D_REENTRANT $(EXTRA)
 
 snap:
-	$(CC) $(RPATH) $(TARGET) $(CFLAGS)  mysnap.cpp psnap.cpp snap.cpp -o mySnap $(LIB)
+	$(CC) $(RPATH) $(TARGET) $(CFLAGS)  mysnap.cpp psnap.cpp snap.cpp -o mySnap $(LIB) -ltiff
 
 post:
 	g++ -Wall -ltiff -o post tiffPostElaboration.cpp post.cpp
