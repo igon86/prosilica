@@ -13,11 +13,12 @@
 extern FILE* fitDebug;
 extern FILE* risultati; 
 
-static int working = 1;
+static int working=0;
 
 static void terminate(int boh){
 	write(1,"SIGTERM\n",8);
-	working=0;
+	if(working) working=0;
+	else _exit(EXIT_SUCCESS);
 }
 
 int main(int argc, char* argv[])
@@ -60,7 +61,7 @@ int main(int argc, char* argv[])
                     if(WaitForUserToQuitOrSnap())
                     {
 						time(&tempo);
-						fprintf(risultati,"%s\n",ctime(&tempo));
+						fprintf(risultati,"%s",ctime(&tempo));
 						
 						clock_t start,end;
 						start = clock();
@@ -153,6 +154,9 @@ int main(int argc, char* argv[])
 						dimy = 2*span_y+1;
 
 						int i=0;
+						
+						working=1;
+						
 						while(working){
 #if DEBUG
 							fprintf(fitDebug,"\n\nIMMAGINE: %d\n\n",i);
