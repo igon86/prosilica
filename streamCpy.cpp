@@ -5,7 +5,7 @@
 #include "tiffPostElaboration.hpp"
 #include "fit.hpp" 
 
-#define iter 100000
+#define iter 0
 #define len 30
 
 extern FILE* fitDebug;
@@ -130,11 +130,12 @@ int main(int argc, char* argv[])
 						dimx = 2*span_x+1;
 						dimy = 2*span_y+1;
 
-						
-						for (int i=0;i<iter;i++){
+						int i=0;
+						while(true){
 #if DEBUG
 							fprintf(fitDebug,"\n\nIMMAGINE: %d\n\n",i);
 #endif
+							i++;
 							printf("IMAGE: %d\n",i);
 							/**snap a picture*/
 							snapCamera(&Camera);
