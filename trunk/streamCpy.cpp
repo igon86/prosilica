@@ -58,7 +58,7 @@ int main(int argc, char* argv[])
                 {
                     printf("camera is ready now. Press q to quit or s to take a STREAM of pictures\n");
                     // wait for the user to quit or snap
-                    if(WaitForUserToQuitOrSnap())
+                    if(true)
                     {
 						time(&tempo);
 						fprintf(risultati,"%s",ctime(&tempo));
@@ -197,7 +197,7 @@ int main(int argc, char* argv[])
 							}
 							writeImage(pred,"pred.tiff",dimx,dimy);
 #endif
-							
+							fprintf(risultati,"%d\t",i);
 							iteration(cropped,dimx,dimy,&test_g);
 							
 #if DEBUG
