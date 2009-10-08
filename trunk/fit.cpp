@@ -388,7 +388,7 @@ int iteration(const unsigned char* data,int w,int h,fit_t* results){
 	printFit(fitDebug,results);
 	fflush(fitDebug);
 #endif
-	printResults(results);
+	//printResults(results);
 	
 	/*FREE!!!!!!!!*/
 	if(M) delete M;
