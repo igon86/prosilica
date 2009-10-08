@@ -9,7 +9,7 @@ function [A,x_0,y_0,sigma_x,sigma_y,a,b,c] = gaussianFit(image,max,min,center_x,
     title('toBeFitted');
     
     % STOP CRITERIA parameter and iteration limit
-    iteration_limit = 100;
+    iteration_limit = 10;
     error_threshold = 100;
     
     %STATISTICAL parameters
@@ -156,6 +156,7 @@ function [A,x_0,y_0,sigma_x,sigma_y,a,b,c] = gaussianFit(image,max,min,center_x,
             
         end
         
+        iterated = j;
     end
     
     %%%%%%%%%%%%%%%%%%%%%%%%%     FINAL PLOTS    %%%%%%%%%%%%%%%%%%%%%%%%%
@@ -309,7 +310,7 @@ function [A,x_0,y_0,sigma_x,sigma_y,a,b,c] = gaussianFit(image,max,min,center_x,
     
      figure(7);
      plot(x_s,stat_x,left_confidence_x,left_spot_x,'ro',right_confidence_x,right_spot_x,'ro')
-     title({['X_0 is: ',num2str(x_0),' and is between ',num2str(left_confidence_x),' and ',num2str(right_confidence_x),' with ',num2str(x_0_width),' width.'];});
+     title({['X_0 is: ',num2str(x_0),' and is between ',num2str(left_confidence_x),' and ',num2str(right_confidence_x),' with ',num2str(x_0_width),' width.'];;});
     
 
     

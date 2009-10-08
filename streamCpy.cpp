@@ -17,8 +17,12 @@ static int working=0;
 
 static void terminate(int boh){
 	write(1,"SIGTERM\n",8);
-	if(working) working=0;
-	else _exit(EXIT_SUCCESS);
+	if(working){
+		working=0;
+	}
+	else{
+		_exit(EXIT_SUCCESS);
+	}
 }
 
 int main(int argc, char* argv[])
@@ -149,7 +153,7 @@ int main(int argc, char* argv[])
 						test_g.a = 0;
 						test_g.b = 0;
 						test_g.c = min;
-						
+												
 						dimx = 2*span_x+1;
 						dimy = 2*span_y+1;
 
@@ -199,6 +203,9 @@ int main(int argc, char* argv[])
 #endif
 							fprintf(risultati,"%d\t",i);
 							iteration(cropped,dimx,dimy,&test_g);
+							
+							fprintf(risultati,"%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\n",(&test_g)->A,(&test_g)->x_0 +x-span_x,(&test_g)->y_0+y-span_y,(&test_g)->sigma_x,(&test_g)->sigma_y,(&test_g)->a,(&test_g)->b,(&test_g)->c);
+
 							
 #if DEBUG
 							unsigned char* fit = new unsigned char [dimension];
