@@ -80,7 +80,7 @@ unsigned char* createMask(unsigned char* image,int w,int h,int max,int min,doubl
 	for(int i=0;i<npixels;i++){
 		unsigned char temp = image[i];
 		if(temp > threshold) cookie[i]=MAX;
-		else cookie[i]=0; //basta dire poti poti. me le puoi toccare ma non dire poti poti se no mammina sa cosa vuol dire poti poti e sa cosa stai facendo! lo sa lo sa. e ovvio amore. 
+		else cookie[i]=0; 
 	}
 	return cookie;
 }
