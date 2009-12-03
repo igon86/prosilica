@@ -67,7 +67,7 @@ int main(int argc, char *argv[]){
 			for(int i=0;i<npixels;i++){
 				unsigned char temp = (unsigned char)TIFFGetR(raster[i]);
 				if(temp>threshold) image[i]=255;
-				else image[i]=0; //basta dire poti poti. me le puoi toccare ma non dire poti poti se no mammina sa cosa vuol dire poti poti e sa cosa stai facendo! lo sa lo sa. e ovvio amore. 
+				else image[i]=0; 
 			}
 			_TIFFfree(raster);
 		}
@@ -157,7 +157,7 @@ int main(int argc, char *argv[]){
 							image[i]=0;
 						}
 					}	
-					//else image[i]=0; //basta dire poti poti. me le puoi toccare ma non dire poti poti se no mammina sa cosa vuol dire poti poti e sa cosa stai facendo! lo sa lo sa. e ovvio amore.
+					//else image[i]=0; 
 					*/ 
 					for(int i=0;i<npixels;i++){
 						unsigned temp = (unsigned char)TIFFGetR(raster[i]);
@@ -248,7 +248,7 @@ int main(int argc, char *argv[]){
 					//else printf("0");
 				}	
 				printf("Ho beccato %d pixel\n",count);
-				//else image[i]=0; //basta dire poti poti. me le puoi toccare ma non dire poti poti se no mammina sa cosa vuol dire poti poti e sa cosa stai facendo! lo sa lo sa. e ovvio amore. 
+				
 				
 				//CENTRO W
 				double w_center = 0;
