@@ -89,7 +89,7 @@ unsigned char *createMask(unsigned char *image, int w, int h, int max, int min, 
     for (int i = 0; i < npixels; i++) {
 		unsigned char temp = image[i];
 		if (temp > threshold)
-			cookie[i] = MAX;
+			cookie[i] = MASSIMO;
 		else
 			cookie[i] = 0;
     }
