@@ -408,7 +408,7 @@ int iteration(const unsigned char *data, int w, int h, fit_t * results)
  Calculate Max & Min of an image
  ****************************************************************************************************************/
 
-void maxmin(const unsigned char *image, int w, int h, int *max, int *min)
+void maxmin(unsigned char *image, int w, int h, int *max, int *min)
 {
 	
     int npixels = w * h;
