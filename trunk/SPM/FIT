@@ -1,0 +1,171 @@
+CROP: 41 - 221   30 - 212 su immagine 800x600
+IMMAGINE: 181x183 
+STARTING STRUCT: 
+A: 128.000000
+x_0: 90.000000	y_0: 91.000000
+sigma_x: 45.000000	sigma_y: 45.500000
+a: 0.000000	b: 0.000000	c: 0.000000
+Done most of it
+Starting with with algebra stuff..dimension..M..matrix..Done with algebra stuff
+Done with inizialization
+Iteration: 0
+ERRORE INIZIA: 004641321
+ERRORE FINALE: 004641321
+STRUCT FINALE: 
+A: 122.826634
+x_0: 90.506534	y_0: 90.830008
+sigma_x: 53.374243	sigma_y: 54.141100
+a: 0.002599	b: -0.000467	c: 2.456445
+IMMAGINE: 181x183 
+STARTING STRUCT: 
+A: 122.826634
+x_0: 90.506534	y_0: 90.830008
+sigma_x: 53.374243	sigma_y: 54.141100
+a: 0.002599	b: -0.000467	c: 2.456445
+Done most of it
+Starting with with algebra stuff..dimension..M..matrix..Done with algebra stuff
+Done with inizialization
+Iteration: 0
+ERRORE INIZIA: 000072309
+ERRORE FINALE: 000072309
+STRUCT FINALE: 
+A: 127.612337
+x_0: 90.605169	y_0: 90.795873
+sigma_x: 54.524578	sigma_y: 55.323213
+a: 0.000216	b: 0.000325	c: 0.057475
+IMMAGINE: 181x183 
+STARTING STRUCT: 
+A: 127.612337
+x_0: 90.605169	y_0: 90.795873
+sigma_x: 54.524578	sigma_y: 55.323213
+a: 0.000216	b: 0.000325	c: 0.057475
+Done most of it
+Starting with with algebra stuff..dimension..M..matrix..Done with algebra stuff
+Done with inizialization
+Iteration: 0
+ERRORE INIZIA: 000002852
+ERRORE FINALE: 000002852
+STRUCT FINALE: 
+A: 127.675717
+x_0: 90.603514	y_0: 90.796455
+sigma_x: 54.499268	sigma_y: 55.297093
+a: 0.000165	b: 0.000342	c: 0.020835
+IMMAGINE: 181x183 
+STARTING STRUCT: 
+A: 127.675717
+x_0: 90.603514	y_0: 90.796455
+sigma_x: 54.499268	sigma_y: 55.297093
+a: 0.000165	b: 0.000342	c: 0.020835
+Done most of it
+Starting with with algebra stuff..dimension..M..matrix..Done with algebra stuff
+Done with inizialization
+Iteration: 0
+ERRORE INIZIA: 000002753
+ERRORE FINALE: 000002753
+STRUCT FINALE: 
+A: 127.675750
+x_0: 90.603516	y_0: 90.796453
+sigma_x: 54.499288	sigma_y: 55.297115
+a: 0.000165	b: 0.000342	c: 0.020818
+IMMAGINE: 181x183 
+STARTING STRUCT: 
+A: 127.675750
+x_0: 90.603516	y_0: 90.796453
+sigma_x: 54.499288	sigma_y: 55.297115
+a: 0.000165	b: 0.000342	c: 0.020818
+Done most of it
+Starting with with algebra stuff..dimension..M..matrix..Done with algebra stuff
+Done with inizialization
+Iteration: 0
+ERRORE INIZIA: 000002753
+ERRORE FINALE: 000002753
+STRUCT FINALE: 
+A: 127.675750
+x_0: 90.603516	y_0: 90.796453
+sigma_x: 54.499288	sigma_y: 55.297115
+a: 0.000165	b: 0.000342	c: 0.020818
+IMMAGINE: 181x183 
+STARTING STRUCT: 
+A: 127.675750
+x_0: 90.603516	y_0: 90.796453
+sigma_x: 54.499288	sigma_y: 55.297115
+a: 0.000165	b: 0.000342	c: 0.020818
+Done most of it
+Starting with with algebra stuff..dimension..M..matrix..Done with algebra stuff
+Done with inizialization
+Iteration: 0
+ERRORE INIZIA: 000002753
+ERRORE FINALE: 000002753
+STRUCT FINALE: 
+A: 127.675750
+x_0: 90.603516	y_0: 90.796453
+sigma_x: 54.499288	sigma_y: 55.297115
+a: 0.000165	b: 0.000342	c: 0.020818
+IMMAGINE: 181x183 
+STARTING STRUCT: 
+A: 127.675750
+x_0: 90.603516	y_0: 90.796453
+sigma_x: 54.499288	sigma_y: 55.297115
+a: 0.000165	b: 0.000342	c: 0.020818
+Done most of it
+Starting with with algebra stuff..dimension..M..matrix..Done with algebra stuff
+Done with inizialization
+Iteration: 0
+ERRORE INIZIA: 000002753
+ERRORE FINALE: 000002753
+STRUCT FINALE: 
+A: 127.675750
+x_0: 90.603516	y_0: 90.796453
+sigma_x: 54.499288	sigma_y: 55.297115
+a: 0.000165	b: 0.000342	c: 0.020818
+IMMAGINE: 181x183 
+STARTING STRUCT: 
+A: 127.675750
+x_0: 90.603516	y_0: 90.796453
+sigma_x: 54.499288	sigma_y: 55.297115
+a: 0.000165	b: 0.000342	c: 0.020818
+Done most of it
+Starting with with algebra stuff..dimension..M..matrix..Done with algebra stuff
+Done with inizialization
+Iteration: 0
+ERRORE INIZIA: 000002753
+ERRORE FINALE: 000002753
+STRUCT FINALE: 
+A: 127.675750
+x_0: 90.603516	y_0: 90.796453
+sigma_x: 54.499288	sigma_y: 55.297115
+a: 0.000165	b: 0.000342	c: 0.020818
+IMMAGINE: 181x183 
+STARTING STRUCT: 
+A: 127.675750
+x_0: 90.603516	y_0: 90.796453
+sigma_x: 54.499288	sigma_y: 55.297115
+a: 0.000165	b: 0.000342	c: 0.020818
+Done most of it
+Starting with with algebra stuff..dimension..M..matrix..Done with algebra stuff
+Done with inizialization
+Iteration: 0
+ERRORE INIZIA: 000002753
+ERRORE FINALE: 000002753
+STRUCT FINALE: 
+A: 127.675750
+x_0: 90.603516	y_0: 90.796453
+sigma_x: 54.499288	sigma_y: 55.297115
+a: 0.000165	b: 0.000342	c: 0.020818
+IMMAGINE: 181x183 
+STARTING STRUCT: 
+A: 127.675750
+x_0: 90.603516	y_0: 90.796453
+sigma_x: 54.499288	sigma_y: 55.297115
+a: 0.000165	b: 0.000342	c: 0.020818
+Done most of it
+Starting with with algebra stuff..dimension..M..matrix..Done with algebra stuff
+Done with inizialization
+Iteration: 0
+ERRORE INIZIA: 000002753
+ERRORE FINALE: 000002753
+STRUCT FINALE: 
+A: 127.675750
+x_0: 90.603516	y_0: 90.796453
+sigma_x: 54.499288	sigma_y: 55.297115
+a: 0.000165	b: 0.000342	c: 0.020818
