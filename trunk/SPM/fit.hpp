@@ -42,6 +42,6 @@ unsigned char* cropImage(const unsigned char *input, int w,int h,int x1,int x2,i
 
 double evaluateGaussian(fit_t* gaussian,int x, int y);
 
-void maxmin(const unsigned char* image,int w,int h,int* max,int* min);
+void maxmin(unsigned char* image,int w,int h,int* max,int* min);
 
 #endif

@@ -84,7 +84,7 @@ int main(int argc, char* argv[]){
 	}
 	
 	/* WRITING THE IMAGE TO BE FITTED ON A TIFF FILE */
-	writeImage((unsigned char *) &matrix,OUTPUT_MATRIX, width, length);
+	writeImage((unsigned char *)matrix,(char *) OUTPUT_MATRIX, width, length);
 	
 	maxmin( (unsigned char*) matrix, width, length, &max, &min);
 	
@@ -94,7 +94,7 @@ int main(int argc, char* argv[]){
 	unsigned char *mask = createMask( (unsigned char*) matrix, width, length, max, min, CROP_PARAMETER);
 	
 #if DEBUG
-	writeImage(mask, "mask.tiff", width, length);
+	writeImage(mask, (char *) "mask.tiff", width, length);
 #endif
 	
 	centroid(mask, width, length, &x0, &y0, &FWHM_x, &FWHM_y);
@@ -137,10 +137,10 @@ int main(int argc, char* argv[]){
 	
 	/* THIS PART CAN BE ITERATIVE */
 	
-	unsigned char *cropped = cropImage((unsigned char*) &matrix, width, length, x - span_x, x + span_x, y - span_y, y + span_y);
+	unsigned char *cropped = cropImage((unsigned char*) matrix, width, length, x - span_x, x + span_x, y - span_y, y + span_y);
 	
 #if DEBUG
-	writeImage(cropped, "./CROP.tiff", dimx, dimy);
+	writeImage(cropped, (char *) "./CROP.tiff", dimx, dimy);
 #endif
 	
 	for(i=0;i<ITERATION;i++){
