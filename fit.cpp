@@ -182,7 +182,7 @@ int iteration(const unsigned char* data,int w,int h,fit_t* results){
 	double squares[10];
 	for (int i=0;i<10;i++) squares[i] = 0; 
 	
-	fprintf(fitDebug,"Starting with with algebra stuff..");
+	fprintf(fitDebug,"Starting with algebra stuff..");
 	fflush(fitDebug);
 
 	int dimension = 8*npixels;
