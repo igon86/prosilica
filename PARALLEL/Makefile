@@ -7,7 +7,7 @@ parallel:
 	$(CC) $(FLAGS) ./parallel.cpp ./tiffPostElaboration.cpp ./fit.cpp -o parallel
 
 test:
-	./parallel ./parameters
+	mpirun ./parallel ./parameters
 
 clean:
 	rm -f RESULTS* *.tiff FIT Centroid *~
