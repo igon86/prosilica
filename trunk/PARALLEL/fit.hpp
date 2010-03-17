@@ -4,7 +4,7 @@
 #define GAUSSIAN 'G'
 #define AIRY 'A'
 
-#define MAX 255
+#define MASSIMO 255
 
 #include <stdio.h>
 #include "math.h"

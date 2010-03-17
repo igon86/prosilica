@@ -2,6 +2,7 @@
 
 #include "tiffPostElaboration.hpp"
 #include "fit.hpp"
+#include <mpi.h>
 
 #define OUTPUT_MATRIX "gaussiana.tiff" 
 #define CROP_PARAMETER 0.5

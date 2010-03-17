@@ -1,4 +1,4 @@
-CC = g++
+CC = mpic++
 FLAGS = -DDEBUG -ltiff -D_x86 -D_LINUX -lgsl -lgslcblas -lm
 
 .PHONY : parallel test clean
