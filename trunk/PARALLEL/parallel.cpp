@@ -178,10 +178,9 @@ int main(int argc, char* argv[]){
 		
 		for(i=0; i < STREAMLENGTH; i++){
 			printf("SEND VERSO %d\n",i%(p-1)+1);
-			MPI_Send(cropped, dim, MPI_BYTE, i%(p-1)+1, IMAGE, MPI_COMM_WORLD);		
-			//iteration(.l,jed, dimx, dimy, &test_g);
+			MPI_Send(cropped, dim, MPI_BYTE, i%(p-1)+1, IMAGE, MPI_COMM_WORLD);
 		
-			//fprintf(risultati, "%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\n", (&test_g)->A, (&test_g)->x_0 + x - span_x, (&test_g)->y_0 + y - span_y, (&test_g)->sigma_x, (&test_g)->sigma_y, (&test_g)->a, (&test_g)->b, (&test_g)->c);
+			//
 		}
 	}else{
 		// I am a worker
@@ -193,6 +192,10 @@ int main(int argc, char* argv[]){
 		MPI_Recv(&test_g.sigma_x,1,MPI_DOUBLE,EMETTITORE,PARAMETERS,MPI_COMM_WORLD,&status);
 		MPI_Recv(&test_g.sigma_y,1,MPI_DOUBLE,EMETTITORE,PARAMETERS,MPI_COMM_WORLD,&status);
 		MPI_Recv(&test_g.c,1,MPI_DOUBLE,EMETTITORE,PARAMETERS,MPI_COMM_WORLD,&status);
+		
+		/* inizializzo gli altri valori della struct */
+		test_g.a = 0;
+		test_g.b = 0;
 		
 		dim = dimx*dimy;
 		cropped = (unsigned char*) malloc(dim);
@@ -206,6 +209,9 @@ int main(int argc, char* argv[]){
 		
 		for (i=0;i< num_image ;i++){
 			MPI_Recv(cropped,dim,MPI_UNSIGNED_CHAR,EMETTITORE,IMAGE,MPI_COMM_WORLD,&status);
+			iteration(cropped,dimx,dimy,&test_g);
+			printf("PROCESSO %d IMMAGINE %d %f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\n", my_rank,i,(&test_g)->A, (&test_g)->x_0,
+			 (&test_g)->y_0, (&test_g)->sigma_x, (&test_g)->sigma_y, (&test_g)->a, (&test_g)->b, (&test_g)->c);
 		}
 
 	}
