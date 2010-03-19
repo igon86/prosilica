@@ -35,6 +35,7 @@ int main(int argc, char* argv[]){
 	double c_0;
 	int max,min;
 	int dim;
+	int num_image;
 	
 	/* parameters for the cookie cutter */
 	double x0,y0;
@@ -196,13 +197,17 @@ int main(int argc, char* argv[]){
 		dim = dimx*dimy;
 		cropped = (unsigned char*) malloc(dim);
 		
-		printf("Sono il processo %d  e devo ricevere %d immagini\n",(STREAMLENGTH / p ) + (STREAMLENGTH % p > my_rank));
-		for (i=0;i< STREAMLENGTH / p ;i++){
+		num_image = STREAMLENGTH / (p-1);		
+		if(STREAMLENGTH % (p-1) > my_rank-1){
+			num_image++;
+		}
+		
+		printf("Sono il processo %d  e devo ricevere %d immagini\n",my_rank,num_image);
+		
+		for (i=0;i< num_image ;i++){
 			MPI_Recv(cropped,dim,MPI_UNSIGNED_CHAR,EMETTITORE,IMAGE,MPI_COMM_WORLD,&status);
 		}
-		if(STREAMLENGTH % p > my_rank){
-			MPI_Recv(cropped,dim,MPI_UNSIGNED_CHAR,EMETTITORE,IMAGE,MPI_COMM_WORLD,&status);
-		}
+
 	}
 	
 	MPI_Finalize();
