@@ -174,7 +174,7 @@ int main(int argc, char* argv[]){
 		}
 	}else{
 		// I am a worker
-		MPI_Recv();	
+		//MPI_Recv();	
 	}
 	
 	MPI_Finalize();
