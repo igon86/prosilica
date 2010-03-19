@@ -9,7 +9,7 @@
 #define STREAMLENGTH 10
 
 #define EMETTITORE 0
-#define DIM 0
+#define PARAMETERS 0
 #define IMAGE 1
 
 extern FILE *risultati;
@@ -45,6 +45,8 @@ int main(int argc, char* argv[]){
 	
 	/* gaussian struct */
 	fit_t results,test_g;
+	
+	unsigned char *cropped;
 	
 	/* indexes */
 	int i,j;
@@ -160,24 +162,47 @@ int main(int argc, char* argv[]){
 #if DEBUG
 		writeImage(cropped, (char *) "./CROP.tiff", dimx, dimy);
 #endif
-		// calcolo la dimensione e la comunico ai worker
+		// invio al worker i differenti parametri
 		dim=dimx*dimy;
 		for(i=1;i<p;i++){
-			MPI_Send(&dimx, i, MPI_INT, i, DIM, MPI_COMM_WORLD);
-			MPI_Send(&dimy, i, MPI_INT, i, DIM, MPI_COMM_WORLD);
+			MPI_Send(&dimx, 1, MPI_INT, i, PARAMETERS, MPI_COMM_WORLD);
+			MPI_Send(&dimy, 1, MPI_INT, i, PARAMETERS, MPI_COMM_WORLD);
+			MPI_Send(&test_g.A, 1, MPI_DOUBLE, i, PARAMETERS, MPI_COMM_WORLD);
+			MPI_Send(&test_g.x_0, 1, MPI_DOUBLE, i, PARAMETERS, MPI_COMM_WORLD);
+			MPI_Send(&test_g.y_0, 1, MPI_DOUBLE, i, PARAMETERS, MPI_COMM_WORLD);
+			MPI_Send(&test_g.sigma_x, 1, MPI_DOUBLE, i, PARAMETERS, MPI_COMM_WORLD);
+			MPI_Send(&test_g.sigma_y, 1, MPI_DOUBLE, i, PARAMETERS, MPI_COMM_WORLD);
+			MPI_Send(&test_g.c, 1, MPI_DOUBLE, i, PARAMETERS, MPI_COMM_WORLD);
 		}
-		/*
+		
 		for(i=0; i < STREAMLENGTH; i++){
-			//MPI_Send(cropped, dim, MPI_BYTE, i%(p-1)+1, IMAGE, MPI_COMM_WORLD);		
+			printf("SEND VERSO %d\n",i%(p-1)+1);
+			MPI_Send(cropped, dim, MPI_BYTE, i%(p-1)+1, IMAGE, MPI_COMM_WORLD);		
 			//iteration(.l,jed, dimx, dimy, &test_g);
 		
-			fprintf(risultati, "%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\n", (&test_g)->A, (&test_g)->x_0 + x - span_x, (&test_g)->y_0 + y - span_y, (&test_g)->sigma_x, (&test_g)->sigma_y, (&test_g)->a, (&test_g)->b, (&test_g)->c);
+			//fprintf(risultati, "%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\n", (&test_g)->A, (&test_g)->x_0 + x - span_x, (&test_g)->y_0 + y - span_y, (&test_g)->sigma_x, (&test_g)->sigma_y, (&test_g)->a, (&test_g)->b, (&test_g)->c);
 		}
-		*/
 	}else{
 		// I am a worker
-		MPI_Recv(&dimx,1,MPI_INT,EMETTITORE,DIM,MPI_COMM_WORLD,&status);
-		MPI_Recv(&dimy,1,MPI_INT,EMETTITORE,DIM,MPI_COMM_WORLD,&status);
+		MPI_Recv(&dimx,1,MPI_INT,EMETTITORE,PARAMETERS,MPI_COMM_WORLD,&status);
+		MPI_Recv(&dimy,1,MPI_INT,EMETTITORE,PARAMETERS,MPI_COMM_WORLD,&status);
+		MPI_Recv(&test_g.A,1,MPI_DOUBLE,EMETTITORE,PARAMETERS,MPI_COMM_WORLD,&status);
+		MPI_Recv(&test_g.x_0,1,MPI_DOUBLE,EMETTITORE,PARAMETERS,MPI_COMM_WORLD,&status);
+		MPI_Recv(&test_g.y_0,1,MPI_DOUBLE,EMETTITORE,PARAMETERS,MPI_COMM_WORLD,&status);
+		MPI_Recv(&test_g.sigma_x,1,MPI_DOUBLE,EMETTITORE,PARAMETERS,MPI_COMM_WORLD,&status);
+		MPI_Recv(&test_g.sigma_y,1,MPI_DOUBLE,EMETTITORE,PARAMETERS,MPI_COMM_WORLD,&status);
+		MPI_Recv(&test_g.c,1,MPI_DOUBLE,EMETTITORE,PARAMETERS,MPI_COMM_WORLD,&status);
+		
+		dim = dimx*dimy;
+		cropped = (unsigned char*) malloc(dim);
+		
+		printf("Sono il processo %d  e devo ricevere %d immagini\n",(STREAMLENGTH / p ) + (STREAMLENGTH % p > my_rank));
+		for (i=0;i< STREAMLENGTH / p ;i++){
+			MPI_Recv(cropped,dim,MPI_UNSIGNED_CHAR,EMETTITORE,IMAGE,MPI_COMM_WORLD,&status);
+		}
+		if(STREAMLENGTH % p > my_rank){
+			MPI_Recv(cropped,dim,MPI_UNSIGNED_CHAR,EMETTITORE,IMAGE,MPI_COMM_WORLD,&status);
+		}
 	}
 	
 	MPI_Finalize();
