@@ -1,10 +1,14 @@
+include ../conf
+
 CC = mpic++
-FLAGS = -DDEBUG -ltiff -D_x86 -D_LINUX -lgsl -lgslcblas -lm
+FLAGS = -DDEBUG
+GSL_LIB=-lgsl -lgslcblas
+LIB=$(GSL_LIB) -lm -ltiff
 
 .PHONY : parallel test clean
 
 parallel:
-	$(CC) $(FLAGS) ./parallel.cpp ./tiffPostElaboration.cpp ./fit.cpp -o parallel
+	$(CC)$(CVER) -D_$(ARCH) -D_$(OS) $(FLAGS) $(GSL_INCLUDE_DIR) $(LIB) ./parallel.cpp ./tiffPostElaboration.cpp ./fit.cpp $(GSL_LIB_DIR) -o parallel
 
 test:
 	mpirun ./parallel ./parameters
