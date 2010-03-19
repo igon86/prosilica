@@ -20,7 +20,8 @@ int main(int argc, char* argv[]){
 	
 	/* MPI VARIABLES */
 	int my_rank,p;
-
+	MPI_Status status;
+	
 	/* parameters of the gaussian */
 	int width;
 	int length;
@@ -162,19 +163,21 @@ int main(int argc, char* argv[]){
 		// calcolo la dimensione e la comunico ai worker
 		dim=dimx*dimy;
 		for(i=1;i<p;i++){
-			MPI_Send(&dim, i, MPI_INT, i, DIM, MPI_COMM_WORLD);
+			MPI_Send(&dimx, i, MPI_INT, i, DIM, MPI_COMM_WORLD);
+			MPI_Send(&dimy, i, MPI_INT, i, DIM, MPI_COMM_WORLD);
 		}
-	
+		/*
 		for(i=0; i < STREAMLENGTH; i++){
-			MPI_Send(cropped, dim, MPI_BYTE, i%(p-1)+1, IMAGE, MPI_COMM_WORLD);		
-			/* FIT FUNCTION */
-//			iteration(.l,jed, dimx, dimy, &test_g);
+			//MPI_Send(cropped, dim, MPI_BYTE, i%(p-1)+1, IMAGE, MPI_COMM_WORLD);		
+			//iteration(.l,jed, dimx, dimy, &test_g);
 		
 			fprintf(risultati, "%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\n", (&test_g)->A, (&test_g)->x_0 + x - span_x, (&test_g)->y_0 + y - span_y, (&test_g)->sigma_x, (&test_g)->sigma_y, (&test_g)->a, (&test_g)->b, (&test_g)->c);
 		}
+		*/
 	}else{
 		// I am a worker
-		//MPI_Recv();	
+		MPI_Recv(&dimx,1,MPI_INT,EMETTITORE,DIM,MPI_COMM_WORLD,&status);
+		MPI_Recv(&dimy,1,MPI_INT,EMETTITORE,DIM,MPI_COMM_WORLD,&status);
 	}
 	
 	MPI_Finalize();
