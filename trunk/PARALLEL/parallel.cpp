@@ -1,16 +1,21 @@
 #include <stdio.h>
+#include <mpi.h>
+#include <sys/time.h>
 
 #include "tiffPostElaboration.hpp"
 #include "fit.hpp"
-#include <mpi.h>
 
 #define OUTPUT_MATRIX "gaussiana.tiff" 
 #define CROP_PARAMETER 0.5
-#define STREAMLENGTH 10
+#define STREAMLENGTH 100
 
 #define EMETTITORE 0
+#define COLLETTORE 1
+#define PS 2
+
 #define PARAMETERS 0
 #define IMAGE 1
+#define RESULTS 2
 
 extern FILE *risultati;
 
@@ -25,6 +30,7 @@ int main(int argc, char* argv[]){
 	/* parameters of the gaussian */
 	int width;
 	int length;
+	/* DA CAMBIARE CON UN MPI_BLOCK */
 	double amplitude;
 	double x_0;
 	double y_0;
@@ -36,6 +42,9 @@ int main(int argc, char* argv[]){
 	int max,min;
 	int dim;
 	int num_image;
+
+	/* time variables */
+	struct timeval tv1,tv2;
 	
 	/* parameters for the cookie cutter */
 	double x0,y0;
@@ -105,11 +114,14 @@ int main(int argc, char* argv[]){
 		}
 	
 		/* WRITING THE IMAGE TO BE FITTED ON A TIFF FILE */
+#if DEBUG
 		writeImage((unsigned char *)matrix,(char *) OUTPUT_MATRIX, width, length);
-	
+#endif	
 		maxmin( (unsigned char*) matrix, width, length, &max, &min);
-	
+
+#if DEBUG	
 		printf("MAX: %d MIN: %d\n", max, min);
+#endif
 	
 		/* a pixel mask is created in order to reduce the dimensione of the region to analyze with the centroid */
 		unsigned char *mask = createMask( (unsigned char*) matrix, width, length, max, min, CROP_PARAMETER);
@@ -165,7 +177,7 @@ int main(int argc, char* argv[]){
 #endif
 		// invio al worker i differenti parametri
 		dim=dimx*dimy;
-		for(i=1;i<p;i++){
+		for(i=COLLETTORE+1;i<p;i++){
 			MPI_Send(&dimx, 1, MPI_INT, i, PARAMETERS, MPI_COMM_WORLD);
 			MPI_Send(&dimy, 1, MPI_INT, i, PARAMETERS, MPI_COMM_WORLD);
 			MPI_Send(&test_g.A, 1, MPI_DOUBLE, i, PARAMETERS, MPI_COMM_WORLD);
@@ -177,12 +189,29 @@ int main(int argc, char* argv[]){
 		}
 		
 		for(i=0; i < STREAMLENGTH; i++){
-			printf("SEND VERSO %d\n",i%(p-1)+1);
-			MPI_Send(cropped, dim, MPI_BYTE, i%(p-1)+1, IMAGE, MPI_COMM_WORLD);
-		
-			//
+
+			MPI_Send(cropped, dim, MPI_BYTE, i%(p-2)+2, IMAGE, MPI_COMM_WORLD);
+
 		}
-	}else{
+	}
+	else if(my_rank == COLLETTORE){
+		gettimeofday(&tv1,NULL);
+		for(i=0; i < STREAMLENGTH; i++){
+
+			MPI_Recv(&test_g.A,1,MPI_DOUBLE,i%(p-2)+2,RESULTS,MPI_COMM_WORLD,&status);
+			MPI_Recv(&test_g.x_0,1,MPI_DOUBLE,i%(p-2)+2,RESULTS,MPI_COMM_WORLD,&status);
+			MPI_Recv(&test_g.y_0,1,MPI_DOUBLE,i%(p-2)+2,RESULTS,MPI_COMM_WORLD,&status);
+			MPI_Recv(&test_g.sigma_x,1,MPI_DOUBLE,i%(p-2)+2,RESULTS,MPI_COMM_WORLD,&status);
+			MPI_Recv(&test_g.sigma_y,1,MPI_DOUBLE,i%(p-2)+2,RESULTS,MPI_COMM_WORLD,&status);
+			MPI_Recv(&test_g.a,1,MPI_DOUBLE,i%(p-2)+2,RESULTS,MPI_COMM_WORLD,&status);
+			MPI_Recv(&test_g.b,1,MPI_DOUBLE,i%(p-2)+2,RESULTS,MPI_COMM_WORLD,&status);
+			MPI_Recv(&test_g.c,1,MPI_DOUBLE,i%(p-2)+2,RESULTS,MPI_COMM_WORLD,&status);
+
+		}
+		gettimeofday(&tv2,NULL);
+		printf("%d: %d\n",p,(tv2.tv_sec - tv1.tv_sec)*1000000 + tv2.tv_usec - tv1.tv_usec);
+	}
+	else{
 		// I am a worker
 		MPI_Recv(&dimx,1,MPI_INT,EMETTITORE,PARAMETERS,MPI_COMM_WORLD,&status);
 		MPI_Recv(&dimy,1,MPI_INT,EMETTITORE,PARAMETERS,MPI_COMM_WORLD,&status);
@@ -200,18 +229,31 @@ int main(int argc, char* argv[]){
 		dim = dimx*dimy;
 		cropped = (unsigned char*) malloc(dim);
 		
-		num_image = STREAMLENGTH / (p-1);		
-		if(STREAMLENGTH % (p-1) > my_rank-1){
+		num_image = STREAMLENGTH / (p-PS);		
+		if(STREAMLENGTH % (p-PS) > my_rank-PS){
 			num_image++;
 		}
-		
+
+#if DEBUG		
 		printf("Sono il processo %d  e devo ricevere %d immagini\n",my_rank,num_image);
-		
+#endif		
+		/* CICLO SULLE IMMAGINI */
 		for (i=0;i< num_image ;i++){
 			MPI_Recv(cropped,dim,MPI_UNSIGNED_CHAR,EMETTITORE,IMAGE,MPI_COMM_WORLD,&status);
 			iteration(cropped,dimx,dimy,&test_g);
+#if DEBUG
 			printf("PROCESSO %d IMMAGINE %d %f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\n", my_rank,i,(&test_g)->A, (&test_g)->x_0,
 			 (&test_g)->y_0, (&test_g)->sigma_x, (&test_g)->sigma_y, (&test_g)->a, (&test_g)->b, (&test_g)->c);
+#endif
+
+			MPI_Send(&test_g.A, 1, MPI_DOUBLE, COLLETTORE , RESULTS, MPI_COMM_WORLD);
+			MPI_Send(&test_g.x_0, 1, MPI_DOUBLE, COLLETTORE , RESULTS, MPI_COMM_WORLD);
+			MPI_Send(&test_g.y_0, 1, MPI_DOUBLE, COLLETTORE , RESULTS, MPI_COMM_WORLD);
+			MPI_Send(&test_g.sigma_x, 1, MPI_DOUBLE, COLLETTORE , RESULTS, MPI_COMM_WORLD);
+			MPI_Send(&test_g.sigma_y, 1, MPI_DOUBLE, COLLETTORE , RESULTS, MPI_COMM_WORLD);
+			MPI_Send(&test_g.a, 1, MPI_DOUBLE, COLLETTORE , RESULTS, MPI_COMM_WORLD);
+			MPI_Send(&test_g.b, 1, MPI_DOUBLE, COLLETTORE , RESULTS, MPI_COMM_WORLD);
+			MPI_Send(&test_g.c, 1, MPI_DOUBLE, COLLETTORE , RESULTS, MPI_COMM_WORLD);
 		}
 
 	}
