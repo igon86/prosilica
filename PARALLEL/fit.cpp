@@ -112,7 +112,9 @@ unsigned char *cropImage(const unsigned char *input, int w, int h, int x1, int x
     int limit = w * (y2 + 1);
     int dimension = (x2 - x1 + 1) * (y2 - y1 + 1);
     if (crop == NULL) {
+#if DEBUG
 		printf("CROP INITIALIZED!!\n");
+#endif
 		cropInitialize(dimension);
     }
     for (int i = 0; i < limit; i++) {
