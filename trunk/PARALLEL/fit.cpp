@@ -131,58 +131,22 @@ unsigned char *cropImage(const unsigned char *input, int w, int h, int x1, int x
  Evaluate Gaussian at coordinates (x,y)
  ****************************************************************************************************************/
 
-double evaluateGaussian(fit_t * gaussian, int x, int y)
+double evaluateGaussian(double* gaussian, int x, int y)
 {
-#if DEBUG
-	//printf("GGG %.2f %.2f %.2f",gaussian->a,gaussian->b,gaussian->c);
-#endif
-    double slope = gaussian->a * x + gaussian->b * y + gaussian->c;
-    double x_arg = pow(((double) x - gaussian->x_0), 2.0) / pow(gaussian->sigma_x, 2.0);
-    double y_arg = pow(((double) y - gaussian->y_0), 2.0) / pow(gaussian->sigma_y, 2.0);
+    double slope = gaussian[PAR_a] * x + gaussian[PAR_b] * y + gaussian[PAR_c];
+    double x_arg = pow(((double) x - gaussian[PAR_X]), 2.0) / pow(gaussian[PAR_SX], 2.0);
+    double y_arg = pow(((double) y - gaussian[PAR_Y]), 2.0) / pow(gaussian[PAR_SY], 2.0);
     double arg = -(x_arg + y_arg);
-    double z = gaussian->A * exp(arg) + slope;
-    //printf("GGG %.2f - %.2f - %.2f - %.2f ", x_arg, y_arg, arg, z);
+    double z = gaussian[PAR_A] * exp(arg) + slope;
     return z;
 }
 
 /***************************************************************************************************************
- Print fit struct
- ****************************************************************************************************************/
-
-void printFit(FILE * fp, fit_t * f)
-{
-	
-    fprintf(fp, "A: %f\nx_0: %f\ty_0: %f\nsigma_x: %f\tsigma_y: %f\na: %f\tb: %f\tc: %f\n", f->A, f->x_0, f->y_0, f->sigma_x, f->sigma_y, f->a, f->b, f->c);
-}
-
-/***************************************************************************************************************
- Print fit struct
- ****************************************************************************************************************/
-
-void printResults(fit_t * f)
-{
-	
-    fprintf(risultati, "%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\n", f->A, f->x_0, f->y_0, f->sigma_x, f->sigma_y, f->a, f->b, f->c);
-    fflush(risultati);
-}
-
-/***************************************************************************************************************
- Create M'M matrix -> this is temporary and should be replaced with BLAS function calls
- ****************************************************************************************************************/
-
-/***************************************************************************************************************
- Create M'diff vector -> this is temporary and should be replaced with BLAS function calls
- ****************************************************************************************************************/
-
-/***************************************************************************************************************
  Iterative NLLS fit algorithm
  ****************************************************************************************************************/
-int iteration(const unsigned char *data, int w, int h, fit_t * results)
+
+int iteration(const unsigned char *data, int w, int h, double * results)
 {
-	
-    fprintf(fitDebug, "IMMAGINE: %dx%d \nSTARTING STRUCT: \n", w, h);
-    printFit(fitDebug, results);
-    fflush(fitDebug);
 	
     int npixels = w * h;
     double *diff = new double[npixels];
