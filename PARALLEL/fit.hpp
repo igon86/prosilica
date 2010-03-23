@@ -4,6 +4,7 @@
 #define GAUSSIAN 'G'
 #define AIRY 'A'
 
+/* dimension of the fit */
 #define DIM_FIT 8
 #define MASSIMO 255
 
@@ -15,26 +16,14 @@
 
 #include <time.h>
 
-#define PAR_A 0
-#define PAR_X 1
-#define PAR_Y 2
-#define PAR_SX 3
-#define PAR_SY 4
-#define PAR_a 5
-#define PAR_b 6
-#define PAR_c 7
-/*typedef struct fit {
-
-  	char type;
-	double A;
-  	double x_0;
-  	double y_0;
-  	double sigma_x;
-  	double sigma_y;
-  	double a;
-  	double b;
-  	double c;
-} fit_t;*/
+#define PAR_A 0  	/* amplitude Gaussian            */
+#define PAR_X 1  	/* x position Gaussian           */
+#define PAR_Y 2  	/* y position Gaussian           */
+#define PAR_SX 3 	/* variance x axis Gaussian      */
+#define PAR_SY 4 	/* variance y axis Gaussian      */
+#define PAR_a 5  	/* first parameter of the plane  */
+#define PAR_b 6  	/* second parameter of the plane */
+#define PAR_c 7  	/* third parameter of the plane  */
 
 int iteration(const unsigned char* data,int x,int y, double* results);
 
