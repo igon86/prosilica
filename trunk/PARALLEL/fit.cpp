@@ -133,6 +133,10 @@ unsigned char *cropImage(const unsigned char *input, int w, int h, int x1, int x
 
 double evaluateGaussian(double* gaussian, int x, int y)
 {
+#if DEBUG
+//printf("Valuto la gaus: %f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\n", gaussian[PAR_A], gaussian[PAR_X],
+//		gaussian[PAR_Y], gaussian[PAR_SX], gaussian[PAR_SY], gaussian[PAR_a], gaussian[PAR_b], gaussian[PAR_c]);
+#endif
     double slope = gaussian[PAR_a] * x + gaussian[PAR_b] * y + gaussian[PAR_c];
     double x_arg = pow(((double) x - gaussian[PAR_X]), 2.0) / pow(gaussian[PAR_SX], 2.0);
     double y_arg = pow(((double) y - gaussian[PAR_Y]), 2.0) / pow(gaussian[PAR_SY], 2.0);
@@ -147,7 +151,10 @@ double evaluateGaussian(double* gaussian, int x, int y)
 
 int iteration(const unsigned char *data, int w, int h, double * results)
 {
-	
+
+#if DEBUG
+	//printf("w vale: %d, h vale %d", w, h);
+#endif
     int npixels = w * h;
     double *diff = new double[npixels];
     double min = 255;
@@ -217,23 +224,23 @@ int iteration(const unsigned char *data, int w, int h, double * results)
 			y = (i + 1) / w;
 			
 			base = i * 8;
-			test = evaluateGaussian(results, x, y);
+			//test = evaluateGaussian(results, x, y);
 			diff[i] = data[i] - test;
 			
 			
-			diff_x = x - results->x_0;
-			diff_y = y - results->y_0;
-			sig2x = pow(results->sigma_x, 2);
-			sig2y = pow(results->sigma_y, 2);
+			diff_x = x - results[PAR_X];
+			diff_y = y - results[PAR_Y];
+			sig2x = pow(results[PAR_SX], 2);
+			sig2y = pow(results[PAR_SY], 2);
 			frac_x = pow(diff_x, 2) / sig2x;
 			frac_y = pow(diff_y, 2) / sig2y;
 			dexp = exp(frac_x + frac_y);
 			
 			M[base] = 1 / dexp;
-			M[base + 1] = (results->A * (2 * x - 2 * results->x_0)) / (sig2x * dexp);
-			M[base + 2] = (results->A * (2 * y - 2 * results->y_0)) / (sig2y * dexp);
-			M[base + 3] = (2 * results->A * pow(diff_x, 2)) / (pow(results->sigma_x, 3) * dexp);
-			M[base + 4] = (2 * results->A * pow(diff_y, 2)) / (pow(results->sigma_y, 3) * dexp);
+			M[base + 1] = (results[PAR_A] * (2 * x - 2 * results[PAR_X])) / (sig2x * dexp);
+			M[base + 2] = (results[PAR_A] * (2 * y - 2 * results[PAR_Y])) / (sig2y * dexp);
+			M[base + 3] = (2 * results[PAR_A] * pow(diff_x, 2)) / (pow(results[PAR_X], 3) * dexp);
+			M[base + 4] = (2 * results[PAR_A] * pow(diff_y, 2)) / (pow(results[PAR_Y], 3) * dexp);
 			//derivative of the slopePlan !
 			M[base + 5] = x;
 			M[base + 6] = y;
@@ -331,14 +338,14 @@ int iteration(const unsigned char *data, int w, int h, double * results)
 		//gsl_vector_fprintf(stdout, delta, "%g");
 		
 		/** result adjustment */
-		results->A = results->A + gsl_vector_get(delta, 0);
-	    results->x_0 = results->x_0 + gsl_vector_get(delta, 1);
-		results->y_0 = results->y_0 + gsl_vector_get(delta, 2);
-		results->sigma_x = results->sigma_x + gsl_vector_get(delta, 3);
-		results->sigma_y = results->sigma_y + gsl_vector_get(delta, 4);
-		results->a = results->a + gsl_vector_get(delta, 5);
-		results->b = results->b + gsl_vector_get(delta, 6);
-		results->c = results->c + +gsl_vector_get(delta, 7);
+		results[PAR_A]  = results[PAR_A]  + gsl_vector_get(delta, 0);
+		results[PAR_X]  = results[PAR_X]  + gsl_vector_get(delta, 1);
+		results[PAR_Y]  = results[PAR_Y]  + gsl_vector_get(delta, 2);
+		results[PAR_SX] = results[PAR_SX] + gsl_vector_get(delta, 3);
+		results[PAR_SY] = results[PAR_SY] + gsl_vector_get(delta, 4);
+		results[PAR_a]  = results[PAR_a]  + gsl_vector_get(delta, 5);
+		results[PAR_b]  = results[PAR_b]  + gsl_vector_get(delta, 6);
+		results[PAR_c]  = results[PAR_c]  + gsl_vector_get(delta, 7);
 		
 		
 		//RIPROVA ! !!
@@ -348,10 +355,8 @@ int iteration(const unsigned char *data, int w, int h, double * results)
 #if DEBUG
     fprintf(fitDebug, "ERRORE FINALE: %09.0f\n", square);
     fprintf(fitDebug, "STRUCT FINALE: \n");
-    printFit(fitDebug, results);
     fflush(fitDebug);
 #endif
-    //printResults(results);
 	
     /* FREE!!!!!!!! */
     if (M)
