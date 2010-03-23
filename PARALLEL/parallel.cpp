@@ -9,79 +9,89 @@
 #define CROP_PARAMETER 0.5
 #define STREAMLENGTH 100
 
-#define EMETTITOR 0
-#define COLLECTOR 1
-#define PS 2
+#define EMETTITOR 0 // rank emettitor
+#define COLLECTOR 1 // rank collector
+#define PS 2        // number of service processes
 
+/* macro for define MPI tags of the messages */
 #define PARAMETERS 0
 #define IMAGE 1
 #define RESULTS 2
 
-extern FILE *risultati;
+extern FILE *risultati; // ??????????
 
 int main(int argc, char* argv[]){
 	
+	/* File conteining parameters*/
 	FILE* parameters;
-	
-	/* MPI VARIABLES */
-	int my_rank, p;
+
+	/* MPI Variables */
+	int my_rank, p; // p is the number of processes
 	MPI_Status status;
-	
-	/* parameters of the gaussian */
-	int width;
-	int length;
-	/* DA CAMBIARE CON UN MPI_BLOCK */
-	double amplitude;
-	double x_0;
-	double y_0;
-	double sigma_x0;
-	double sigma_y0;
-	double a_0;
-	double b_0;
-	double c_0;
-	int max,min;
+
+	/* width and length of the input image */
+	int width, length;
+	/* parameters fro create the mask */
+	int max, min;	
+ 	/* dimension of cropped image */
 	int dim;
+	/* number of images per worker */
 	int num_image;
 
 	/* time variables */
-	struct timeval tv1,tv2;
+	struct timeval tv1, tv2;
 	
 	/* parameters for the cookie cutter */
-	double x0,y0;
-	double FWHM_x,FWHM_y;
-	int span_x,span_y;
-	int dimx,dimy;
-	int x,y;
+	double x0, y0;
+	double FWHM_x, FWHM_y;
+	int span_x, span_y;
+	int dimx, dimy;
+	int x, y;
 	
-	/* gaussian struct */
-	//	fit_t results,test_g;
+	/* two fits of Gaussian */
 	double result [DIM_FIT], fit [DIM_FIT];	
 
+	/* cropped image */
 	unsigned char *cropped;
 	
 	/* indexes */
-	int i,j;
-	int temp;
+	int i, j;
+	
+	int temp; // ???????
 
+	/* check the input parameters */
 	if(argc != 2){
-		printf("NUMERO PARAMETRI INVALIDO\n");
+		fprintf(stderr, "Invalid number of parameters\n");
 		exit(EXIT_FAILURE);
 	}
 
-	MPI_Init (&argc,&argv);
-	
+	/* Initialize of MPI */
+	MPI_Init (&argc, &argv);
+	/* Every process takes the own rank*/
 	MPI_Comm_rank (MPI_COMM_WORLD, &my_rank);
-
+	/* Total number of processes */
 	MPI_Comm_size (MPI_COMM_WORLD, &p);
 
 	if(my_rank == EMETTITOR){
-
-		parameters = fopen(argv[1],"r");
+		/* THIS IS THE TASK OF THE EMETTITOR PROCESS */
+		
+		/* reading the input parameters */		
+		if((parameters = fopen(argv[1], "r")) == NULL){
+			fprintf(stderr, "File not valid");
+			exit(EXIT_FAILURE);		
+		}
 	
-		/* LETTURA DEI PARAMETRI */
-		fscanf(parameters,"%d\t%d\t", &width, &length);
+		/* initialize the dimension of the image */
+		if(fscanf(parameters, "%d\t%d\t", &width, &length) == 0){
+			fprintf(stderr, "File not valid");
+			exit(EXIT_FAILURE);							
+		}
+		/* initialize the fit of the Gaussian */
 		for(i = 0; i < DIM_FIT; i++){
-			fscanf(parameters,"%lf\t",&result[i]);		
+			if(fscanf(parameters, "%lf\t", &result[i]) == 0){
+				fprintf(stderr, "File not valid");
+				exit(EXIT_FAILURE);							
+			}		
 			fit[i]=0;
 		}
 
