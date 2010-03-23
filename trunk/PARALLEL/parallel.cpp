@@ -179,38 +179,22 @@ int main(int argc, char* argv[]){
 
 	else if(my_rank == COLLECTOR){
 		/* THIS IS THE TASK OF THE COLLECTOR PROCESS */
-		gettimeofday(&tv1,NULL);
-		for(i=0; i < STREAMLENGTH; i++){
-			MPI_Recv(fit, DIM_FIT ,MPI_DOUBLE, i%(p-2)+2, RESULTS, MPI_COMM_WORLD, &status);
-				
-/*			MPI_Recv(&test_g.A,1,MPI_DOUBLE,i%(p-2)+2,RESULTS,MPI_COMM_WORLD,&status);
-			MPI_Recv(&test_g.x_0,1,MPI_DOUBLE,i%(p-2)+2,RESULTS,MPI_COMM_WORLD,&status);
-			MPI_Recv(&test_g.y_0,1,MPI_DOUBLE,i%(p-2)+2,RESULTS,MPI_COMM_WORLD,&status);
-			MPI_Recv(&test_g.sigma_x,1,MPI_DOUBLE,i%(p-2)+2,RESULTS,MPI_COMM_WORLD,&status);
-			MPI_Recv(&test_g.sigma_y,1,MPI_DOUBLE,i%(p-2)+2,RESULTS,MPI_COMM_WORLD,&status);
-			MPI_Recv(&test_g.a,1,MPI_DOUBLE,i%(p-2)+2,RESULTS,MPI_COMM_WORLD,&status);
-			MPI_Recv(&test_g.b,1,MPI_DOUBLE,i%(p-2)+2,RESULTS,MPI_COMM_WORLD,&status);
-			MPI_Recv(&test_g.c,1,MPI_DOUBLE,i%(p-2)+2,RESULTS,MPI_COMM_WORLD,&status);*/
 
-		}
+		gettimeofday(&tv1,NULL);
+		for(i=0; i < STREAMLENGTH; i++)
+			MPI_Recv(fit, DIM_FIT ,MPI_DOUBLE, i%(p-2)+2, RESULTS, MPI_COMM_WORLD, &status);
+		
 		gettimeofday(&tv2,NULL);
 		printf("Sono il processo %d (collector), the completion time: %ld\n", my_rank, (tv2.tv_sec - tv1.tv_sec)*1000000 + tv2.tv_usec - tv1.tv_usec);
 	}
+
+
 	else{
-		// I am a worker
+		/* THIS IS THE TASK OF THE WORKER PROCESS */
+
 		MPI_Recv(&dimx, 1, MPI_INT, EMETTITOR, PARAMETERS, MPI_COMM_WORLD, &status);
 		MPI_Recv(&dimy, 1, MPI_INT, EMETTITOR, PARAMETERS, MPI_COMM_WORLD, &status);
 		MPI_Recv(fit, DIM_FIT, MPI_DOUBLE, EMETTITOR, RESULTS, MPI_COMM_WORLD, &status);
-		/*MPI_Recv(&test_g.A,1,MPI_DOUBLE,EMETTITOR,PARAMETERS,MPI_COMM_WORLD,&status);
-		MPI_Recv(&test_g.x_0,1,MPI_DOUBLE,EMETTITOR,PARAMETERS,MPI_COMM_WORLD,&status);
-		MPI_Recv(&test_g.y_0,1,MPI_DOUBLE,EMETTITOR,PARAMETERS,MPI_COMM_WORLD,&status);
-		MPI_Recv(&test_g.sigma_x,1,MPI_DOUBLE,EMETTITOR,PARAMETERS,MPI_COMM_WORLD,&status);
-		MPI_Recv(&test_g.sigma_y,1,MPI_DOUBLE,EMETTITOR,PARAMETERS,MPI_COMM_WORLD,&status);
-		MPI_Recv(&test_g.c,1,MPI_DOUBLE,EMETTITOR,PARAMETERS,MPI_COMM_WORLD,&status);
-		*/
-		/* inizializzo gli altri valori della struct */
-		//test_g.a = 0;
-		//test_g.b = 0;
 
 #if DEBUG
 		printf("PROCESSO %d, the initial fit: %f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\n", my_rank, fit[PAR_A], fit[PAR_X],
