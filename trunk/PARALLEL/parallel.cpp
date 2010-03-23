@@ -164,14 +164,14 @@ int main(int argc, char* argv[]){
 		writeImage(cropped, (char *) "./CROP.tiff", dimx, dimy);
 #endif
 	
-		// invio al worker i differenti parametri
+		// send to the workers the parameters
 		dim = dimx * dimy;
 		for(i = PS; i < p; i++){
 			MPI_Send(&dimx, 1, MPI_INT, i, PARAMETERS, MPI_COMM_WORLD);
 			MPI_Send(&dimy, 1, MPI_INT, i, PARAMETERS, MPI_COMM_WORLD);
 			MPI_Send(fit, DIM_FIT, MPI_DOUBLE, i, RESULTS, MPI_COMM_WORLD);
 		}
-		// invio la crop image
+		// send the cropped image
 		for(i=0; i < STREAMLENGTH; i++)
 			MPI_Send(cropped, dim, MPI_UNSIGNED_CHAR, i%(p-2)+2, IMAGE, MPI_COMM_WORLD);
 	}
@@ -192,8 +192,10 @@ int main(int argc, char* argv[]){
 	else{
 		/* THIS IS THE TASK OF THE WORKER PROCESS */
 
+		/* receive the dimension of the cropped image */
 		MPI_Recv(&dimx, 1, MPI_INT, EMETTITOR, PARAMETERS, MPI_COMM_WORLD, &status);
 		MPI_Recv(&dimy, 1, MPI_INT, EMETTITOR, PARAMETERS, MPI_COMM_WORLD, &status);
+		/* receive the fit of the Gaussian */
 		MPI_Recv(fit, DIM_FIT, MPI_DOUBLE, EMETTITOR, RESULTS, MPI_COMM_WORLD, &status);
 
 #if DEBUG
@@ -201,9 +203,11 @@ int main(int argc, char* argv[]){
 		fit[PAR_Y], fit[PAR_SX], fit[PAR_SY], fit[PAR_a], fit[PAR_b], fit[PAR_c]);
 #endif
 		
+		/* define the cropped image */
 		dim = dimx*dimy;
 		cropped = (unsigned char*) malloc(dim);
 		
+		/* receive the number of the images */
 		num_image = STREAMLENGTH / (p - PS);		
 		if(STREAMLENGTH % (p - PS) > (my_rank - PS))
 			num_image++;
@@ -211,9 +215,10 @@ int main(int argc, char* argv[]){
 #if DEBUG		
 		printf("Sono il processo %d  e devo ricevere %d immagini\n", my_rank, num_image);
 #endif		
-		/* CICLO SULLE IMMAGINI */
-		for (i = 0; i < num_image ;i++){
+		/* work on the images and send them to the collector */
+		for (i = 0; i < num_image ; i++){
 			MPI_Recv(cropped, dim, MPI_UNSIGNED_CHAR, EMETTITOR, IMAGE, MPI_COMM_WORLD, &status);
+			/* iterative procedure */
 			iteration(cropped, dimx, dimy, fit);
 #if DEBUG
 			printf("PROCESSO %d IMMAGINE %d %f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\n", my_rank, i, fit[PAR_A], fit[PAR_X],
@@ -222,9 +227,10 @@ int main(int argc, char* argv[]){
 
 			MPI_Send(fit, DIM_FIT, MPI_DOUBLE, COLLECTOR , RESULTS, MPI_COMM_WORLD);
 		}
-
 	}
 	
+	/* Finalize of MPI */
 	MPI_Finalize();
+
 	return 0;
 }
