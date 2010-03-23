@@ -173,7 +173,12 @@ int main(int argc, char* argv[]){
 		}
 		// send the cropped image
 		for(i=0; i < STREAMLENGTH; i++)
-			MPI_Send(cropped, dim, MPI_UNSIGNED_CHAR, i%(p-2)+2, IMAGE, MPI_COMM_WORLD);
+			MPI_Send(cropped, dim, MPI_UNSIGNED_CHAR, i%(p-PS)+PS, IMAGE, MPI_COMM_WORLD);
+			
+#if MASTER
+		for(i=0; i < STREAMLENGTH; i++)
+			MPI_Recv(fit, DIM_FIT, MPI_DOUBLE, i%(p-PS)+PS, RESULTS, MPI_COMM_WORLD);	
+#endif				
 	}
 
 
