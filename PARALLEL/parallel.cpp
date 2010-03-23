@@ -7,6 +7,8 @@
 
 #define OUTPUT_MATRIX "gaussiana.tiff" 
 #define CROP_PARAMETER 0.5
+
+/* length of the stream */
 #define STREAMLENGTH 100
 
 #define EMETTITOR 0 // rank emettitor
@@ -50,14 +52,11 @@ int main(int argc, char* argv[]){
 	
 	/* two fits of Gaussian */
 	double result [DIM_FIT], fit [DIM_FIT];	
-
-	/* cropped image */
+	/* cropped image taken from a Gaussian image */
 	unsigned char *cropped;
 	
 	/* indexes */
 	int i, j;
-	
-	int temp; // ???????
 
 	/* check the input parameters */
 	if(argc != 2){
@@ -95,20 +94,15 @@ int main(int argc, char* argv[]){
 			fit[i]=0;
 		}
 
-
-
-		/* GAUSSIAN_MATRIX */
-		unsigned char matrix[length][width];
+		/* image representing the Gaussian fit */
+		unsigned char matrix [length] [width];
 	
-		/* COSTRUZIONE DELL'IMMAGINE */
-		for (i = 0;i < length; i++){
-			for(j = 0; j < width; j++){
-				temp = (int) evaluateGaussian(result, j, i);
-				matrix[i][j] = temp;
-			}
-		}
+		/* build the image */
+		for (i = 0;i < length; i++)
+			for(j = 0; j < width; j++)
+				matrix[i][j] = (int) evaluateGaussian(result, j, i);
 	
-		/* WRITING THE IMAGE TO BE FITTED ON A TIFF FILE */
+		/* writing the image to be fitted in a FITT file */
 #if DEBUG
 		writeImage((unsigned char *)matrix,(char *) OUTPUT_MATRIX, width, length);
 #endif	
@@ -146,10 +140,10 @@ int main(int argc, char* argv[]){
 		y = (int) y0;
 	
 		/**
-		 inizialization of the test_g struct.
+		 inizialization of the fit of the Gaussian
 		 NOTE: the coordinates of the position (x,y) are relative to the cropped portion of the image.
-		 the value of span_x, which is approximately the diameter of the gaussian, is generally not as bad
-		 as you may think to start the fit. 
+		 The value of span_x, which is approximately the diameter of the gaussian, is generally not as bad
+		 as you may think to start the fit.
 		 */
 		fit[PAR_A] = max;
 		fit[PAR_X] = span_x;
@@ -166,7 +160,7 @@ int main(int argc, char* argv[]){
 		writeImage(cropped, (char *) "./CROP.tiff", dimx, dimy);
 #endif
 		// invio al worker i differenti parametri
-		dim=dimx*dimy;
+		dim = dimx * dimy;
 		for(i = PS; i < p; i++){
 			MPI_Send(&dimx, 1, MPI_INT, i, PARAMETERS, MPI_COMM_WORLD);
 			MPI_Send(&dimy, 1, MPI_INT, i, PARAMETERS, MPI_COMM_WORLD);
@@ -174,10 +168,12 @@ int main(int argc, char* argv[]){
 		}
 		// invio la crop image
 		for(i=0; i < STREAMLENGTH; i++)
-			MPI_Send(cropped, dim, MPI_BYTE, i%(p-2)+2, IMAGE, MPI_COMM_WORLD);
+			MPI_Send(cropped, dim, MPI_UNSIGNED_CHAR, i%(p-2)+2, IMAGE, MPI_COMM_WORLD);
 	}
+
+
 	else if(my_rank == COLLECTOR){
-		// I am the collector
+		/* THIS IS THE TASK OF THE COLLECTOR PROCESS */
 		gettimeofday(&tv1,NULL);
 		for(i=0; i < STREAMLENGTH; i++){
 			MPI_Recv(fit, DIM_FIT ,MPI_DOUBLE, i%(p-2)+2, RESULTS, MPI_COMM_WORLD, &status);

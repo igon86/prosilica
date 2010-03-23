@@ -76,6 +76,27 @@ void centroid(unsigned char *image, int w, int h, double *x, double *y, double *
     *sigma_y = (up_border - down_border) / 2.0;
 }
 
+
+
+/***************************************************************************************************************
+ Matrix
+ ****************************************************************************************************************/
+unsigned char * createMatrix (int length, int width, double* result){
+	int i = 0, j = 0;	
+	int dim = length * width;
+	int temp;
+	unsigned char* matrix = new unsigned char [dim];
+	/* build the image */
+	for (i = 0;i < length; i++){
+		for(j = 0; j < width; j++){
+			temp = evaluateGaussian(result, j, i);		
+			matrix[i+j] = (int) temp;
+		}
+	}
+	return matrix;
+}
+
+
 /***************************************************************************************************************
  Cookie
  ****************************************************************************************************************/
