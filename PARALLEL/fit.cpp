@@ -173,13 +173,8 @@ double evaluateGaussian(double* gaussian, int x, int y)
 int iteration(const unsigned char *data, int w, int h, double * results)
 {
 
-#if DEBUG
-	//printf("w vale: %d, h vale %d", w, h);
-#endif
     int npixels = w * h;
     double *diff = new double[npixels];
-    double min = 255;
-    double max = -255;
     int temp;
     int x, y;
     int index;
@@ -245,7 +240,7 @@ int iteration(const unsigned char *data, int w, int h, double * results)
 			y = (i + 1) / w;
 			
 			base = i * 8;
-			//test = evaluateGaussian(results, x, y);
+			test = evaluateGaussian(results, x, y);
 			diff[i] = data[i] - test;
 			
 			
@@ -260,8 +255,8 @@ int iteration(const unsigned char *data, int w, int h, double * results)
 			M[base] = 1 / dexp;
 			M[base + 1] = (results[PAR_A] * (2 * x - 2 * results[PAR_X])) / (sig2x * dexp);
 			M[base + 2] = (results[PAR_A] * (2 * y - 2 * results[PAR_Y])) / (sig2y * dexp);
-			M[base + 3] = (2 * results[PAR_A] * pow(diff_x, 2)) / (pow(results[PAR_X], 3) * dexp);
-			M[base + 4] = (2 * results[PAR_A] * pow(diff_y, 2)) / (pow(results[PAR_Y], 3) * dexp);
+			M[base + 3] = (2 * results[PAR_A] * pow(diff_x, 2)) / (pow(results[PAR_SX], 3) * dexp);
+			M[base + 4] = (2 * results[PAR_A] * pow(diff_y, 2)) / (pow(results[PAR_SY], 3) * dexp);
 			//derivative of the slopePlan !
 			M[base + 5] = x;
 			M[base + 6] = y;
