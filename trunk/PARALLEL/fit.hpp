@@ -38,6 +38,8 @@
 
 int iteration(const unsigned char* data,int x,int y, double* results);
 
+unsigned char* createMatrix (int length, int width, double* result);
+
 unsigned char* createMask(unsigned char* image,int w,int h,int max,int min,double filter);
 
 void centroid(unsigned char* image,int w,int h,double* x,double* y,double* sigma_x,double* sigma_y);
