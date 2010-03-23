@@ -102,7 +102,7 @@ int main(int argc, char* argv[]){
 			for(j = 0; j < width; j++)
 				matrix[i][j] = (int) evaluateGaussian(result, j, i);
 	
-		/* writing the image to be fitted in a FITT file */
+		/* writing the image to be fitted in a FIT file */
 #if DEBUG
 		writeImage((unsigned char *)matrix,(char *) OUTPUT_MATRIX, width, length);
 #endif	
@@ -151,6 +151,10 @@ int main(int argc, char* argv[]){
 		fit[PAR_SX] = FWHM_x;
 		fit[PAR_SY] = FWHM_y;
 		fit[PAR_c] = min;	
+
+#if DEBUG
+	printf("%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\n", fit[PAR_A], fit[PAR_X] + x - span_x, fit[PAR_Y] + y - span_y, fit[PAR_SX], fit[PAR_SY], fit[PAR_a], fit[PAR_b], fit[PAR_c]);
+#endif
 	
 		/* THIS PART CAN BE ITERATIVE */
 	
@@ -159,6 +163,7 @@ int main(int argc, char* argv[]){
 #if DEBUG
 		writeImage(cropped, (char *) "./CROP.tiff", dimx, dimy);
 #endif
+	
 		// invio al worker i differenti parametri
 		dim = dimx * dimy;
 		for(i = PS; i < p; i++){
