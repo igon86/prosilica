@@ -9,8 +9,8 @@
 #define CROP_PARAMETER 0.5
 #define STREAMLENGTH 100
 
-#define EMETTITORE 0
-#define COLLETTORE 1
+#define EMETTITOR 0
+#define COLLECTOR 1
 #define PS 2
 
 #define PARAMETERS 0
@@ -24,7 +24,7 @@ int main(int argc, char* argv[]){
 	FILE* parameters;
 	
 	/* MPI VARIABLES */
-	int my_rank,p;
+	int my_rank, p;
 	MPI_Status status;
 	
 	/* parameters of the gaussian */
@@ -74,7 +74,7 @@ int main(int argc, char* argv[]){
 
 	MPI_Comm_size (MPI_COMM_WORLD, &p);
 
-	if(my_rank == EMETTITORE){
+	if(my_rank == EMETTITOR){
 
 		parameters = fopen(argv[1],"r");
 	
@@ -91,10 +91,9 @@ int main(int argc, char* argv[]){
 		unsigned char matrix[length][width];
 	
 		/* COSTRUZIONE DELL'IMMAGINE */
-		for (i=0;i<length;i++){
-			for(j=0;j<width;j++){
-				temp = (int) evaluateGaussian(result,j,i);
-				//printf("%d\n",temp);
+		for (i = 0;i < length; i++){
+			for(j = 0; j < width; j++){
+				temp = (int) evaluateGaussian(result, j, i);
 				matrix[i][j] = temp;
 			}
 		}
@@ -158,71 +157,75 @@ int main(int argc, char* argv[]){
 #endif
 		// invio al worker i differenti parametri
 		dim=dimx*dimy;
-		for(i=PS;i<p;i++){
+		for(i = PS; i < p; i++){
 			MPI_Send(&dimx, 1, MPI_INT, i, PARAMETERS, MPI_COMM_WORLD);
 			MPI_Send(&dimy, 1, MPI_INT, i, PARAMETERS, MPI_COMM_WORLD);
-			MPI_Send(fit, DIM_FIT, MPI_DOUBLE, i, PARAMETERS, MPI_COMM_WORLD);
+			MPI_Send(fit, DIM_FIT, MPI_DOUBLE, i, RESULTS, MPI_COMM_WORLD);
 		}
-		
-		for(i=0; i < STREAMLENGTH; i++){
-
+		// invio la crop image
+		for(i=0; i < STREAMLENGTH; i++)
 			MPI_Send(cropped, dim, MPI_BYTE, i%(p-2)+2, IMAGE, MPI_COMM_WORLD);
-
-		}
 	}
-	else if(my_rank == COLLETTORE){
+	else if(my_rank == COLLECTOR){
+		// I am the collector
 		gettimeofday(&tv1,NULL);
 		for(i=0; i < STREAMLENGTH; i++){
-
-			MPI_Recv(&test_g.A,1,MPI_DOUBLE,i%(p-2)+2,RESULTS,MPI_COMM_WORLD,&status);
+			MPI_Recv(fit, DIM_FIT ,MPI_DOUBLE, i%(p-2)+2, RESULTS, MPI_COMM_WORLD, &status);
+				
+/*			MPI_Recv(&test_g.A,1,MPI_DOUBLE,i%(p-2)+2,RESULTS,MPI_COMM_WORLD,&status);
 			MPI_Recv(&test_g.x_0,1,MPI_DOUBLE,i%(p-2)+2,RESULTS,MPI_COMM_WORLD,&status);
 			MPI_Recv(&test_g.y_0,1,MPI_DOUBLE,i%(p-2)+2,RESULTS,MPI_COMM_WORLD,&status);
 			MPI_Recv(&test_g.sigma_x,1,MPI_DOUBLE,i%(p-2)+2,RESULTS,MPI_COMM_WORLD,&status);
 			MPI_Recv(&test_g.sigma_y,1,MPI_DOUBLE,i%(p-2)+2,RESULTS,MPI_COMM_WORLD,&status);
 			MPI_Recv(&test_g.a,1,MPI_DOUBLE,i%(p-2)+2,RESULTS,MPI_COMM_WORLD,&status);
 			MPI_Recv(&test_g.b,1,MPI_DOUBLE,i%(p-2)+2,RESULTS,MPI_COMM_WORLD,&status);
-			MPI_Recv(&test_g.c,1,MPI_DOUBLE,i%(p-2)+2,RESULTS,MPI_COMM_WORLD,&status);
+			MPI_Recv(&test_g.c,1,MPI_DOUBLE,i%(p-2)+2,RESULTS,MPI_COMM_WORLD,&status);*/
 
 		}
 		gettimeofday(&tv2,NULL);
-		printf("%d: %ld\n",p,(tv2.tv_sec - tv1.tv_sec)*1000000 + tv2.tv_usec - tv1.tv_usec);
+		printf("Sono il processo %d (collector), the completion time: %ld\n", my_rank, (tv2.tv_sec - tv1.tv_sec)*1000000 + tv2.tv_usec - tv1.tv_usec);
 	}
 	else{
 		// I am a worker
-		MPI_Recv(&dimx,1,MPI_INT,EMETTITORE,PARAMETERS,MPI_COMM_WORLD,&status);
-		MPI_Recv(&dimy,1,MPI_INT,EMETTITORE,PARAMETERS,MPI_COMM_WORLD,&status);
-		MPI_Recv(&test_g.A,1,MPI_DOUBLE,EMETTITORE,PARAMETERS,MPI_COMM_WORLD,&status);
-		MPI_Recv(&test_g.x_0,1,MPI_DOUBLE,EMETTITORE,PARAMETERS,MPI_COMM_WORLD,&status);
-		MPI_Recv(&test_g.y_0,1,MPI_DOUBLE,EMETTITORE,PARAMETERS,MPI_COMM_WORLD,&status);
-		MPI_Recv(&test_g.sigma_x,1,MPI_DOUBLE,EMETTITORE,PARAMETERS,MPI_COMM_WORLD,&status);
-		MPI_Recv(&test_g.sigma_y,1,MPI_DOUBLE,EMETTITORE,PARAMETERS,MPI_COMM_WORLD,&status);
-		MPI_Recv(&test_g.c,1,MPI_DOUBLE,EMETTITORE,PARAMETERS,MPI_COMM_WORLD,&status);
-		
+		MPI_Recv(&dimx, 1, MPI_INT, EMETTITOR, PARAMETERS, MPI_COMM_WORLD, &status);
+		MPI_Recv(&dimy, 1, MPI_INT, EMETTITOR, PARAMETERS, MPI_COMM_WORLD, &status);
+		MPI_Recv(fit, DIM_FIT, MPI_DOUBLE, EMETTITOR, RESULTS, MPI_COMM_WORLD, &status);
+		/*MPI_Recv(&test_g.A,1,MPI_DOUBLE,EMETTITOR,PARAMETERS,MPI_COMM_WORLD,&status);
+		MPI_Recv(&test_g.x_0,1,MPI_DOUBLE,EMETTITOR,PARAMETERS,MPI_COMM_WORLD,&status);
+		MPI_Recv(&test_g.y_0,1,MPI_DOUBLE,EMETTITOR,PARAMETERS,MPI_COMM_WORLD,&status);
+		MPI_Recv(&test_g.sigma_x,1,MPI_DOUBLE,EMETTITOR,PARAMETERS,MPI_COMM_WORLD,&status);
+		MPI_Recv(&test_g.sigma_y,1,MPI_DOUBLE,EMETTITOR,PARAMETERS,MPI_COMM_WORLD,&status);
+		MPI_Recv(&test_g.c,1,MPI_DOUBLE,EMETTITOR,PARAMETERS,MPI_COMM_WORLD,&status);
+		*/
 		/* inizializzo gli altri valori della struct */
-		test_g.a = 0;
-		test_g.b = 0;
+		//test_g.a = 0;
+		//test_g.b = 0;
+
+#if DEBUG
+		printf("PROCESSO %d, the initial fit: %f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\n", my_rank, fit[PAR_A], fit[PAR_X],
+		fit[PAR_Y], fit[PAR_SX], fit[PAR_SY], fit[PAR_a], fit[PAR_b], fit[PAR_c]);
+#endif
 		
 		dim = dimx*dimy;
 		cropped = (unsigned char*) malloc(dim);
 		
-		num_image = STREAMLENGTH / (p-PS);		
-		if(STREAMLENGTH % (p-PS) > my_rank-PS){
+		num_image = STREAMLENGTH / (p - PS);		
+		if(STREAMLENGTH % (p - PS) > (my_rank - PS))
 			num_image++;
-		}
 
 #if DEBUG		
-		printf("Sono il processo %d  e devo ricevere %d immagini\n",my_rank,num_image);
+		printf("Sono il processo %d  e devo ricevere %d immagini\n", my_rank, num_image);
 #endif		
 		/* CICLO SULLE IMMAGINI */
-		for (i=0;i< num_image ;i++){
-			MPI_Recv(cropped,dim,MPI_UNSIGNED_CHAR,EMETTITORE,IMAGE,MPI_COMM_WORLD,&status);
-			iteration(cropped,dimx,dimy,&test_g);
+		for (i = 0; i < num_image ;i++){
+			MPI_Recv(cropped, dim, MPI_UNSIGNED_CHAR, EMETTITOR, IMAGE, MPI_COMM_WORLD, &status);
+			iteration(cropped, dimx, dimy, fit);
 #if DEBUG
-			printf("PROCESSO %d IMMAGINE %d %f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\n", my_rank,i,(&test_g)->A, (&test_g)->x_0,
-			 (&test_g)->y_0, (&test_g)->sigma_x, (&test_g)->sigma_y, (&test_g)->a, (&test_g)->b, (&test_g)->c);
+			printf("PROCESSO %d IMMAGINE %d %f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\n", my_rank, i, fit[PAR_A], fit[PAR_X],
+			 fit[PAR_Y], fit[PAR_SX], fit[PAR_SY], fit[PAR_a], fit[PAR_b], fit[PAR_c]);
 #endif
 
-			MPI_Send(fit, DIM_FIT, MPI_DOUBLE, COLLETTORE , RESULTS, MPI_COMM_WORLD);
+			MPI_Send(fit, DIM_FIT, MPI_DOUBLE, COLLECTOR , RESULTS, MPI_COMM_WORLD);
 		}
 
 	}
