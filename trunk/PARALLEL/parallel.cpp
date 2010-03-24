@@ -200,10 +200,12 @@ int main(int argc, char* argv[]){
 			sleep(1);
 			flag = 0;
 			while ( !flag ){
-				MPI_Iprobe( (j)%PS+PS , MPI_ANY_TAG , MPI_COMM_WORLD ,&flag, &status);
+				MPI_Iprobe( j%(p-PS)+PS , MPI_ANY_TAG , MPI_COMM_WORLD ,&flag, &status);
 				j++;
 			}
-			//MPI_RECV(ON_DEMAND);
+			/* ricevo la richiesta */
+			MPI_Recv(NULL, 0, MPI_INT,  j%(p-PS)+PS , REQUEST, MPI_COMM_WORLD,&status);
+			/* mando il job */
 			MPI_Send(cropped, dim, MPI_UNSIGNED_CHAR, j%(p-PS)+PS, IMAGE, MPI_COMM_WORLD);
 		}
 		for(i=PS;i<p;i++)
