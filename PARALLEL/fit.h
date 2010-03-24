@@ -24,18 +24,20 @@
 #define PAR_b 6  	/* second parameter of the plane */
 #define PAR_c 7  	/* third parameter of the plane  */
 
-int iteration(const unsigned char* data,int x,int y, double* results);
+int iteration (const unsigned char* data,int x,int y, double* results);
 
-unsigned char* createMask(unsigned char* image,int w,int h,int max,int min,double filter);
+unsigned char* createMask (unsigned char* image, int w, int h, int max, int min, double filter);
 
-void centroid(unsigned char* image,int w,int h,double* x,double* y,double* sigma_x,double* sigma_y);
+unsigned char* createMatrix (int length, int width, double* result);
 
-unsigned char* cropImage(const unsigned char *input, int w,int h,int x1,int x2,int y1,int y2);
+void centroid (unsigned char* image, int w, int h, double* x, double* y, double* sigma_x, double* sigma_y);
 
-double evaluateGaussian(double* gaussian,int x, int y);
+unsigned char* cropImage (const unsigned char *input, int w, int h, int x1, int x2, int y1, int y2);
 
-void maxmin(unsigned char* image,int w,int h,int* max,int* min);
+double evaluateGaussian (double* gaussian, int x, int y);
 
-void writeImage(unsigned char* image,char *dest, int w, int h);
+void maxmin (unsigned char* image, int w, int h, int* max, int* min);
+
+void writeImage (unsigned char* image, char *dest, int w, int h);
 
 #endif

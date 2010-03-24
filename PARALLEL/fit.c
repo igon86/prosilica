@@ -1,16 +1,15 @@
 #include "fit.h"
 
-FILE *fitDebug = fopen("FIT", "w");
-
+static FILE* fitDebug = fopen("FIT", "w");
 static unsigned char *crop = NULL;
 
 /***************************************************************************************************************
  Cookie cutter initialization
  ****************************************************************************************************************/
 
-static void cropInitialize(int dimension)
-{
-    crop = new unsigned char[dimension];
+static void cropInitialize(int dimension){
+    	//crop = new unsigned char[dimension];
+	crop = (unsigned char*) malloc(dimension);
 }
 
 /***************************************************************************************************************
@@ -81,18 +80,14 @@ void centroid(unsigned char *image, int w, int h, double *x, double *y, double *
 unsigned char * createMatrix (int length, int width, double* result){
 	int i = 0, j = 0;	
 	int dim = length * width;
-	int temp;
-	unsigned char* matrix = new unsigned char [dim];
+	unsigned char* matrix = (unsigned char*) malloc (dim);
+	unsigned char* p = matrix;	
 	/* build the image */
-	for (i = 0;i < length; i++){
-		for(j = 0; j < width; j++){
-			temp = evaluateGaussian(result, j, i);		
-			matrix[i+j] = (int) temp;
-		}
-	}
+	for (i = 0;i < length; i++)
+		for(j = 0; j < width; j++)
+			*p++ = (unsigned char) evaluateGaussian(result, j, i);
 	return matrix;
 }
-
 
 /***************************************************************************************************************
  Cookie
