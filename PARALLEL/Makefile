@@ -1,7 +1,7 @@
 include ../conf
 
 CC = mpic++
-FLAGS = -DDEBUG
+FLAGS = -DDEBUG -DMASTER
 GSL_LIB=-lgsl -lgslcblas
 LIB=$(GSL_LIB) -lm -ltiff
 

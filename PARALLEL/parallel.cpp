@@ -12,13 +12,24 @@
 #define STREAMLENGTH 100
 
 #define EMETTITOR 0 // rank emettitor
-#define COLLECTOR 1 // rank collector
-#define PS 2        // number of service processes
+#if MASTER
+	#define COLLECTOR 0 // rank collector
+#else
+	#define COLLECTOR 1
+#endif
+	
+// number of service processes
+#if MASTER
+	#define PS 1       
+#else
+	#define PS 2
+#endif
 
 /* macro for define MPI tags of the messages */
 #define PARAMETERS 0
 #define IMAGE 1
 #define RESULTS 2
+#define REQUEST 3
 
 extern FILE *risultati; // ??????????
 
@@ -71,6 +82,10 @@ int main(int argc, char* argv[]){
 	/* Total number of processes */
 	MPI_Comm_size (MPI_COMM_WORLD, &p);
 
+/*********************************************************************
+						EMETTITORE
+*********************************************************************/		
+	
 	if(my_rank == EMETTITOR){
 		/* THIS IS THE TASK OF THE EMETTITOR PROCESS */
 		
@@ -171,29 +186,60 @@ int main(int argc, char* argv[]){
 			MPI_Send(&dimy, 1, MPI_INT, i, PARAMETERS, MPI_COMM_WORLD);
 			MPI_Send(fit, DIM_FIT, MPI_DOUBLE, i, RESULTS, MPI_COMM_WORLD);
 		}
+		// prima mandata di immagini
+		for(i=PS;i<p;i++){
+			MPI_Send(cropped, dim, MPI_UNSIGNED_CHAR, i%(p-PS)+PS, IMAGE, MPI_COMM_WORLD);
+		}
+#if ON_DEMAND
+		printf("ON_DEMAND\n");
+		j=PS;
+		for(i=p-PS; i < STREAMLENGTH; i++){
+			while ( ! MPI_Iprobe( ((j)%PS+PS) , MPI_COMM_WORLD) ) j++;
+			//MPI_RECV(ON_DEMAND);
+			MPI_Send(cropped, dim, MPI_UNSIGNED_CHAR, j%(p-PS)+PS, IMAGE, MPI_COMM_WORLD);
+		}
+		for(i=PS;i<p;i++)
+			//MPI_SEND(TERMINATION);
+#else			
 		// send the cropped image
-		for(i=0; i < STREAMLENGTH; i++)
+		for(i=p-PS; i < STREAMLENGTH; i++)
 			MPI_Send(cropped, dim, MPI_UNSIGNED_CHAR, i%(p-PS)+PS, IMAGE, MPI_COMM_WORLD);
 			
-#if MASTER
+	#if MASTER
+		printf("MASTER\n");
 		for(i=0; i < STREAMLENGTH; i++)
-			MPI_Recv(fit, DIM_FIT, MPI_DOUBLE, i%(p-PS)+PS, RESULTS, MPI_COMM_WORLD);	
+			MPI_Recv(fit, DIM_FIT, MPI_DOUBLE, i%(p-PS)+PS, RESULTS, MPI_COMM_WORLD,&status);	
+	#endif
 #endif				
 	}
 
+/*********************************************************************
+						COLLETTORE
+*********************************************************************/
 
+#ifndef MASTER
 	else if(my_rank == COLLECTOR){
 		/* THIS IS THE TASK OF THE COLLECTOR PROCESS */
 
 		gettimeofday(&tv1,NULL);
+#if ON_DEMAND		
+		for(i=0; i < STREAMLENGTH; i++){
+			j=0;
+			while(! MPI_Iprobe( ((j)%PS+PS) , MPI_COMM_WORLD ) ) j++;
+			MPI_Recv(fit, DIM_FIT ,MPI_DOUBLE, i%(p-PS)+PS, RESULTS, MPI_COMM_WORLD, &status);	
+		}
+#else		
 		for(i=0; i < STREAMLENGTH; i++)
-			MPI_Recv(fit, DIM_FIT ,MPI_DOUBLE, i%(p-2)+2, RESULTS, MPI_COMM_WORLD, &status);
-		
+			MPI_Recv(fit, DIM_FIT ,MPI_DOUBLE, i%(p-PS)+PS, RESULTS, MPI_COMM_WORLD, &status);
+#endif		
 		gettimeofday(&tv2,NULL);
 		printf("Sono il processo %d (collector), the completion time: %ld\n", my_rank, (tv2.tv_sec - tv1.tv_sec)*1000000 + tv2.tv_usec - tv1.tv_usec);
 	}
+#endif	
 
-
+/*********************************************************************
+							WORKER
+*********************************************************************/
 	else{
 		/* THIS IS THE TASK OF THE WORKER PROCESS */
 
@@ -211,7 +257,14 @@ int main(int argc, char* argv[]){
 		/* define the cropped image */
 		dim = dimx*dimy;
 		cropped = (unsigned char*) malloc(dim);
+#if ON_DEMAND	
 		
+		while(true){
+			MPI_SEND(..,0,MPI_INT,EMETTITOR,REQUEST,MPI_COMM_WORLD);
+			MPI_Probe(EMETTITORE,&status);
+			if()
+		}
+#else	
 		/* receive the number of the images */
 		num_image = STREAMLENGTH / (p - PS);		
 		if(STREAMLENGTH % (p - PS) > (my_rank - PS))
@@ -232,6 +285,7 @@ int main(int argc, char* argv[]){
 
 			MPI_Send(fit, DIM_FIT, MPI_DOUBLE, COLLECTOR , RESULTS, MPI_COMM_WORLD);
 		}
+#endif		
 	}
 	
 	/* Finalize of MPI */
