@@ -24,7 +24,7 @@
 #define PAR_b 6  	/* second parameter of the plane */
 #define PAR_c 7  	/* third parameter of the plane  */
 
-int iteration (const unsigned char* data,int x,int y, double* results);
+int procedure (const unsigned char* data,int x,int y, double* results);
 
 unsigned char* createMask (unsigned char* image, int w, int h, int max, int min, double filter);
 

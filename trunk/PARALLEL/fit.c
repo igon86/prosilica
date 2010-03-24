@@ -133,49 +133,23 @@ double evaluateGaussian(double* gaussian, int x, int y) {
  Iterative NLLS fit algorithm
  ****************************************************************************************************************/
 
-int iteration(const unsigned char *data, int w, int h, double * results) {
+int procedure (const unsigned char *data, int w, int h, double * results) {
 	int npixels = w * h;
-	double *diff = (double*) malloc (sizeof(double)*npixels);
-	int i = 0, temp = 0, x = 0, y = 0, index = 0, error = 0;
+	double *diff = (double*) malloc (sizeof(double) * npixels);
+	int i = 0, temp = 0, x = 0, y = 0, error = 0, base = 0;
 
+	/* vedtors for calculations */
 	gsl_vector *delta = gsl_vector_alloc(DIM_FIT);
 	gsl_vector *vettore = gsl_vector_alloc(DIM_FIT);
 	
-	fprintf(fitDebug, "Done most of it\n");
-	fflush(fitDebug);
-	
 	/** variables used to keep track of the square error*/
-	double square = 0.0;
-	
-	fprintf(fitDebug, "Starting with with algebra stuff..");
-	fflush(fitDebug);
-	
-	int dimension = DIM_FIT * npixels;
-	
-	fprintf(fitDebug, "dimension..");
-	fflush(fitDebug);
-	
-	double *M = (double*) malloc(sizeof(double)*dimension);
-	
-	fprintf(fitDebug, "M..");
-	fflush(fitDebug);
+	double *M = (double*) malloc(sizeof(double) * DIM_FIT * npixels);
 	
 	double matrix [DIM_FIT * DIM_FIT];
 	
-	fprintf(fitDebug, "matrix..");
-	fflush(fitDebug);
-	
 	double vector [DIM_FIT];
 	
-	fprintf(fitDebug, "Done with algebra stuff\n");
-	fflush(fitDebug);
-	
-	double diff_x, diff_y, frac_x, frac_y, sig2x, sig2y, dexp;
-	int base;
-	double test;
-	
-	fprintf(fitDebug, "Done with inizialization\n");
-	fflush(fitDebug);
+	double square = 0.0, diff_x = 0.0, diff_y = 0.0, frac_x = 0.0, frac_y = 0.0, sig2x = 0.0, sig2y = 0.0, dexp = 0.0;
 		
 	/* Task over the image */
 	for (i = 0; i < npixels; i++) {
@@ -183,8 +157,7 @@ int iteration(const unsigned char *data, int w, int h, double * results) {
 		y = (i + 1) / w;
 			
 		base = i * DIM_FIT;
-		test = evaluateGaussian(results, x, y);
-		diff[i] = data[i] - test;
+		diff[i] = data[i] - evaluateGaussian(results, x, y);
 			
 		diff_x = x - results[PAR_X];
 		diff_y = y - results[PAR_Y];
@@ -205,11 +178,11 @@ int iteration(const unsigned char *data, int w, int h, double * results) {
 	}
 		
 	/* square calculation and array adjustment */
-	for (int index1 = 0; index1 < npixels; index1++)
-		square = square + pow(diff[index1], 2);
+	for (i = 0; i < npixels; i++)
+		square = square + pow(diff[i], 2);
 		
-	gsl_matrix_view gsl_M = gsl_matrix_view_array(M, npixels, 8);
-	gsl_matrix_view matrice = gsl_matrix_view_array(matrix, 8, 8);
+	gsl_matrix_view gsl_M = gsl_matrix_view_array(M, npixels, DIM_FIT);
+	gsl_matrix_view matrice = gsl_matrix_view_array(matrix, DIM_FIT, DIM_FIT);
 		
 	gsl_vector_view differenze = gsl_vector_view_array(diff, npixels);
 		
@@ -219,8 +192,8 @@ int iteration(const unsigned char *data, int w, int h, double * results) {
 	gsl_blas_dgemv(CblasTrans, 1.0, &gsl_M.matrix, &differenze.vector, 0.0, vettore);
 	/* Compute the delta vector of deviation */
 		
-	gsl_permutation *p = gsl_permutation_alloc(8);	
-	gsl_linalg_LU_decomp(&matrice.matrix, p, &error); /* TEST ERRORE-->TODO*/
+	gsl_permutation *p = gsl_permutation_alloc(DIM_FIT);	
+	gsl_linalg_LU_decomp(&matrice.matrix, p, &error); /* TEST ERRORE--> TODO*/
 	gsl_linalg_LU_solve(&matrice.matrix, p, vettore, delta);
 
 /*#if DEBUG
@@ -251,20 +224,15 @@ int iteration(const unsigned char *data, int w, int h, double * results) {
  Calculate Max & Min of an image
  ****************************************************************************************************************/
 
-void maxmin(unsigned char *image, int w, int h, int *max, int *min)
-{
-	
-    int npixels = w * h;
+void maxmin(unsigned char *image, int w, int h, int *max, int *min) {
+    int npixels = w * h, i = 0;
     *max = 0;
-    *min = 255;
-    unsigned char temp;
-	
-    for (int i = 0; i < npixels; i++) {
-		temp = image[i];
-		if (temp > *max)
-			*max = temp;
-		if (temp < *min)
-			*min = temp;
+    *min = MASSIMO;
+    for (i = 0; i < npixels; i++) {
+		if (image[i] > *max)
+			*max = image[i];
+		if (image[i] < *min)
+			*min = image[i];
     }
 }
 
@@ -272,7 +240,7 @@ void maxmin(unsigned char *image, int w, int h, int *max, int *min)
 				Writing mono8 black and white tiff function
 ****************************************************************************************************************/
 
-void writeImage(unsigned char* image,char* dest, int w, int h){
+void writeImage(unsigned char* image,char* dest, int w, int h) {
 		
 		TIFF* out = TIFFOpen(dest, "w");
 		

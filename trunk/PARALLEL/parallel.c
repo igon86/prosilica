@@ -274,7 +274,7 @@ int main(int argc, char* argv[]){
 #endif
 		
 		/* define the cropped image */
-		dim = dimx*dimy;
+		dim = dimx * dimy;
 		cropped = (unsigned char*) malloc(dim);
 #if ON_DEMAND	
 		
@@ -286,8 +286,8 @@ int main(int argc, char* argv[]){
 				break;
 			}	
 			MPI_Recv(cropped, dim, MPI_UNSIGNED_CHAR, EMETTITOR, IMAGE, MPI_COMM_WORLD, &status);
-			/* iterative procedure */
-			iteration(cropped, dimx, dimy, fit);
+			/* image procedure */
+			procedure (cropped, dimx, dimy, fit);
 			
 			MPI_Send(fit, DIM_FIT, MPI_DOUBLE, COLLECTOR , RESULTS, MPI_COMM_WORLD);
 		}
@@ -305,8 +305,8 @@ int main(int argc, char* argv[]){
 		/* work on the images and send them to the collector */
 		for (i = 0; i < num_image ; i++){
 			MPI_Recv(cropped, dim, MPI_UNSIGNED_CHAR, EMETTITOR, IMAGE, MPI_COMM_WORLD, &status);
-			/* iterative procedure */
-			iteration(cropped, dimx, dimy, fit);
+			/* image procedure */
+			procedure (cropped, dimx, dimy, fit);
 
 			MPI_Send(fit, DIM_FIT, MPI_DOUBLE, COLLECTOR , RESULTS, MPI_COMM_WORLD);
 		}
