@@ -58,7 +58,9 @@ int main(int argc, char* argv[]){
 	int x, y;
 	
 	/* two fits of Gaussian */
-	double result [DIM_FIT], fit [DIM_FIT];	
+	double result [DIM_FIT], fit [DIM_FIT];
+	/* image representing Gaussian fit */	
+	unsigned char *matrix;
 	/* cropped image taken from a Gaussian image */
 	unsigned char *cropped;
 	
@@ -106,12 +108,12 @@ int main(int argc, char* argv[]){
 		}
 
 		/* image representing the Gaussian fit */
-		unsigned char matrix [length] [width];
-	
+		//unsigned char matrix [length] [width];
+		matrix = createMatrix( length, width, result);
 		/* build the image */
-		for (i = 0;i < length; i++)
-			for(j = 0; j < width; j++)
-				matrix[i][j] = (int) evaluateGaussian(result, j, i);
+		//for (i = 0;i < length; i++)
+		//	for(j = 0; j < width; j++)
+		//		matrix[i][j] = (int) evaluateGaussian(result, j, i);
 	
 		/* writing the image to be fitted in a FIT file */
 #if DEBUG
