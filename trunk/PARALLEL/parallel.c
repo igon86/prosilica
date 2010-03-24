@@ -6,7 +6,7 @@
 #define CROP_PARAMETER 0.5
 
 /* length of the stream */
-#define STREAMLENGTH 100
+#define STREAMLENGTH 4
 
 #define EMETTITOR 0 // rank emettitor
 #if MASTER
@@ -226,22 +226,31 @@ int main(int argc, char* argv[]){
 		/* THIS IS THE TASK OF THE COLLECTOR PROCESS */
 
 		gettimeofday(&tv1,NULL);
-#if ON_DEMAND		
+		
 		for(i=0; i < STREAMLENGTH; i++){
+		
+		
+#if ON_DEMAND		
 			j=0;
 			flag = 0;
 			while ( !flag ){
 				MPI_Iprobe( (j)%PS+PS , MPI_ANY_TAG , MPI_COMM_WORLD ,&flag, &status);
 				j++;
 			}
-			MPI_Recv(fit, DIM_FIT ,MPI_DOUBLE, (j-1)%(p-PS)+PS, RESULTS, MPI_COMM_WORLD, &status);	
-			printf("COLLETTORE: ricevuta immagine %d\n",i);
-		}
-		printf("COLLETTORE: RICEVUTO TUTTO MUORO\n");
-#else		
-		for(i=0; i < STREAMLENGTH; i++)
-			MPI_Recv(fit, DIM_FIT ,MPI_DOUBLE, i%(p-PS)+PS, RESULTS, MPI_COMM_WORLD, &status);
+			MPI_Recv(fit, DIM_FIT ,MPI_DOUBLE, (j-1)%(p-PS)+PS, RESULTS, MPI_COMM_WORLD, &status);
+#else
+			MPI_Recv(fit, DIM_FIT ,MPI_DOUBLE,i, RESULTS, MPI_COMM_WORLD, &status);
 #endif		
+
+		
+			printf("COLLETTORE: ricevuta immagine %d\n",i);
+#if DEBUG
+			printf("IMMAGINE %d DA WORKER %d %f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\n", i,(j-1)%(p-PS)+PS , fit[PAR_A], fit[PAR_X],
+			 fit[PAR_Y], fit[PAR_SX], fit[PAR_SY], fit[PAR_a], fit[PAR_b], fit[PAR_c]);
+#endif
+
+
+		}
 		gettimeofday(&tv2,NULL);
 		printf("Sono il processo %d (collector), the completion time: %ld\n", my_rank, (tv2.tv_sec - tv1.tv_sec)*1000000 + tv2.tv_usec - tv1.tv_usec);
 	}
@@ -282,30 +291,22 @@ int main(int argc, char* argv[]){
 			
 			MPI_Send(fit, DIM_FIT, MPI_DOUBLE, COLLECTOR , RESULTS, MPI_COMM_WORLD);
 		}
-		/* last image */
-		MPI_Recv(cropped, dim, MPI_UNSIGNED_CHAR, EMETTITOR, IMAGE, MPI_COMM_WORLD, &status);
-		/* iterative procedure */
-		iteration(cropped, dimx, dimy, fit);
-		
-		MPI_Send(fit, DIM_FIT, MPI_DOUBLE, COLLECTOR , RESULTS, MPI_COMM_WORLD);
+
+		printf("WORKER %d: MUORO\n",my_rank);
 #else	
 		/* receive the number of the images */
 		num_image = STREAMLENGTH / (p - PS);		
 		if(STREAMLENGTH % (p - PS) > (my_rank - PS))
 			num_image++;
 
-#if DEBUG		
+	#if DEBUG		
 		printf("Sono il processo %d  e devo ricevere %d immagini\n", my_rank, num_image);
-#endif		
+	#endif		
 		/* work on the images and send them to the collector */
 		for (i = 0; i < num_image ; i++){
 			MPI_Recv(cropped, dim, MPI_UNSIGNED_CHAR, EMETTITOR, IMAGE, MPI_COMM_WORLD, &status);
 			/* iterative procedure */
 			iteration(cropped, dimx, dimy, fit);
-#if DEBUG
-			printf("PROCESSO %d IMMAGINE %d %f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\n", my_rank, i, fit[PAR_A], fit[PAR_X],
-			 fit[PAR_Y], fit[PAR_SX], fit[PAR_SY], fit[PAR_a], fit[PAR_b], fit[PAR_c]);
-#endif
 
 			MPI_Send(fit, DIM_FIT, MPI_DOUBLE, COLLECTOR , RESULTS, MPI_COMM_WORLD);
 		}
