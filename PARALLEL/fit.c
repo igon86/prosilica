@@ -4,15 +4,6 @@ static FILE* fitDebug = fopen("FIT", "w");
 static unsigned char *crop = NULL;
 
 /***************************************************************************************************************
- Cookie cutter initialization
- ****************************************************************************************************************/
-
-static void cropInitialize(int dimension){
-    	//crop = new unsigned char[dimension];
-	crop = (unsigned char*) malloc(dimension);
-}
-
-/***************************************************************************************************************
  Centroid
  ****************************************************************************************************************/
 
@@ -20,56 +11,55 @@ static void cropInitialize(int dimension){
  both the center position and the dimension of the centroid depends
  on the filter parameter of the createMask function previously used*/
 
-void centroid(unsigned char *image, int w, int h, double *x, double *y, double *sigma_x, double *sigma_y)
-{
-    int npixels = w * h;
-	
-    //support data arrays
-	int counth[h];
-    int countw[w];
-    int count = 0;
-    for (int i = 0; i < h; i++)
+void centroid(unsigned char *image, int w, int h, double *x, double *y, double *sigma_x, double *sigma_y) {	
+	int npixels = w * h;
+	//support data arrays
+	int counth [h];
+	int countw [w];
+	int count = 0;
+	int i = 0;
+    	for (i; i < h; i++)
 		counth[i] = 0;
-    for (int i = 0; i < w; i++)
+    	for (i = 0; i < w; i++)
 		countw[i] = 0;
-    for (int i = 0; i < npixels; i++) {
+	for (i = 0; i < npixels; i++) {
 		unsigned temp = image[i];
 		if (temp) {
 			++count;
 			++countw[i % w];
 			++counth[i / w];
 		}
-    }
+    	}
 	
-    double w_center = 0;
-    double h_center = 0;
-	
-    int left_border = 0;
-    int right_border = 0;
-    int down_border = 0;
-    int up_border = 0;
+	double w_center = 0;
+	double h_center = 0;
+
+	int left_border = 0;
+	int right_border = 0;
+	int down_border = 0;
+	int up_border = 0;
 	
     //W CENTER
-	for (int i = 0; i < w; i++) {
+	for (i = 0; i < w; i++) {
 		w_center = w_center + ((double) countw[i] / count) * (i + 1);
 		if (!left_border && countw[i])
 			left_border = i;
 		if (left_border && !right_border && !countw[i])
 			right_border = i;
-    }
+	}
 	
     //H CENTER
-	for (int i = 0; i < h; i++) {
+	for (i = 0; i < h; i++) {
 		h_center = h_center + ((double) counth[i] / count) * (i + 1);
 		if (!down_border && counth[i])
 			down_border = i;
 		if (down_border && !up_border && !counth[i])
 			up_border = i;
-    }
-    *x = w_center;
-    *y = h_center;
-    *sigma_x = (right_border - left_border) / 2.0;
-    *sigma_y = (up_border - down_border) / 2.0;
+	}
+	*x = w_center;
+	*y = h_center;
+	*sigma_x = (right_border - left_border) / 2.0;
+	*sigma_y = (up_border - down_border) / 2.0;
 }
 
 
@@ -93,20 +83,20 @@ unsigned char * createMatrix (int length, int width, double* result){
  Cookie
  ****************************************************************************************************************/
 
-unsigned char *createMask(unsigned char *image, int w, int h, int max, int min, double filter)
-{
-    int threshold = (int) (filter * (max - min));
+unsigned char *createMask(unsigned char *image, int w, int h, int max, int min, double filter) {
+	int threshold = (int) (filter * (max - min));
 	
-    int npixels = w * h;
-    unsigned char *cookie = new unsigned char[npixels];
-    for (int i = 0; i < npixels; i++) {
+    	int npixels = w * h;
+    //unsigned char *cookie = new unsigned char[npixels];
+	unsigned char *cookie = new unsigned char[npixels];
+	for (int i = 0; i < npixels; i++) {
 		unsigned char temp = image[i];
 		if (temp > threshold)
 			cookie[i] = MASSIMO;
 		else
 			cookie[i] = 0;
-    }
-    return cookie;
+	}
+	return cookie;
 }
 
 /***************************************************************************************************************
@@ -123,7 +113,7 @@ unsigned char *cropImage(const unsigned char *input, int w, int h, int x1, int x
 #if DEBUG
 		printf("CROP INITIALIZED!!\n");
 #endif
-		cropInitialize(dimension);
+		crop = (unsigned char*) malloc(dimension);
     }
     for (int i = 0; i < limit; i++) {
 		int a = i % w;

@@ -108,16 +108,11 @@ int main(int argc, char* argv[]){
 		}
 
 		/* image representing the Gaussian fit */
-		//unsigned char matrix [length] [width];
 		matrix = createMatrix( length, width, result);
-		/* build the image */
-		//for (i = 0;i < length; i++)
-		//	for(j = 0; j < width; j++)
-		//		matrix[i][j] = (int) evaluateGaussian(result, j, i);
 	
 		/* writing the image to be fitted in a FIT file */
 #if DEBUG
-		writeImage((unsigned char *)matrix,(char *) OUTPUT_MATRIX, width, length);
+		writeImage((unsigned char *) matrix,(char *) OUTPUT_MATRIX, width, length);
 #endif	
 		maxmin( (unsigned char*) matrix, width, length, &max, &min);
 
