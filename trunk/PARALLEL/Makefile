@@ -10,7 +10,7 @@ NP=4
 .PHONY : parallel test clean
 
 parallel:
-	$(CC)$(CVER) -D_$(ARCH) -D_$(OS) $(FLAGS) $(GSL_INCLUDE_DIR) $(LIB) ./parallel.cpp ./tiffPostElaboration.cpp ./fit.cpp $(GSL_LIB_DIR) -o parallel
+	$(CC)$(CVER) -D_$(ARCH) -D_$(OS) $(FLAGS) $(GSL_INCLUDE_DIR) $(LIB) ./parallel.c ./fit.c $(GSL_LIB_DIR) -o parallel
 
 test:
 	mpirun -np $(NP) ./parallel ./parameters
