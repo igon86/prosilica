@@ -35,7 +35,7 @@ int main(int argc, char* argv[]){
 	FILE* parameters;
 
 	/* MPI Variables */
-	int my_rank, p, flag; // p is the number of processes
+	int my_rank, p, flag, junk; // p is the number of processes
 	MPI_Status status;
 
 	/* width and length of the input image */
@@ -193,18 +193,22 @@ int main(int argc, char* argv[]){
 		printf("ON_DEMAND\n");
 		j=PS;
 		for(i=p-PS; i < STREAMLENGTH; i++){
-			printf("COLLETTORE MANDO IMMAGINE %d\n",i);
-			sleep(1);
+			printf("EMETTITORE IMMAGINE %d\n",i);
 			flag = 0;
 			while ( !flag ){
-				MPI_Iprobe( (j)%PS+PS , MPI_ANY_TAG , MPI_COMM_WORLD ,&flag, &status);
+				MPI_Iprobe( (j)%(p-PS)+PS , MPI_ANY_TAG , MPI_COMM_WORLD ,&flag, &status);
 				j++;
 			}
-			//MPI_RECV(ON_DEMAND);
+			printf("MESSAGGIO DA %d \n",j-1);
+			MPI_Recv(&junk, 1, MPI_INT, (j-1)%(p-PS)+PS, REQUEST, MPI_COMM_WORLD,&status);	
+			printf("REQUEST RICEVUTA\n");
 			MPI_Send(cropped, dim, MPI_UNSIGNED_CHAR, j%(p-PS)+PS, IMAGE, MPI_COMM_WORLD);
+			printf("IMMAGINE MANDATA\n");
 		}
-		for(i=PS;i<p;i++)
+		for(i=PS;i<p;i++){
 			MPI_Send(NULL,0,MPI_INT,i,TERMINATION,MPI_COMM_WORLD);
+		}
+		printf("EMETTITORE: FINITO DI MANDARE LA TERMINAZIONE...MUORO\n");	
 #else			
 		// send the cropped image
 		for(i=p-PS; i < STREAMLENGTH; i++)
@@ -235,8 +239,10 @@ int main(int argc, char* argv[]){
 				MPI_Iprobe( (j)%PS+PS , MPI_ANY_TAG , MPI_COMM_WORLD ,&flag, &status);
 				j++;
 			}
-			MPI_Recv(fit, DIM_FIT ,MPI_DOUBLE, i%(p-PS)+PS, RESULTS, MPI_COMM_WORLD, &status);	
+			MPI_Recv(fit, DIM_FIT ,MPI_DOUBLE, (j-1)%(p-PS)+PS, RESULTS, MPI_COMM_WORLD, &status);	
+			printf("COLLETTORE: ricevuta immagine %d\n",i);
 		}
+		printf("COLLETTORE: RICEVUTO TUTTO MUORO\n");
 #else		
 		for(i=0; i < STREAMLENGTH; i++)
 			MPI_Recv(fit, DIM_FIT ,MPI_DOUBLE, i%(p-PS)+PS, RESULTS, MPI_COMM_WORLD, &status);
@@ -269,17 +275,24 @@ int main(int argc, char* argv[]){
 #if ON_DEMAND	
 		
 		while(true){
-			MPI_Send(NULL,0,MPI_INT,EMETTITOR,REQUEST,MPI_COMM_WORLD);
+			MPI_Send(&dim,1,MPI_INT,EMETTITOR,REQUEST,MPI_COMM_WORLD);
 			MPI_Probe(EMETTITOR,MPI_ANY_TAG,MPI_COMM_WORLD,&status);
-			if(status.MPI_TAG == TERMINATION) break;
+			if(status.MPI_TAG == TERMINATION){
+				printf("WORKER %d: BECCATO FLAG DI TERMINAZIONE\n",my_rank);
+				break;
+			}	
 			MPI_Recv(cropped, dim, MPI_UNSIGNED_CHAR, EMETTITOR, IMAGE, MPI_COMM_WORLD, &status);
 			/* iterative procedure */
 			iteration(cropped, dimx, dimy, fit);
+			
+			MPI_Send(fit, DIM_FIT, MPI_DOUBLE, COLLECTOR , RESULTS, MPI_COMM_WORLD);
 		}
 		/* last image */
 		MPI_Recv(cropped, dim, MPI_UNSIGNED_CHAR, EMETTITOR, IMAGE, MPI_COMM_WORLD, &status);
 		/* iterative procedure */
 		iteration(cropped, dimx, dimy, fit);
+		
+		MPI_Send(fit, DIM_FIT, MPI_DOUBLE, COLLECTOR , RESULTS, MPI_COMM_WORLD);
 #else	
 		/* receive the number of the images */
 		num_image = STREAMLENGTH / (p - PS);		
