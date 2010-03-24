@@ -85,11 +85,10 @@ unsigned char * createMatrix (int length, int width, double* result){
 
 unsigned char *createMask(unsigned char *image, int w, int h, int max, int min, double filter) {
 	int threshold = (int) (filter * (max - min));
-	
+	int i = 0;
     	int npixels = w * h;
-    //unsigned char *cookie = new unsigned char[npixels];
-	unsigned char *cookie = new unsigned char[npixels];
-	for (int i = 0; i < npixels; i++) {
+	unsigned char *cookie = (unsigned char*) malloc(npixels);
+	for (i = 0; i < npixels; i++) {
 		unsigned char temp = image[i];
 		if (temp > threshold)
 			cookie[i] = MASSIMO;
@@ -103,230 +102,126 @@ unsigned char *createMask(unsigned char *image, int w, int h, int max, int min, 
  Crop function
  ****************************************************************************************************************/
 
-unsigned char *cropImage(const unsigned char *input, int w, int h, int x1, int x2, int y1, int y2)
-{
-	
-    int count = 0;
-    int limit = w * (y2 + 1);
-    int dimension = (x2 - x1 + 1) * (y2 - y1 + 1);
-    if (crop == NULL) {
-#if DEBUG
-		printf("CROP INITIALIZED!!\n");
-#endif
+unsigned char *cropImage(const unsigned char *input, int w, int h, int x1, int x2, int y1, int y2) {
+	int count = 0, i = 0;
+	int limit = w * (y2 + 1);
+	int dimension = (x2 - x1 + 1) * (y2 - y1 + 1);
+	if (crop == NULL)
 		crop = (unsigned char*) malloc(dimension);
-    }
-    for (int i = 0; i < limit; i++) {
+	for (i = 0; i < limit; i++) {
 		int a = i % w;
 		int b = i / w;
-		if (a >= x1 && a <= x2 && b >= y1 && b <= y2) {
+		if (a >= x1 && a <= x2 && b >= y1 && b <= y2)
 			crop[count++] = input[i];
-		}
-    }
-    return crop;
+    	}
+	return crop;
 }
 
 /***************************************************************************************************************
  Evaluate Gaussian at coordinates (x,y)
  ****************************************************************************************************************/
 
-double evaluateGaussian(double* gaussian, int x, int y)
-{
-#if DEBUG
-//printf("Valuto la gaus: %f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\n", gaussian[PAR_A], gaussian[PAR_X],
-//		gaussian[PAR_Y], gaussian[PAR_SX], gaussian[PAR_SY], gaussian[PAR_a], gaussian[PAR_b], gaussian[PAR_c]);
-#endif
-    double slope = gaussian[PAR_a] * x + gaussian[PAR_b] * y + gaussian[PAR_c];
-    double x_arg = pow(((double) x - gaussian[PAR_X]), 2.0) / pow(gaussian[PAR_SX], 2.0);
-    double y_arg = pow(((double) y - gaussian[PAR_Y]), 2.0) / pow(gaussian[PAR_SY], 2.0);
-    double arg = -(x_arg + y_arg);
-    double z = gaussian[PAR_A] * exp(arg) + slope;
-    return z;
+double evaluateGaussian(double* gaussian, int x, int y) {
+	double slope = gaussian[PAR_a] * x + gaussian[PAR_b] * y + gaussian[PAR_c];
+	double x_arg = pow(((double) x - gaussian[PAR_X]), 2.0) / pow(gaussian[PAR_SX], 2.0);
+	double y_arg = pow(((double) y - gaussian[PAR_Y]), 2.0) / pow(gaussian[PAR_SY], 2.0);
+	double arg = -(x_arg + y_arg);
+	return gaussian[PAR_A] * exp(arg) + slope;
 }
 
 /***************************************************************************************************************
  Iterative NLLS fit algorithm
  ****************************************************************************************************************/
 
-int iteration(const unsigned char *data, int w, int h, double * results)
-{
+int iteration(const unsigned char *data, int w, int h, double * results) {
+	int npixels = w * h;
+	double *diff = (double*) malloc (sizeof(double)*npixels);
+	int i = 0, temp = 0, x = 0, y = 0, index = 0, error = 0;
 
-    int npixels = w * h;
-    double *diff = new double[npixels];
-    int temp;
-    int x, y;
-    int index;
-    gsl_vector *delta = gsl_vector_alloc(8);
-    gsl_vector *vettore = gsl_vector_alloc(8);
+	gsl_vector *delta = gsl_vector_alloc(DIM_FIT);
+	gsl_vector *vettore = gsl_vector_alloc(DIM_FIT);
 	
-    fprintf(fitDebug, "Done most of it\n");
-    fflush(fitDebug);
+	fprintf(fitDebug, "Done most of it\n");
+	fflush(fitDebug);
 	
-    /** variables used to keep track of the square error*/
-    double square;
-    int iteration = 0;
-    double squares[10];
-    for (int i = 0; i < 10; i++)
-		squares[i] = 0;
+	/** variables used to keep track of the square error*/
+	double square = 0.0;
 	
-    fprintf(fitDebug, "Starting with with algebra stuff..");
-    fflush(fitDebug);
+	fprintf(fitDebug, "Starting with with algebra stuff..");
+	fflush(fitDebug);
 	
-    int dimension = 8 * npixels;
+	int dimension = DIM_FIT * npixels;
 	
-    fprintf(fitDebug, "dimension..");
-    fflush(fitDebug);
+	fprintf(fitDebug, "dimension..");
+	fflush(fitDebug);
 	
-    double *M = new double[dimension];
+	double *M = (double*) malloc(sizeof(double)*dimension);
 	
-    fprintf(fitDebug, "M..");
-    fflush(fitDebug);
+	fprintf(fitDebug, "M..");
+	fflush(fitDebug);
 	
-    double matrix[8 * 8];
+	double matrix [DIM_FIT * DIM_FIT];
 	
-    fprintf(fitDebug, "matrix..");
-    fflush(fitDebug);
+	fprintf(fitDebug, "matrix..");
+	fflush(fitDebug);
 	
-    double vector[8];
+	double vector [DIM_FIT];
 	
-    fprintf(fitDebug, "Done with algebra stuff\n");
-    fflush(fitDebug);
+	fprintf(fitDebug, "Done with algebra stuff\n");
+	fflush(fitDebug);
 	
-    double initial_error = 0;
+	double diff_x, diff_y, frac_x, frac_y, sig2x, sig2y, dexp;
+	int base;
+	double test;
 	
-    double diff_x, diff_y;
-    double frac_x, frac_y, sig2x, sig2y, dexp;
-    int base;
-    double test;
-	
-    fprintf(fitDebug, "Done with inizialization\n");
-    fflush(fitDebug);
-	
-    /**ITERATION LOOP */
-    while (iteration < 1) {
-		/*
-		 printf("LOOP %d\n",iteration+1);
-		 fflush(stdout);
-		 */
+	fprintf(fitDebug, "Done with inizialization\n");
+	fflush(fitDebug);
 		
-		/** ITERATIVE PROCEDURE OVER THE IMAGE*/
-		fprintf(fitDebug, "Iteration: %d\n", iteration);
-		fflush(fitDebug);
-		for (int i = 0; i < npixels; i++) {
+	/* Task over the image */
+	for (i = 0; i < npixels; i++) {
+		x = (i + 1) % w;
+		y = (i + 1) / w;
 			
-			x = (i + 1) % w;
-			y = (i + 1) / w;
+		base = i * DIM_FIT;
+		test = evaluateGaussian(results, x, y);
+		diff[i] = data[i] - test;
 			
-			base = i * 8;
-			test = evaluateGaussian(results, x, y);
-			diff[i] = data[i] - test;
+		diff_x = x - results[PAR_X];
+		diff_y = y - results[PAR_Y];
+		sig2x = pow(results[PAR_SX], 2);
+		sig2y = pow(results[PAR_SY], 2);
+		frac_x = pow(diff_x, 2) / sig2x;
+		frac_y = pow(diff_y, 2) / sig2y;
+		dexp = exp(frac_x + frac_y);
 			
-			
-			diff_x = x - results[PAR_X];
-			diff_y = y - results[PAR_Y];
-			sig2x = pow(results[PAR_SX], 2);
-			sig2y = pow(results[PAR_SY], 2);
-			frac_x = pow(diff_x, 2) / sig2x;
-			frac_y = pow(diff_y, 2) / sig2y;
-			dexp = exp(frac_x + frac_y);
-			
-			M[base] = 1 / dexp;
-			M[base + 1] = (results[PAR_A] * (2 * x - 2 * results[PAR_X])) / (sig2x * dexp);
-			M[base + 2] = (results[PAR_A] * (2 * y - 2 * results[PAR_Y])) / (sig2y * dexp);
-			M[base + 3] = (2 * results[PAR_A] * pow(diff_x, 2)) / (pow(results[PAR_SX], 3) * dexp);
-			M[base + 4] = (2 * results[PAR_A] * pow(diff_y, 2)) / (pow(results[PAR_SY], 3) * dexp);
-			//derivative of the slopePlan !
-			M[base + 5] = x;
-			M[base + 6] = y;
-			M[base + 7] = 1.0;
-			
-
-		}
+		M[base] = 1 / dexp;
+		M[base + 1] = (results[PAR_A] * (2 * x - 2 * results[PAR_X])) / (sig2x * dexp);
+		M[base + 2] = (results[PAR_A] * (2 * y - 2 * results[PAR_Y])) / (sig2y * dexp);
+		M[base + 3] = (2 * results[PAR_A] * pow(diff_x, 2)) / (pow(results[PAR_SX], 3) * dexp);
+		M[base + 4] = (2 * results[PAR_A] * pow(diff_y, 2)) / (pow(results[PAR_SY], 3) * dexp);
+		M[base + 5] = x;
+		M[base + 6] = y;
+		M[base + 7] = 1.0;
+	}
 		
-		square = 0.0;
-		/* square calculation and array adjustment */
-		for (int index1 = 0; index1 < npixels; index1++) {
-			square = square + pow(diff[index1], 2);
-		}
-		squares[iteration] = square;
+	/* square calculation and array adjustment */
+	for (int index1 = 0; index1 < npixels; index1++)
+		square = square + pow(diff[index1], 2);
 		
-		iteration++;
+	gsl_matrix_view gsl_M = gsl_matrix_view_array(M, npixels, 8);
+	gsl_matrix_view matrice = gsl_matrix_view_array(matrix, 8, 8);
 		
-		/**initial error print*/
-		if (iteration == 1) {
-			initial_error = square;
-			fprintf(fitDebug, "ERRORE INIZIA: %09.0f\n", initial_error);
-			fflush(fitDebug);
-		}
-		fflush(stdout);
+	gsl_vector_view differenze = gsl_vector_view_array(diff, npixels);
 		
-		/**
-		 FILE* fp = fopen("matrice.mat","w");
-		 for (int index1 = 0;index1<500;index1++){
-		 for (int index2=0;index2<8;index2++){
-		 fprintf(fp,"%08f\t",M[index1*8+index2]);
-		 }
-		 fprintf(fp,"\n");
-		 }
-		 */
+	/* Compute matrix = M'*M */
+	gsl_blas_dgemm(CblasTrans, CblasNoTrans, 1.0, &gsl_M.matrix, &gsl_M.matrix, 0.0, &matrice.matrix);
+	/* Compute vector = M'*diff */
+	gsl_blas_dgemv(CblasTrans, 1.0, &gsl_M.matrix, &differenze.vector, 0.0, vettore);
+	/* Compute the delta vector of deviation */
 		
-		gsl_matrix_view gsl_M = gsl_matrix_view_array(M, npixels, 8);
-		gsl_matrix_view matrice = gsl_matrix_view_array(matrix, 8, 8);
-		
-		gsl_vector_view differenze = gsl_vector_view_array(diff, npixels);
-		
-		//printf("\nMM\n");
-		
-		/* Compute matrix = M'*M */
-		gsl_blas_dgemm(CblasTrans, CblasNoTrans, 1.0, &gsl_M.matrix, &gsl_M.matrix, 0.0, &matrice.matrix);
-		/**
-		 for (int index1 = 0;index1<8;index1++){
-		 for (int index2 =0;index2<8;index2++){
-		 //				printf("%8f\t",matrix[index1*8 + index2]);
-		 }
-		 //			printf("\n");
-		 }
-		 */
-		/** Compute matrix = M'*M
-		 printf("MM2\n");
-		 for (int index1 = 0;index1<8;index1++){
-		 for(int index2 = 0;index2<8;index2++){
-		 matrix[index1*8 + index2] = 0;
-		 for (int index3 = 0;index3<npixels;index3++){
-		 matrix[index1*8 + index2] = matrix[index1*8 + index2] + M[index3*8+index1]*M[index3*8+index2];
-		 }
-		 }
-		 }
-		 for (int index1 = 0;index1<8;index1++){
-		 for (int index2 =0;index2<8;index2++){
-		 printf("%08.2f\t",matrix[index1*8 + index2]);
-		 }
-		 printf("\n");
-		 }
-		 */
-		
-		//printf("\nVECTOR\n");
-		
-		/* Compute vector = M'*diff for (int i =8; i<16 ;i++){ for (int
-		 k=0;k<npixels;k++){ vector[i] = vector[i] + M[k*8 + i]*diff[k];
-		 } } for (int index1 = 0;index1<8;index1++){
-		 printf("%08.2f\t",vector[index1]); } printf("\n"); */
-		/* Compute vector = M'*diff */
-		gsl_blas_dgemv(CblasTrans, 1.0, &gsl_M.matrix, &differenze.vector, 0.0, vettore);
-		
-		//gsl_vector_fprintf(stdout, vettore, "%g");
-		
-		//printf("\n");
-		
-		/* Compute the delta vector of deviation */
-		
-		
-		int s;
-		
-		gsl_permutation *p = gsl_permutation_alloc(8);
-		
-		gsl_linalg_LU_decomp(&matrice.matrix, p, &s);
-		
-		gsl_linalg_LU_solve(&matrice.matrix, p, vettore, delta);
+	gsl_permutation *p = gsl_permutation_alloc(8);	
+	gsl_linalg_LU_decomp(&matrice.matrix, p, &error); /* TEST ERRORE-->TODO*/
+	gsl_linalg_LU_solve(&matrice.matrix, p, vettore, delta);
 		//printf("delta = \n");
 		//gsl_vector_fprintf(stdout, delta, "%g");
 		
@@ -343,7 +238,6 @@ int iteration(const unsigned char *data, int w, int h, double * results)
 		
 		//RIPROVA ! !!
 	    //printf("New x_0 is %f\n", results->x_0);
-    }
 	
 #if DEBUG
     fprintf(fitDebug, "ERRORE FINALE: %09.0f\n", square);
@@ -359,13 +253,7 @@ int iteration(const unsigned char *data, int w, int h, double * results)
     gsl_vector_free(vettore);
     gsl_vector_free(delta);
 	
-	
-	
-    if (square > initial_error) {
-		return 0;
-    } else {
-		return 1;
-    }
+	return (int) square;
 }
 
 /***************************************************************************************************************
