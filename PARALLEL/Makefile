@@ -1,6 +1,6 @@
 include ../conf
 
-CC = mpic++
+CC = mpicc
 FLAGS = -DDEBUG -DON_DEMAND
 GSL_LIB=-lgsl -lgslcblas
 LIB=$(GSL_LIB) -lm -ltiff

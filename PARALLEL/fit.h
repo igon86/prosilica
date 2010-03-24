@@ -14,6 +14,7 @@
 #define DIM_FIT 8
 
 #define MASSIMO 255
+#define TRUE 1==1
 
 #define PAR_A 0  	/* amplitude Gaussian            */
 #define PAR_X 1  	/* x position Gaussian           */
@@ -23,6 +24,33 @@
 #define PAR_a 5  	/* first parameter of the plane  */
 #define PAR_b 6  	/* second parameter of the plane */
 #define PAR_c 7  	/* third parameter of the plane  */
+
+#define OUTPUT_MATRIX "gaussiana.tiff" 
+#define CROP_PARAMETER 0.5
+
+/* length of the stream */
+#define STREAMLENGTH 4
+
+#define EMETTITOR 0 // rank emettitor
+#if MASTER
+	#define COLLECTOR 0 // rank collector
+#else
+	#define COLLECTOR 1
+#endif
+	
+// number of service processes
+#if MASTER
+	#define PS 1       
+#else
+	#define PS 2
+#endif
+
+/* macro for define MPI tags of the messages */
+#define PARAMETERS 0
+#define IMAGE 1
+#define RESULTS 2
+#define REQUEST 3
+#define TERMINATION 4
 
 int procedure (const unsigned char* data,int x,int y, double* results);
 

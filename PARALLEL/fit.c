@@ -1,6 +1,5 @@
 #include "fit.h"
 
-static FILE* fitDebug = fopen("FIT", "w");
 static unsigned char *crop = NULL;
 
 /***************************************************************************************************************
@@ -272,7 +271,8 @@ void writeImage(unsigned char* image,char* dest, int w, int h) {
 		TIFFSetField(out, TIFFTAG_ROWSPERSTRIP, TIFFDefaultStripSize(out, w*sampleperpixel));
 		
 		//Now writing image to the file one strip at a time
-		for (uint32 row = 0; row < h; row++)
+		uint32 row = 0;
+		for (row = 0; row < h; row++)
 		{
 			//printf("%d ",row);
 			//fflush(stdout);

@@ -2,33 +2,6 @@
 #include <sys/time.h>
 #include "fit.h"
 
-#define OUTPUT_MATRIX "gaussiana.tiff" 
-#define CROP_PARAMETER 0.5
-
-/* length of the stream */
-#define STREAMLENGTH 4
-
-#define EMETTITOR 0 // rank emettitor
-#if MASTER
-	#define COLLECTOR 0 // rank collector
-#else
-	#define COLLECTOR 1
-#endif
-	
-// number of service processes
-#if MASTER
-	#define PS 1       
-#else
-	#define PS 2
-#endif
-
-/* macro for define MPI tags of the messages */
-#define PARAMETERS 0
-#define IMAGE 1
-#define RESULTS 2
-#define REQUEST 3
-#define TERMINATION 4
-
 int main(int argc, char* argv[]){
 	
 	/* File conteining parameters*/
@@ -133,7 +106,7 @@ int main(int argc, char* argv[]){
 		printf("centro in %f - %f\nCon ampiezza %f e %f\n", x0, y0, FWHM_x, FWHM_y);
 #endif
 	
-		delete mask;
+		free(mask);
 	
 		/* inizialization for the diameter of the gaussian*/
 		span_x = (int) (2 * FWHM_x);
@@ -278,7 +251,7 @@ int main(int argc, char* argv[]){
 		cropped = (unsigned char*) malloc(dim);
 #if ON_DEMAND	
 		
-		while(true){
+		while(TRUE){
 			MPI_Send(&dim,1,MPI_INT,EMETTITOR,REQUEST,MPI_COMM_WORLD);
 			MPI_Probe(EMETTITOR,MPI_ANY_TAG,MPI_COMM_WORLD,&status);
 			if(status.MPI_TAG == TERMINATION){
