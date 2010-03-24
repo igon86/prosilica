@@ -222,37 +222,28 @@ int iteration(const unsigned char *data, int w, int h, double * results) {
 	gsl_permutation *p = gsl_permutation_alloc(8);	
 	gsl_linalg_LU_decomp(&matrice.matrix, p, &error); /* TEST ERRORE-->TODO*/
 	gsl_linalg_LU_solve(&matrice.matrix, p, vettore, delta);
-		//printf("delta = \n");
-		//gsl_vector_fprintf(stdout, delta, "%g");
+
+/*#if DEBUG
+	printf("delta = \n");
+	gsl_vector_fprintf(stdout, delta, "%g");
+#endif*/
 		
-		/** result adjustment */
-		results[PAR_A]  = results[PAR_A]  + gsl_vector_get(delta, 0);
-		results[PAR_X]  = results[PAR_X]  + gsl_vector_get(delta, 1);
-		results[PAR_Y]  = results[PAR_Y]  + gsl_vector_get(delta, 2);
-		results[PAR_SX] = results[PAR_SX] + gsl_vector_get(delta, 3);
-		results[PAR_SY] = results[PAR_SY] + gsl_vector_get(delta, 4);
-		results[PAR_a]  = results[PAR_a]  + gsl_vector_get(delta, 5);
-		results[PAR_b]  = results[PAR_b]  + gsl_vector_get(delta, 6);
-		results[PAR_c]  = results[PAR_c]  + gsl_vector_get(delta, 7);
-		
-		
-		//RIPROVA ! !!
-	    //printf("New x_0 is %f\n", results->x_0);
-	
-#if DEBUG
-    fprintf(fitDebug, "ERRORE FINALE: %09.0f\n", square);
-    fprintf(fitDebug, "STRUCT FINALE: \n");
-    fflush(fitDebug);
-#endif
-	
-    /* FREE!!!!!!!! */
-    if (M)
-		delete M;
-    if (diff)
-		delete diff;
-    gsl_vector_free(vettore);
-    gsl_vector_free(delta);
-	
+	/** result adjustment */
+	results[PAR_A]  = results[PAR_A]  + gsl_vector_get(delta, 0);
+	results[PAR_X]  = results[PAR_X]  + gsl_vector_get(delta, 1);
+	results[PAR_Y]  = results[PAR_Y]  + gsl_vector_get(delta, 2);
+	results[PAR_SX] = results[PAR_SX] + gsl_vector_get(delta, 3);
+	results[PAR_SY] = results[PAR_SY] + gsl_vector_get(delta, 4);
+	results[PAR_a]  = results[PAR_a]  + gsl_vector_get(delta, 5);
+	results[PAR_b]  = results[PAR_b]  + gsl_vector_get(delta, 6);
+	results[PAR_c]  = results[PAR_c]  + gsl_vector_get(delta, 7);
+			
+	/* free the memory */
+	free(M);
+	free(diff);	
+	gsl_vector_free(vettore);
+	gsl_vector_free(delta);
+
 	return (int) square;
 }
 
