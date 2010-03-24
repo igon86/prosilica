@@ -30,6 +30,7 @@
 #define IMAGE 1
 #define RESULTS 2
 #define REQUEST 3
+#define TERMINATION 4
 
 extern FILE *risultati; // ??????????
 
@@ -39,7 +40,7 @@ int main(int argc, char* argv[]){
 	FILE* parameters;
 
 	/* MPI Variables */
-	int my_rank, p; // p is the number of processes
+	int my_rank, p, flag; // p is the number of processes
 	MPI_Status status;
 
 	/* width and length of the input image */
@@ -190,16 +191,23 @@ int main(int argc, char* argv[]){
 		for(i=PS;i<p;i++){
 			MPI_Send(cropped, dim, MPI_UNSIGNED_CHAR, i%(p-PS)+PS, IMAGE, MPI_COMM_WORLD);
 		}
+		
 #if ON_DEMAND
 		printf("ON_DEMAND\n");
 		j=PS;
 		for(i=p-PS; i < STREAMLENGTH; i++){
-			while ( ! MPI_Iprobe( ((j)%PS+PS) , MPI_COMM_WORLD) ) j++;
+			printf("COLLETTORE MANDO IMMAGINE %d\n",i);
+			sleep(1);
+			flag = 0;
+			while ( !flag ){
+				MPI_Iprobe( (j)%PS+PS , MPI_ANY_TAG , MPI_COMM_WORLD ,&flag, &status);
+				j++;
+			}
 			//MPI_RECV(ON_DEMAND);
 			MPI_Send(cropped, dim, MPI_UNSIGNED_CHAR, j%(p-PS)+PS, IMAGE, MPI_COMM_WORLD);
 		}
 		for(i=PS;i<p;i++)
-			//MPI_SEND(TERMINATION);
+			MPI_Send(NULL,0,MPI_INT,i,TERMINATION,MPI_COMM_WORLD);
 #else			
 		// send the cropped image
 		for(i=p-PS; i < STREAMLENGTH; i++)
@@ -225,7 +233,11 @@ int main(int argc, char* argv[]){
 #if ON_DEMAND		
 		for(i=0; i < STREAMLENGTH; i++){
 			j=0;
-			while(! MPI_Iprobe( ((j)%PS+PS) , MPI_COMM_WORLD ) ) j++;
+			flag = 0;
+			while ( !flag ){
+				MPI_Iprobe( (j)%PS+PS , MPI_ANY_TAG , MPI_COMM_WORLD ,&flag, &status);
+				j++;
+			}
 			MPI_Recv(fit, DIM_FIT ,MPI_DOUBLE, i%(p-PS)+PS, RESULTS, MPI_COMM_WORLD, &status);	
 		}
 #else		
@@ -260,9 +272,10 @@ int main(int argc, char* argv[]){
 #if ON_DEMAND	
 		
 		while(true){
-			MPI_SEND(..,0,MPI_INT,EMETTITOR,REQUEST,MPI_COMM_WORLD);
-			MPI_Probe(EMETTITORE,&status);
-			if()
+			MPI_Send(NULL,0,MPI_INT,EMETTITOR,REQUEST,MPI_COMM_WORLD);
+			MPI_Probe(EMETTITOR,MPI_ANY_TAG,MPI_COMM_WORLD,&status);
+			if(status.MPI_Tag == TERMINATION) break;
+			MPI_Recv(EMETTITOR,,MPI_COMM_WORLD)
 		}
 #else	
 		/* receive the number of the images */
