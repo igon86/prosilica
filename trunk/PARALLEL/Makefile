@@ -1,11 +1,11 @@
 include ../conf
 
 CC = mpicc
-FLAGS = -DDEBUG -DON_DEMAND
+FLAGS = -DDEBUG -DMASTER -DON_DEMAND
 GSL_LIB=-lgsl -lgslcblas
 LIB=$(GSL_LIB) -lm -ltiff
 
-NP=4
+NP=3
 
 .PHONY : parallel test clean
 
