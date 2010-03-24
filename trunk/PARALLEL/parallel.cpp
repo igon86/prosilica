@@ -274,9 +274,15 @@ int main(int argc, char* argv[]){
 		while(true){
 			MPI_Send(NULL,0,MPI_INT,EMETTITOR,REQUEST,MPI_COMM_WORLD);
 			MPI_Probe(EMETTITOR,MPI_ANY_TAG,MPI_COMM_WORLD,&status);
-			if(status.MPI_Tag == TERMINATION) break;
-			MPI_Recv(EMETTITOR,,MPI_COMM_WORLD)
+			if(status.MPI_TAG == TERMINATION) break;
+			MPI_Recv(cropped, dim, MPI_UNSIGNED_CHAR, EMETTITOR, IMAGE, MPI_COMM_WORLD, &status);
+			/* iterative procedure */
+			iteration(cropped, dimx, dimy, fit);
 		}
+		/* last image */
+		MPI_Recv(cropped, dim, MPI_UNSIGNED_CHAR, EMETTITOR, IMAGE, MPI_COMM_WORLD, &status);
+		/* iterative procedure */
+		iteration(cropped, dimx, dimy, fit);
 #else	
 		/* receive the number of the images */
 		num_image = STREAMLENGTH / (p - PS);		
