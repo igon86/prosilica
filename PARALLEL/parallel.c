@@ -59,6 +59,9 @@ int main(int argc, char* argv[]){
 	
 	if(my_rank == EMETTITOR){
 		/* THIS IS THE TASK OF THE EMETTITOR PROCESS */
+#if DEBUG
+		printf("EMITTER: RANK %d\n",my_rank);
+#endif		
 		
 		/* reading the input parameters */		
 		if((parameters = fopen(argv[1], "r")) == NULL){
@@ -145,26 +148,29 @@ int main(int argc, char* argv[]){
 		writeImage(cropped, (char *) "./CROP.tiff", dimx, dimy);
 #endif
 	
-		// send to the workers the parameters
+		// send to the workers the parameters and images
 		dim = dimx * dimy;
 		for(i = PS; i < p; i++){
 			MPI_Send(&dimx, 1, MPI_INT, i, PARAMETERS, MPI_COMM_WORLD);
 			MPI_Send(&dimy, 1, MPI_INT, i, PARAMETERS, MPI_COMM_WORLD);
 			MPI_Send(fit, DIM_FIT, MPI_DOUBLE, i, RESULTS, MPI_COMM_WORLD);
-		}
-		// prima mandata di immagini
-		for(i=PS;i<p;i++){
-			MPI_Send(cropped, dim, MPI_UNSIGNED_CHAR, i%(p-PS)+PS, IMAGE, MPI_COMM_WORLD);
+			MPI_Send(cropped, dim, MPI_UNSIGNED_CHAR, i, IMAGE, MPI_COMM_WORLD);
+#if DEBUG
+			printf("EMITTER: DATI INIZIALI INVIATI A %d\n",i);
+#endif
 		}
 		
 #if ON_DEMAND
 		printf("ON_DEMAND\n");
+		fflush(stdout);
+
 		j=PS;
 		for(i=p-PS; i < STREAMLENGTH; i++){
 			printf("EMETTITORE IMMAGINE %d\n",i);
 			flag = 0;
 			while ( !flag ){
-				MPI_Iprobe( (j)%(p-PS)+PS , MPI_ANY_TAG , MPI_COMM_WORLD ,&flag, &status);
+				if( MPI_Iprobe( j%(p-PS) + PS , MPI_ANY_TAG , MPI_COMM_WORLD ,&flag, &status) != MPI_SUCCESS) printf("PROBLEMA NELLA IPROBE DELL'EMETTITORE\n");
+				fflush(stdout);
 				j++;
 			}
 			printf("MESSAGGIO DA %d \n",j-1);
@@ -179,9 +185,12 @@ int main(int argc, char* argv[]){
 		printf("EMETTITORE: FINITO DI MANDARE LA TERMINAZIONE...MUORO\n");	
 #else			
 		// send the cropped image
-		for(i=p-PS; i < STREAMLENGTH; i++)
+		for(i=p-PS; i < STREAMLENGTH; i++){
+			printf("EMETTITORE IMMAGINE %d\n",i);
+			fflush(stdout);
 			MPI_Send(cropped, dim, MPI_UNSIGNED_CHAR, i%(p-PS)+PS, IMAGE, MPI_COMM_WORLD);
-			
+			printf("EMETTITORE, INVIATA IMMAGINE %d\n",i);
+		}
 	#if MASTER
 		printf("MASTER\n");
 		for(i=0; i < STREAMLENGTH; i++)
@@ -197,7 +206,9 @@ int main(int argc, char* argv[]){
 #ifndef MASTER
 	else if(my_rank == COLLECTOR){
 		/* THIS IS THE TASK OF THE COLLECTOR PROCESS */
-
+#if DEBUG
+		printf("COLLECTOR: RANK %d\n",my_rank);
+#endif
 		gettimeofday(&tv1,NULL);
 		
 		for(i=0; i < STREAMLENGTH; i++){
@@ -207,12 +218,12 @@ int main(int argc, char* argv[]){
 			j=0;
 			flag = 0;
 			while ( !flag ){
-				MPI_Iprobe( (j)%PS+PS , MPI_ANY_TAG , MPI_COMM_WORLD ,&flag, &status);
+				MPI_Iprobe( (j)%(p-PS)+PS , MPI_ANY_TAG , MPI_COMM_WORLD ,&flag, &status);
 				j++;
 			}
 			MPI_Recv(fit, DIM_FIT ,MPI_DOUBLE, (j-1)%(p-PS)+PS, RESULTS, MPI_COMM_WORLD, &status);
 #else
-			MPI_Recv(fit, DIM_FIT ,MPI_DOUBLE,i, RESULTS, MPI_COMM_WORLD, &status);
+			MPI_Recv(fit, DIM_FIT ,MPI_DOUBLE,i%(p-PS)+PS, RESULTS, MPI_COMM_WORLD, &status);
 #endif		
 
 		
@@ -234,7 +245,9 @@ int main(int argc, char* argv[]){
 *********************************************************************/
 	else{
 		/* THIS IS THE TASK OF THE WORKER PROCESS */
-
+#if DEBUG
+		printf("WORKER: RANK %d\n",my_rank);
+#endif
 		/* receive the dimension of the cropped image */
 		MPI_Recv(&dimx, 1, MPI_INT, EMETTITOR, PARAMETERS, MPI_COMM_WORLD, &status);
 		MPI_Recv(&dimy, 1, MPI_INT, EMETTITOR, PARAMETERS, MPI_COMM_WORLD, &status);
@@ -278,6 +291,7 @@ int main(int argc, char* argv[]){
 		/* work on the images and send them to the collector */
 		for (i = 0; i < num_image ; i++){
 			MPI_Recv(cropped, dim, MPI_UNSIGNED_CHAR, EMETTITOR, IMAGE, MPI_COMM_WORLD, &status);
+			printf("WORKER %d: RICEVUTA IMMAGINE %d\n",my_rank,i);
 			/* image procedure */
 			procedure (cropped, dimx, dimy, fit);
 
