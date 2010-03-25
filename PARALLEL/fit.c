@@ -12,47 +12,40 @@ static unsigned char *crop = NULL;
 
 void centroid(unsigned char *image, int w, int h, double *x, double *y, double *sigma_x, double *sigma_y) {	
 	int npixels = w * h;
-	//support data arrays
-	int counth [h];
-	int countw [w];
-	int count = 0;
-	int i = 0;
-    	for (i; i < h; i++)
-		counth[i] = 0;
+	int* counth = (int*) malloc (sizeof(int) * h);
+	int* countw = (int*) malloc (sizeof(int) * w);	
+	int count = 0, i = 0;
+	double w_center = 0.0, h_center = 0.0;
+	int left_border = 0, right_border = 0;
+	int down_border = 0, up_border = 0;
+
+    	for (i = 0; i < h; i++)
+		counth [i] = 0;
     	for (i = 0; i < w; i++)
-		countw[i] = 0;
+		countw [i] = 0;
 	for (i = 0; i < npixels; i++) {
-		unsigned temp = image[i];
-		if (temp) {
+		if (image [i]) {
 			++count;
-			++countw[i % w];
-			++counth[i / w];
+			++countw [i % w];
+			++counth [i / w];
 		}
     	}
 	
-	double w_center = 0;
-	double h_center = 0;
-
-	int left_border = 0;
-	int right_border = 0;
-	int down_border = 0;
-	int up_border = 0;
-	
-    //W CENTER
+	/* W CENTER */
 	for (i = 0; i < w; i++) {
-		w_center = w_center + ((double) countw[i] / count) * (i + 1);
-		if (!left_border && countw[i])
+		w_center = w_center + ((double) countw [i] / count) * (i + 1);
+		if (!left_border && countw [i])
 			left_border = i;
-		if (left_border && !right_border && !countw[i])
+		if (left_border && !right_border && !countw [i])
 			right_border = i;
 	}
 	
-    //H CENTER
+	/* H CENTER */
 	for (i = 0; i < h; i++) {
-		h_center = h_center + ((double) counth[i] / count) * (i + 1);
+		h_center = h_center + ((double) counth [i] / count) * (i + 1);
 		if (!down_border && counth[i])
 			down_border = i;
-		if (down_border && !up_border && !counth[i])
+		if (down_border && !up_border && !counth [i])
 			up_border = i;
 	}
 	*x = w_center;
@@ -90,7 +83,7 @@ unsigned char *createMask(unsigned char *image, int w, int h, int max, int min, 
 	for (i = 0; i < npixels; i++) {
 		unsigned char temp = image[i];
 		if (temp > threshold)
-			cookie[i] = MASSIMO;
+			cookie[i] = MAXIMUM;
 		else
 			cookie[i] = 0;
 	}
@@ -107,12 +100,9 @@ unsigned char *cropImage(const unsigned char *input, int w, int h, int x1, int x
 	int dimension = (x2 - x1 + 1) * (y2 - y1 + 1);
 	if (crop == NULL)
 		crop = (unsigned char*) malloc(dimension);
-	for (i = 0; i < limit; i++) {
-		int a = i % w;
-		int b = i / w;
-		if (a >= x1 && a <= x2 && b >= y1 && b <= y2)
+	for (i = 0; i < limit; i++)
+		if (i % w >= x1 && i % w <= x2 && i / w >= y1 && i / w <= y2)
 			crop[count++] = input[i];
-    	}
 	return crop;
 }
 
@@ -129,24 +119,26 @@ double evaluateGaussian(double* gaussian, int x, int y) {
 }
 
 /***************************************************************************************************************
- Iterative NLLS fit algorithm
+ fit algorithm
  ****************************************************************************************************************/
 
 int procedure (const unsigned char *data, int w, int h, double * results) {
 	int npixels = w * h;
 	double *diff = (double*) malloc (sizeof(double) * npixels);
-	int i = 0, temp = 0, x = 0, y = 0, error = 0, base = 0;
+	int i = 0, x = 0, y = 0, error = 0, base = 0;
 
 	/* vedtors for calculations */
 	gsl_vector *delta = gsl_vector_alloc(DIM_FIT);
 	gsl_vector *vettore = gsl_vector_alloc(DIM_FIT);
-	
+	gsl_matrix_view gsl_M;
+	gsl_matrix_view matrice;
+	gsl_vector_view differenze;
+	gsl_permutation *permutation;
+
 	/** variables used to keep track of the square error*/
 	double *M = (double*) malloc(sizeof(double) * DIM_FIT * npixels);
 	
 	double matrix [DIM_FIT * DIM_FIT];
-	
-	double vector [DIM_FIT];
 	
 	double square = 0.0, diff_x = 0.0, diff_y = 0.0, frac_x = 0.0, frac_y = 0.0, sig2x = 0.0, sig2y = 0.0, dexp = 0.0;
 		
@@ -180,10 +172,9 @@ int procedure (const unsigned char *data, int w, int h, double * results) {
 	for (i = 0; i < npixels; i++)
 		square = square + pow(diff[i], 2);
 		
-	gsl_matrix_view gsl_M = gsl_matrix_view_array(M, npixels, DIM_FIT);
-	gsl_matrix_view matrice = gsl_matrix_view_array(matrix, DIM_FIT, DIM_FIT);
-		
-	gsl_vector_view differenze = gsl_vector_view_array(diff, npixels);
+	gsl_M = gsl_matrix_view_array(M, npixels, DIM_FIT);
+	matrice = gsl_matrix_view_array(matrix, DIM_FIT, DIM_FIT);
+	differenze = gsl_vector_view_array(diff, npixels);
 		
 	/* Compute matrix = M'*M */
 	gsl_blas_dgemm(CblasTrans, CblasNoTrans, 1.0, &gsl_M.matrix, &gsl_M.matrix, 0.0, &matrice.matrix);
@@ -191,9 +182,9 @@ int procedure (const unsigned char *data, int w, int h, double * results) {
 	gsl_blas_dgemv(CblasTrans, 1.0, &gsl_M.matrix, &differenze.vector, 0.0, vettore);
 	/* Compute the delta vector of deviation */
 		
-	gsl_permutation *p = gsl_permutation_alloc(DIM_FIT);	
-	gsl_linalg_LU_decomp(&matrice.matrix, p, &error); /* TEST ERRORE--> TODO*/
-	gsl_linalg_LU_solve(&matrice.matrix, p, vettore, delta);
+	permutation = gsl_permutation_alloc(DIM_FIT);	
+	gsl_linalg_LU_decomp(&matrice.matrix, permutation, &error); /* TEST ERRORE--> TODO*/
+	gsl_linalg_LU_solve(&matrice.matrix, permutation, vettore, delta);
 
 /*#if DEBUG
 	printf("delta = \n");
@@ -201,15 +192,9 @@ int procedure (const unsigned char *data, int w, int h, double * results) {
 #endif*/
 		
 	/** result adjustment */
-	results[PAR_A]  = results[PAR_A]  + gsl_vector_get(delta, 0);
-	results[PAR_X]  = results[PAR_X]  + gsl_vector_get(delta, 1);
-	results[PAR_Y]  = results[PAR_Y]  + gsl_vector_get(delta, 2);
-	results[PAR_SX] = results[PAR_SX] + gsl_vector_get(delta, 3);
-	results[PAR_SY] = results[PAR_SY] + gsl_vector_get(delta, 4);
-	results[PAR_a]  = results[PAR_a]  + gsl_vector_get(delta, 5);
-	results[PAR_b]  = results[PAR_b]  + gsl_vector_get(delta, 6);
-	results[PAR_c]  = results[PAR_c]  + gsl_vector_get(delta, 7);
-			
+	for(i = 0; i < DIM_FIT; i++)
+		results[i]  = results[i]  + gsl_vector_get(delta, i);
+
 	/* free the memory */
 	free(M);
 	free(diff);	
@@ -226,7 +211,7 @@ int procedure (const unsigned char *data, int w, int h, double * results) {
 void maxmin(unsigned char *image, int w, int h, int *max, int *min) {
     int npixels = w * h, i = 0;
     *max = 0;
-    *min = MASSIMO;
+    *min = MAXIMUM;
     for (i = 0; i < npixels; i++) {
 		if (image[i] > *max)
 			*max = image[i];
@@ -242,46 +227,39 @@ void maxmin(unsigned char *image, int w, int h, int *max, int *min) {
 void writeImage(unsigned char* image,char* dest, int w, int h) {
 		
 		TIFF* out = TIFFOpen(dest, "w");
-		
-		//8bit image
+		tsize_t linebytes;
+		uint32 row = 0;
+		/* buffer used to store the row of pixel information for writing to file */
+		unsigned char *buf = NULL;
+		/* 8bit image */
 		int sampleperpixel = 1;
 		
-		TIFFSetField (out, TIFFTAG_IMAGEWIDTH, w);  // set the width of the image
-		TIFFSetField(out, TIFFTAG_IMAGELENGTH, h);    // set the height of the image
-		TIFFSetField(out, TIFFTAG_SAMPLESPERPIXEL, sampleperpixel);   // set number of channels per pixel
-		TIFFSetField(out, TIFFTAG_BITSPERSAMPLE, 8);    // set the size of the channels
-		TIFFSetField(out, TIFFTAG_ORIENTATION, ORIENTATION_TOPLEFT);    // set the origin of the image.
-		//   Some other essential fields to set that you do not have to understand for now.
+		TIFFSetField (out, TIFFTAG_IMAGEWIDTH, w);  /* set the width of the image */
+		TIFFSetField(out, TIFFTAG_IMAGELENGTH, h);    /* set the height of the image */
+		TIFFSetField(out, TIFFTAG_SAMPLESPERPIXEL, sampleperpixel);   /* set number of channels per pixel */
+		TIFFSetField(out, TIFFTAG_BITSPERSAMPLE, 8);    /* set the size of the channels */
+		TIFFSetField(out, TIFFTAG_ORIENTATION, ORIENTATION_TOPLEFT);    /* set the origin of the image */
+		/* Some other essential fields to set that you do not have to understand for now */
 		TIFFSetField(out, TIFFTAG_PLANARCONFIG, PLANARCONFIG_CONTIG);
 		TIFFSetField(out, TIFFTAG_PHOTOMETRIC, PHOTOMETRIC_MINISBLACK);
 
-		//a quanto pare si scrive una row alla volta!!! quindi una row e` lunga:
-		tsize_t linebytes = sampleperpixel * w;     // length in memory of one row of pixel in the image.
+		/* a quanto pare si scrive una row alla volta!!! quindi una row e` lunga: */
+		linebytes = sampleperpixel * w;     /* length in memory of one row of pixel in the image */
 		
-		// buffer used to store the row of pixel information for writing to file
-		unsigned char *buf = (unsigned char*) NULL;        
-		//    Allocating memory to store the pixels of current row
+		/* Allocating memory to store the pixels of current row */
 		if (TIFFScanlineSize(out) == linebytes)
 			buf =(unsigned char *)_TIFFmalloc(linebytes);
 		else
 			buf = (unsigned char *)_TIFFmalloc(TIFFScanlineSize(out));
 		
 		
-		// We set the strip size of the file to be size of one row of pixels
+		/* We set the strip size of the file to be size of one row of pixels */
 		TIFFSetField(out, TIFFTAG_ROWSPERSTRIP, TIFFDefaultStripSize(out, w*sampleperpixel));
 		
-		//Now writing image to the file one strip at a time
-		uint32 row = 0;
-		for (row = 0; row < h; row++)
-		{
-			//printf("%d ",row);
-			//fflush(stdout);
-			memcpy(buf, &image[(h-row-1)*linebytes], linebytes);    // check the index here, and figure out why not using h*linebytes
-			//printf("memcpy ");
-			//fflush(stdout);
+		/* Now writing image to the file one strip at a time */
+		for (row = 0; row < h; row++) {
+			memcpy(buf, &image[(h-row-1)*linebytes], linebytes);    /* check the index here, and figure out why not using h*linebytes */
 			if (TIFFWriteScanline(out, buf, row, 0) < 0) break;
-			//printf("writeline ");
-			//fflush(stdout);
 		}
 		(void) TIFFClose(out);
 		if (buf) _TIFFfree(buf);
