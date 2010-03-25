@@ -9,7 +9,7 @@ int main(int argc, char* argv[]){
 	/* MPI Variables */
 	int my_rank = 0, p = 0; /* p is the number of processes */
 #if ON_DEMAND
-	int flag = 0, junk = 0;
+	int flag = 0, junk = 0, j = 0;
 #endif
 	MPI_Status status;
 
@@ -44,9 +44,6 @@ int main(int argc, char* argv[]){
 
 	/* indexes */
 	int i = 0;
-#if ON_DEMAND
-	int j = 0;
-#endif
 
 	/* check the input parameters */
 	if(argc != 2){

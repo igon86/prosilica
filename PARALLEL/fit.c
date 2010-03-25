@@ -52,8 +52,10 @@ void centroid(unsigned char *image, int w, int h, double *x, double *y, double *
 	*y = h_center;
 	*sigma_x = (right_border - left_border) / 2.0;
 	*sigma_y = (up_border - down_border) / 2.0;
+	/* free the space */
+	free(counth);
+	free(countw);
 }
-
 
 
 /***************************************************************************************************************
