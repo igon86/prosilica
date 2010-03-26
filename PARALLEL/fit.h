@@ -51,4 +51,6 @@ double evaluateGaussian (double* gaussian, int x, int y);
 /* Write the image in a .TIFF file named dest (for debugging) */
 void writeImage (unsigned char* image, char *dest, int w, int h);
 
+/* Initialize of the fit */
+int initialization(char* parameters, double* results, double* fit, unsigned char** matrix, unsigned char** cropped, int* dimx, int* dimy);
 #endif

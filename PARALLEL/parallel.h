@@ -8,7 +8,7 @@
 #define STREAMLENGTH 4
 
 /* rank emettitor */
-#define EMETTITOR 0
+#define EMITTER 0
 
 /* rank collector */
 #if MASTER
