@@ -5,7 +5,7 @@ FLAGS = -Wall -pedantic -DDEBUG
 GSL_LIB=-lgsl -lgslcblas
 LIB=$(GSL_LIB) -lm -ltiff
 
-NP=3
+NP=4
 
 .PHONY : parallel test clean
 

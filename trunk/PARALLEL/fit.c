@@ -226,7 +226,7 @@ void maxmin(unsigned char *image, int w, int h, int *max, int *min) {
 				Writing mono8 black and white tiff function
 ****************************************************************************************************************/
 
-void writeImage(unsigned char* image,char* dest, int w, int h) {
+void writeImage(unsigned char* image, char* dest, int w, int h) {
 		
 		TIFF* out = TIFFOpen(dest, "w");
 		tsize_t linebytes;
@@ -267,3 +267,108 @@ void writeImage(unsigned char* image,char* dest, int w, int h) {
 		if (buf) _TIFFfree(buf);
 }
 
+/***************************************************************************************************************
+				Initialize of the fit
+****************************************************************************************************************/
+
+int initialization(char* parameter, double* result, double* fit, unsigned char** matrix, unsigned char** cropped, int* dimx, int* dimy){
+		
+	/* parameters for the cookie cutter */
+	double x0 = 0.0, y0 = 0.0;
+	double FWHM_x = 0.0, FWHM_y = 0.0;
+	int span_x = 0, span_y = 0;
+	int x = 0 , y = 0;
+	/* File conteining parameters*/
+	FILE* parameters = NULL;
+	/* width and length of the input image */
+	int width = 0, length = 0;
+	/* parameters fro create the mask */
+	int max = 0, min = 0;
+	/* pixel mask for reduce the dimension of the region to analyze */
+	unsigned char *mask = NULL;
+
+	int i = 0;
+		/* reading the input parameters */		
+		if((parameters = fopen(parameter, "r")) == NULL){
+			fprintf(stderr, "File not valid");
+			exit(EXIT_FAILURE);		
+		}
+	
+		/* initialize the dimension of the image */
+		if(fscanf(parameters, "%d\t%d\t", &width, &length) == 0){
+			fprintf(stderr, "File not valid");
+			exit(EXIT_FAILURE);							
+		}
+		/* initialize the fit of the Gaussian */
+		for(i = 0; i < DIM_FIT; i++){
+			if(fscanf(parameters, "%lf\t", &result[i]) == 0){
+				fprintf(stderr, "File not valid");
+				exit(EXIT_FAILURE);							
+			}		
+			fit[i] = 0;
+		}
+
+		/* image representing the Gaussian fit */
+		*matrix = createMatrix( length, width, result);
+	
+		/* writing the image to be fitted in a FIT file */
+#if DEBUG
+		writeImage((unsigned char *) *matrix,(char *) "gaussiana.tiff", width, length);
+#endif	
+		maxmin( (unsigned char*) *matrix, width, length, &max, &min);
+
+#if DEBUG	
+		printf("MAX: %d MIN: %d\n", max, min);
+#endif
+	
+		/* a pixel mask is created in order to reduce the dimensione of the region to analyze with the centroid */
+		mask = createMask( (unsigned char*) *matrix, width, length, max, min, CROP_PARAMETER);
+	
+#if DEBUG
+		writeImage(mask, (char *) "mask.tiff", width, length);
+#endif
+	
+		centroid(mask, width, length, &x0, &y0, &FWHM_x, &FWHM_y);
+	
+#if DEBUG
+		printf("centro in %f - %f\nCon ampiezza %f e %f\n", x0, y0, FWHM_x, FWHM_y);
+#endif
+	
+		free(mask);
+	
+		/* inizialization for the diameter of the gaussian*/
+		span_x = (int) (2 * FWHM_x);
+		span_y = (int) (2 * FWHM_y);
+	
+		/* determination of the dimension of the crop */
+		*dimx = 2 * span_x + 1;
+		*dimy = 2 * span_y + 1;
+	
+		/* inizialization of the position coordinates */
+		x = (int) x0;
+		y = (int) y0;
+	
+		/**
+		 inizialization of the fit of the Gaussian
+		 NOTE: the coordinates of the position (x,y) are relative to the cropped portion of the image.
+		 The value of span_x, which is approximately the diameter of the gaussian, is generally not as bad
+		 as you may think to start the fit.
+		 */
+		fit[PAR_A] = max;
+		fit[PAR_X] = span_x;
+		fit[PAR_Y] = span_y;
+		fit[PAR_SX] = FWHM_x;
+		fit[PAR_SY] = FWHM_y;
+		fit[PAR_c] = min;	
+
+#if DEBUG
+	printf("%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\n", fit[PAR_A], fit[PAR_X] + x - span_x, fit[PAR_Y] + y - span_y, fit[PAR_SX], fit[PAR_SY], fit[PAR_a], fit[PAR_b], fit[PAR_c]);
+#endif
+		*cropped = cropImage((unsigned char*) *matrix, width, length, x - span_x, x + span_x, y - span_y, y + span_y);
+	
+#if DEBUG
+		writeImage(*cropped, (char *) "./CROP.tiff", *dimx, *dimy);
+#endif
+
+	return 0;
+}
