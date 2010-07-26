@@ -5,19 +5,18 @@ int main(int argc, char* argv[]){
 	
 	/* MPI Variables */
 	int my_rank = 0, p = 0; /* p is the number of processes */
-#if ON_DEMAND
+#ifdef ON_DEMAND
 	int flag = 0, junk = 0, j = 0;
 #endif
 	MPI_Status status;
-
  	/* dimension of cropped image */
 	int dim = 0;
 #ifndef ON_DEMAND
 	/* number of images per worker */
-	int num_image = 0;
-	/* time variables */
-	struct timeval tv1, tv2;	
+	int num_image = 0;	
 #endif
+	/* time variables */
+	struct timeval tv1, tv2;
 	/* Dimension of the cropped image */
 	int dimx = 0, dimy = 0;
 	
@@ -50,12 +49,12 @@ int main(int argc, char* argv[]){
 	
 	if(my_rank == EMITTER){
 		/* THIS IS THE TASK OF THE EMITTER PROCESS */
-#if DEBUG
+	#ifdef DEBUG
 		printf("EMITTER: RANK %d\n",my_rank);
-#endif		
+	#endif		
 		/* initialization of the fit */
 		initialization(argv[1], result, fit, &matrix, &cropped, &dimx, &dimy);
-	
+		
 		/* send to the workers the parameters and images */
 		dim = dimx * dimy;
 		for(i = PS; i < p; i++){
@@ -63,121 +62,150 @@ int main(int argc, char* argv[]){
 			MPI_Send(&dimy, 1, MPI_INT, i, PARAMETERS, MPI_COMM_WORLD);
 			MPI_Send(fit, DIM_FIT, MPI_DOUBLE, i, RESULTS, MPI_COMM_WORLD);
 			MPI_Send(cropped, dim, MPI_UNSIGNED_CHAR, i, IMAGE, MPI_COMM_WORLD);
-#if DEBUG
+	#ifdef DEBUG
 			printf("EMITTER: DATI INIZIALI INVIATI A %d\n",i);
-#endif
+	#endif
 		}
 		
-#if ON_DEMAND
-		printf("ON_DEMAND\n");
-		fflush(stdout);
+#ifdef ON_DEMAND
 
+	#ifdef DEBUG
+		printf("ON_DEMAND\n");
+	#endif
 		j = PS;
 		for(i = p - PS; i < STREAMLENGTH; i++){
-			printf("EMITTERE IMMAGINE %d\n",i);
+	#ifdef DEBUG
+			printf("EMITTERE IMMAGINE %d\n", i);
+	#endif
 			flag = 0;
 			while ( !flag ){
-				if( MPI_Iprobe( j%(p-PS) + PS , MPI_ANY_TAG , MPI_COMM_WORLD ,&flag, &status) != MPI_SUCCESS) printf("PROBLEMA NELLA IPROBE DELL'EMITTERE\n");
-				fflush(stdout);
+				if( MPI_Iprobe( j % (p - PS) + PS , MPI_ANY_TAG , MPI_COMM_WORLD , &flag, &status) != MPI_SUCCESS) {
+	#ifdef DEBUG
+					printf("PROBLEMA NELLA IPROBE DELL'EMITTERE\n");
+	#endif
+					/*TODO: far schiantare tutto se errore */
+				}
 				j++;
 			}
+	#ifdef DEBUG
 			printf("MESSAGGIO DA %d \n", j - 1);
+	#endif
+			/* ricevo la richiesta */
 			MPI_Recv(&junk, 1, MPI_INT, (j - 1) % (p - PS) + PS, REQUEST, MPI_COMM_WORLD, &status);	
+	#ifdef DEBUG
 			printf("REQUEST RICEVUTA\n");
+	#endif	
+			/*TODO: per ora è la stessa immagine iniziale, eventualmente va cambiata */
 			MPI_Send(cropped, dim, MPI_UNSIGNED_CHAR, j % (p - PS) + PS, IMAGE, MPI_COMM_WORLD);
+	#ifdef DEBUG
 			printf("IMMAGINE MANDATA\n");
+	#endif
 		}
+	
+		/* avviso i worker che lo stream è finito */
 		for(i = PS; i < p; i++)
 			MPI_Send(NULL, 0, MPI_INT, i, TERMINATION, MPI_COMM_WORLD);
+	#ifdef DEBUG
+		printf("EMITTERE: FINITO DI MANDARE LA TERMINAZIONE...MUORO\n");
 
-		printf("EMITTERE: FINITO DI MANDARE LA TERMINAZIONE...MUORO\n");	
-#else			
+	#endif
+#else		
+		/* funzionamento NON su domanda */	
+	
 		/* send the cropped image */
 		for(i = p - PS; i < STREAMLENGTH; i++){
+	#ifdef DEBUG
 			printf("EMITTERE IMMAGINE %d\n", i);
-			fflush(stdout);
+	#endif
 			MPI_Send(cropped, dim, MPI_UNSIGNED_CHAR, i % (p - PS) + PS, IMAGE, MPI_COMM_WORLD);
+	#ifdef DEBUG
 			printf("EMITTERE, INVIATA IMMAGINE %d\n", i);
+	#endif
 		}
-#if MASTER
-		printf("MASTER\n");
-		gettimeofday(&tv1, NULL);		
-		for(i = 0; i < STREAMLENGTH; i++)
-			MPI_Recv(fit, DIM_FIT, MPI_DOUBLE, i % (p - PS) + PS, RESULTS, MPI_COMM_WORLD, &status);
-
-		gettimeofday(&tv2, NULL);
-		printf("Sono il processo %d (EMITTER master), the completion time: %ld\n", my_rank, (tv2.tv_sec - tv1.tv_sec)*1000000 + tv2.tv_usec - 	tv1.tv_usec);
-#endif
 #endif				
-	}
+		
 
 /*********************************************************************
 						COLLETTORE
 *********************************************************************/
 
-#ifndef MASTER
-	else if(my_rank == COLLECTOR){
+	} else if(my_rank == COLLECTOR){
 		/* THIS IS THE TASK OF THE COLLECTOR PROCESS */
-#if DEBUG
+	#ifdef DEBUG
 		printf("COLLECTOR: RANK %d\n",my_rank);
-#endif
+	#endif
+		/* prendo il tempo */
 		gettimeofday(&tv1,NULL);
 		
 		for(i = 0; i < STREAMLENGTH; i++){
 		
-		
-#if ON_DEMAND		
+#ifdef ON_DEMAND
+			/* se su domanda testo per vedere quale worker ha finito */	
 			j = 0;
 			flag = 0;
 			while ( !flag ){
-				MPI_Iprobe( (j)%(p-PS)+PS , MPI_ANY_TAG , MPI_COMM_WORLD ,&flag, &status);
+				MPI_Iprobe( j % (p - PS) + PS , MPI_ANY_TAG , MPI_COMM_WORLD , &flag, &status);
 				j++;
 			}
-			MPI_Recv(fit, DIM_FIT ,MPI_DOUBLE, (j-1)%(p-PS)+PS, RESULTS, MPI_COMM_WORLD, &status);
+			/* e ricevo */
+			MPI_Recv(fit, DIM_FIT ,MPI_DOUBLE, (j - 1) % (p - PS) + PS, RESULTS, MPI_COMM_WORLD, &status);
 
 #else
-			MPI_Recv(fit, DIM_FIT ,MPI_DOUBLE,i%(p-PS)+PS, RESULTS, MPI_COMM_WORLD, &status);
+			/* se non su domanda ricevo scandendo in sequenziale */
+			MPI_Recv(fit, DIM_FIT ,MPI_DOUBLE, i % (p - PS) + PS, RESULTS, MPI_COMM_WORLD, &status);
 #endif		
 			
-#if DEBUG
+	#ifdef DEBUG
 			printf("IMMAGINE %d %f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\n", i , fit[PAR_A], fit[PAR_X],
 			 fit[PAR_Y], fit[PAR_SX], fit[PAR_SY], fit[PAR_a], fit[PAR_b], fit[PAR_c]);
-#endif
+	#endif
 		}
+		/* prendo il tempo */
 		gettimeofday(&tv2,NULL);
-		printf("Sono il processo %d (collector), the completion time: %ld\n", my_rank, (tv2.tv_sec - tv1.tv_sec)*1000000 + tv2.tv_usec - tv1.tv_usec);
-	}
-#endif	
+
+		printf("Sono il processo %d (collector), the completion time: %ld\n", 
+			my_rank, (tv2.tv_sec - tv1.tv_sec)*1000000 + tv2.tv_usec - tv1.tv_usec);
 
 /*********************************************************************
 							WORKER
 *********************************************************************/
-	else{
+
+	} else {
 		/* THIS IS THE TASK OF THE WORKER PROCESS */
-#if DEBUG
+	#ifdef DEBUG
 		printf("WORKER: RANK %d\n",my_rank);
-#endif
+	#endif
 		/* receive the dimension of the cropped image */
 		MPI_Recv(&dimx, 1, MPI_INT, EMITTER, PARAMETERS, MPI_COMM_WORLD, &status);
 		MPI_Recv(&dimy, 1, MPI_INT, EMITTER, PARAMETERS, MPI_COMM_WORLD, &status);
 		/* receive the fit of the Gaussian */
 		MPI_Recv(fit, DIM_FIT, MPI_DOUBLE, EMITTER, RESULTS, MPI_COMM_WORLD, &status);
 
-#if DEBUG
+	#ifdef DEBUG
 		printf("PROCESSO %d, the initial fit: %f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\n", my_rank, fit[PAR_A], fit[PAR_X],
 		fit[PAR_Y], fit[PAR_SX], fit[PAR_SY], fit[PAR_a], fit[PAR_b], fit[PAR_c]);
-#endif
+	#endif
 		
 		/* define the cropped image */
 		dim = dimx * dimy;
 		cropped = (unsigned char*) malloc(dim);
-#if ON_DEMAND	
+#ifdef ON_DEMAND	
 		
 		while(TRUE){
-			MPI_Send(&dim,1,MPI_INT,EMITTER,REQUEST,MPI_COMM_WORLD);
-			MPI_Probe(EMITTER,MPI_ANY_TAG,MPI_COMM_WORLD,&status);
+			/* send the request */
+			MPI_Send(&dim, 1, MPI_INT, EMITTER, REQUEST, MPI_COMM_WORLD);
+			/* blocking test */
+			if(MPI_Probe(EMITTER, MPI_ANY_TAG, MPI_COMM_WORLD, &status) != MPI_SUCCESS){
+				/*TODO: se errore schianto tutto */
+	#ifdef DEBUG
+			printf("ERRORE nel worker durante MPI_Probe\n");
+	#endif
+			}
+			/* se ricevo msg di terminazione esco dal ciclo e muoro */		
 			if(status.MPI_TAG == TERMINATION){
+	#ifdef DEBUG
 				printf("WORKER %d: BECCATO FLAG DI TERMINAZIONE\n",my_rank);
+	#endif
 				break;
 			}	
 			MPI_Recv(cropped, dim, MPI_UNSIGNED_CHAR, EMITTER, IMAGE, MPI_COMM_WORLD, &status);
@@ -186,8 +214,9 @@ int main(int argc, char* argv[]){
 			
 			MPI_Send(fit, DIM_FIT, MPI_DOUBLE, COLLECTOR , RESULTS, MPI_COMM_WORLD);
 		}
-
+	#ifdef DEBUG
 		printf("WORKER %d: MUORO\n",my_rank);
+	#endif
 #else	
 		/* receive the number of the images */
 		num_image = STREAMLENGTH / (p - PS);		
@@ -200,7 +229,9 @@ int main(int argc, char* argv[]){
 		/* work on the images and send them to the collector */
 		for (i = 0; i < num_image ; i++){
 			MPI_Recv(cropped, dim, MPI_UNSIGNED_CHAR, EMITTER, IMAGE, MPI_COMM_WORLD, &status);
+	#ifdef DEBUG
 			printf("WORKER %d: RICEVUTA IMMAGINE %d\n",my_rank,i);
+	#endif
 			/* image procedure */
 			procedure (cropped, dimx, dimy, fit);
 

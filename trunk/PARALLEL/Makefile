@@ -1,9 +1,9 @@
 include ../conf
 
 CC = mpicc
-FLAGS = -Wall -pedantic -DDEBUG
-GSL_LIB=-lgsl -lgslcblas
-LIB=$(GSL_LIB) -lm -ltiff
+FLAGS = -Wall -pedantic -DDEBUG -DON_DEMAND
+GSL_LIB = -lgsl -lgslcblas
+LIB = $(GSL_LIB) -lm -ltiff
 
 NP=4
 
@@ -16,4 +16,4 @@ test:
 	mpirun -np $(NP) ./parallel ./parameters
 
 clean:
-	rm -f RESULTS* *.tiff FIT Centroid *~
+	rm -f RESULTS* *.tiff FIT Centroid *~ parallel
