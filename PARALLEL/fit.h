@@ -12,6 +12,10 @@
 /* dimension of the fit of a Gaussian */
 #define DIM_FIT 8
 
+#define CROP_PARAMETER 0.5
+#define MAXIMUM 255
+#define TRUE 1==1
+
 /* Define the parameters of a Gaussian fit*/
 enum{
 	PAR_A = 0,  	/* amplitude Gaussian            */
@@ -23,10 +27,6 @@ enum{
 	PAR_b,  	/* second parameter of the plane */
 	PAR_c  		/* third parameter of the plane  */
 };
-
-#define CROP_PARAMETER 0.5
-#define MAXIMUM 255
-#define TRUE 1==1
 
 /* Create the image representing the Gaussian fit */
 unsigned char* createMatrix (int length, int width, double* result);
