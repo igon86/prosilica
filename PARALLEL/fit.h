@@ -52,5 +52,5 @@ double evaluateGaussian (double* gaussian, int x, int y);
 void writeImage (unsigned char* image, char *dest, int w, int h);
 
 /* Initialize of the fit */
-int initialization(char* parameter, double* input, double* fit, unsigned char** matrix, unsigned char** cropped, int* dimx, int* dimy);
+int initialization(char* parameter, double* input, double* fit, unsigned char** matrix, unsigned char** cropped, int* dimx, int* dimy, int p);
 #endif
