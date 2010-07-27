@@ -21,7 +21,7 @@ int main(int argc, char* argv[]){
 	int dimx = 0, dimy = 0;
 	
 	/* two fits of Gaussian */
-	double result [DIM_FIT], fit [DIM_FIT];
+	double input [DIM_FIT], fit [DIM_FIT];
 	/* image representing Gaussian fit */	
 	unsigned char *matrix = NULL;
 	/* cropped image taken from a Gaussian image */
@@ -30,6 +30,16 @@ int main(int argc, char* argv[]){
 	/* indexes */
 	int i = 0;
 
+	/* data for the LU solver */
+	double* data = (double*) malloc(sizeof(double) * DIM_FIT * (DIM_FIT + 1));
+	gsl_matrix_view matrice = gsl_matrix_view_array(data, DIM_FIT, DIM_FIT);
+	gsl_vector_view vettore = gsl_vector_view_array(data + (DIM_FIT * DIM_FIT), DIM_FIT);
+	gsl_vector *delta = gsl_vector_alloc(DIM_FIT);
+	gsl_permutation* permutation = gsl_permutation_alloc(DIM_FIT);
+
+	/* error status of gsl_LU */
+	int error;
+	
 	/* check the input parameters */
 	if(argc != 2){
 		fprintf(stderr, "Invalid number of parameters\n");
@@ -53,7 +63,7 @@ int main(int argc, char* argv[]){
 		printf("EMITTER: RANK %d\n",my_rank);
 	#endif		
 		/* initialization of the fit */
-		initialization(argv[1], result, fit, &matrix, &cropped, &dimx, &dimy);
+		initialization(argv[1], input, fit, &matrix, &cropped, &dimx, &dimy);
 		
 		/* send to the workers the parameters and images */
 		dim = dimx * dimy;
@@ -209,9 +219,16 @@ int main(int argc, char* argv[]){
 				break;
 			}	
 			MPI_Recv(cropped, dim, MPI_UNSIGNED_CHAR, EMITTER, IMAGE, MPI_COMM_WORLD, &status);
-			/* image procedure */
-			procedure (cropped, dimx, dimy, fit);
 			
+			/* image procedure */
+			procedure (cropped, dimx, dimy, fit, matrice, vettore);
+
+			gsl_linalg_LU_decomp(&matrice.matrix, permutation, &error); /* TEST ERRORE--> TODO*/
+			gsl_linalg_LU_solve(&matrice.matrix, permutation, &vettore.vector, delta);
+
+			for(i = 0; i < DIM_FIT; i++)
+				fit[i]  = fit[i]  + gsl_vector_get(delta, i);
+
 			MPI_Send(fit, DIM_FIT, MPI_DOUBLE, COLLECTOR , RESULTS, MPI_COMM_WORLD);
 		}
 	#ifdef DEBUG
@@ -233,7 +250,17 @@ int main(int argc, char* argv[]){
 			printf("WORKER %d: RICEVUTA IMMAGINE %d\n",my_rank,i);
 	#endif
 			/* image procedure */
-			procedure (cropped, dimx, dimy, fit);
+			procedure (cropped, dimx, dimy, fit, matrice, vettore);
+
+			gsl_linalg_LU_decomp(&matrice.matrix, permutation, &error); /* TEST ERRORE--> TODO*/
+			gsl_linalg_LU_solve(&matrice.matrix, permutation, &vettore.vector, delta);
+
+			int j;
+			for(j = 0; j < DIM_FIT; j++){
+				printf("%d: %f + %f =" ,j,input[j],gsl_vector_get(delta, j));
+				fit[j]  = fit[j]  + gsl_vector_get(delta, j);
+				printf("%f\n",fit[j]);
+			}
 
 			MPI_Send(fit, DIM_FIT, MPI_DOUBLE, COLLECTOR , RESULTS, MPI_COMM_WORLD);
 		}

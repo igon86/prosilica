@@ -15,13 +15,13 @@ int main(int argc, char* argv[]){
 	int ppw;
 
 	/* time variables */
-	struct timeval tv1, tv2;	
+	/*struct timeval tv1, tv2;*/
 
 	/* Dimension of the cropped image */
 	int dimx = 0, dimy = 0;
 	
 	/* two fits of Gaussian */
-	double result [DIM_FIT], fit [DIM_FIT];
+	double input [DIM_FIT], fit [DIM_FIT];
 	
 	/* image representing Gaussian fit */	
 	unsigned char *matrix = NULL;
@@ -33,20 +33,28 @@ int main(int argc, char* argv[]){
 	unsigned char* partition;
 
 	/* indexes */
-	int i = 0;
+	int i = 0, j = 0;
+	
+	/* data for the LU solver */
+	gsl_vector *delta = gsl_vector_alloc(DIM_FIT);
+	gsl_permutation* permutation = gsl_permutation_alloc(DIM_FIT);
 	
 	/* error status of gsl_LU */
 	int error;
+
+	double* data = (double*) malloc(sizeof(double) * DIM_FIT * (DIM_FIT + 1));
+	gsl_matrix_view matrice = gsl_matrix_view_array(data, DIM_FIT, DIM_FIT);
+	gsl_vector_view vettore = gsl_vector_view_array(data + (DIM_FIT * DIM_FIT), DIM_FIT);
+
+	/* usato solo per la reduce... si fa in place? loop unrolling? */
+	double* ret = (double*) malloc(sizeof(double) * DIM_FIT * (DIM_FIT + 1));
+	
 	
 	/* check the input parameters */
 	if(argc != 2){
 		fprintf(stderr, "Invalid number of parameters\n");
 		exit(EXIT_FAILURE);
 	}
-
-	/* data for the LU solver */
-	gsl_vector *delta = gsl_vector_alloc(DIM_FIT);
-	gsl_permutation* permutation = gsl_permutation_alloc(DIM_FIT);
 			
 	/* Initialize of MPI */
 	MPI_Init (&argc, &argv);
@@ -59,21 +67,13 @@ int main(int argc, char* argv[]){
 						INIT
 *********************************************************************/		
 
-	// angosciante
-	double* data = (double*) malloc(sizeof(double)*DIM_FIT*(DIM_FIT+1));
-	gsl_matrix_view matrice = gsl_matrix_view_array(data,DIM_FIT,DIM_FIT);
-	gsl_vector_view vettore = gsl_vector_view_array(data + (DIM_FIT*DIM_FIT),DIM_FIT);
-
-	//usato solo per la reduce... si fa in place? loop unrolling?
-	double* ret = (double*) malloc(sizeof(double)*DIM_FIT*(DIM_FIT+1));
-	
 	if(my_rank == EMITTER){
 		/* THIS IS THE TASK OF THE EMITTER PROCESS */
 #if DEBUG
 		printf("EMITTER: RANK %d\n",my_rank);
 #endif		
 		/* initialization of the fit */
-		initialization(argv[1], result, fit, &matrix, &cropped, &dimx, &dimy);
+		initialization(argv[1], input, fit, &matrix, &cropped, &dimx, &dimy);
 	
 		/* send to the workers the parameters and images */
 		dim = dimx * dimy;
@@ -133,27 +133,24 @@ int main(int argc, char* argv[]){
 		printf("processo %d sopravvissuto alla scatter\n",my_rank);
 		MPI_Barrier(MPI_COMM_WORLD);				 
 		
-		procedure (partition, dimx/p, dimy/p, fit,matrice,vettore);
+		procedure (partition, dimx/p, dimy/p, fit, matrice, vettore);
 		
 		printf("processo %d sopravvissuto alla PROCEDURE\n",my_rank);
 		MPI_Barrier(MPI_COMM_WORLD);
 		
-		MPI_Reduce (data,ret,DIM_FIT*(DIM_FIT+1),MPI_DOUBLE,MPI_SUM,EMITTER,MPI_COMM_WORLD);
+		MPI_Reduce (data, ret, DIM_FIT * (DIM_FIT + 1), MPI_DOUBLE, MPI_SUM, EMITTER, MPI_COMM_WORLD);
 		
 		printf("processo %d sopravvissuto alla REDUCE\n",my_rank);
 		fflush(stdout);
 		MPI_Barrier(MPI_COMM_WORLD);
 		
-		// da cambiare con il collettore?
+		/* da cambiare con il collettore? */
 		if (my_rank == EMITTER){
 			gsl_linalg_LU_decomp(&matrice.matrix, permutation, &error); /* TEST ERRORE--> TODO*/
 			gsl_linalg_LU_solve(&matrice.matrix, permutation, &vettore.vector, delta);
-			//printf("%f \n",gsl_vector_get(delta, 7));
-			//printf("%f \n" ,result[0]);
 
-			int j;
 			for(j = 0; j < DIM_FIT; j++){
-				printf("%d: %f + %f =" ,j,result[j],gsl_vector_get(delta, j));
+				printf("%d: %f + %f =" ,j,input[j],gsl_vector_get(delta, j));
 				fit[j]  = fit[j]  + gsl_vector_get(delta, j);
 				printf("%f\n",fit[j]);
 			}

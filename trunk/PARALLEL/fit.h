@@ -29,7 +29,7 @@ enum{
 };
 
 /* Create the image representing the Gaussian fit */
-unsigned char* createMatrix (int length, int width, double* result);
+unsigned char* createMatrix (int length, int width, double* input);
 
 void maxmin (unsigned char* image, int w, int h, int* max, int* min);
 
@@ -43,7 +43,7 @@ void centroid (unsigned char* image, int w, int h, double* x, double* y, double*
 unsigned char* cropImage (const unsigned char *input, int w, int h, int x1, int x2, int y1, int y2);
 
 /* Task over the image */
-int procedure (const unsigned char* data, int x, int y, double* results);
+int procedure (const unsigned char* data, int x, int y, double * results, gsl_matrix_view matrice,gsl_vector_view vettore);
 
 /* Evaluate the Gaussian at coordinates (x, y) */
 double evaluateGaussian (double* gaussian, int x, int y);
@@ -52,5 +52,5 @@ double evaluateGaussian (double* gaussian, int x, int y);
 void writeImage (unsigned char* image, char *dest, int w, int h);
 
 /* Initialize of the fit */
-int initialization(char* parameters, double* results, double* fit, unsigned char** matrix, unsigned char** cropped, int* dimx, int* dimy);
+int initialization(char* parameter, double* input, double* fit, unsigned char** matrix, unsigned char** cropped, int* dimx, int* dimy);
 #endif
