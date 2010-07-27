@@ -61,7 +61,7 @@ void centroid(unsigned char *image, int w, int h, double *x, double *y, double *
 /***************************************************************************************************************
  Matrix
  ****************************************************************************************************************/
-unsigned char * createMatrix (int length, int width, double* result){
+unsigned char * createMatrix (int length, int width, double* input){
 	int i = 0, j = 0;	
 	int dim = length * width;
 	unsigned char* matrix = (unsigned char*) malloc (dim);
@@ -69,7 +69,7 @@ unsigned char * createMatrix (int length, int width, double* result){
 	/* build the image */
 	for (i = 0;i < length; i++)
 		for(j = 0; j < width; j++)
-			*p++ = (unsigned char) evaluateGaussian(result, j, i);
+			*p++ = (unsigned char) evaluateGaussian(input, j, i);
 	return matrix;
 }
 
@@ -247,7 +247,7 @@ void writeImage(unsigned char* image, char* dest, int w, int h) {
 				Initialize of the fit
 ****************************************************************************************************************/
 
-int initialization(char* parameter, double* result, double* fit, unsigned char** matrix, unsigned char** cropped, int* dimx, int* dimy){
+int initialization(char* parameter, double* input, double* fit, unsigned char** matrix, unsigned char** cropped, int* dimx, int* dimy){
 		
 	/* parameters for the cookie cutter */
 	double x0 = 0.0, y0 = 0.0;
@@ -277,7 +277,7 @@ int initialization(char* parameter, double* result, double* fit, unsigned char**
 		}
 		/* initialize the fit of the Gaussian */
 		for(i = 0; i < DIM_FIT; i++){
-			if(fscanf(parameters, "%lf\t", &result[i]) == 0){
+			if(fscanf(parameters, "%lf\t", &input[i]) == 0){
 				fprintf(stderr, "File not valid");
 				exit(EXIT_FAILURE);							
 			}		
@@ -285,7 +285,7 @@ int initialization(char* parameter, double* result, double* fit, unsigned char**
 		}
 
 		/* image representing the Gaussian fit */
-		*matrix = createMatrix( length, width, result);
+		*matrix = createMatrix( length, width, input);
 	
 		/* writing the image to be fitted in a FIT file */
 #if DEBUG
