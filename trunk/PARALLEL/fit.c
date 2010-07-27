@@ -1,7 +1,8 @@
 #include "fit.h"
+#include "parallel.h"
 
 static unsigned char *crop = NULL;
-
+extern int my_rank;
 /***************************************************************************************************************
 							Centroid
  ****************************************************************************************************************/
@@ -171,6 +172,12 @@ int procedure (const unsigned char *data, int w, int h,double * results, gsl_mat
 		square = square + pow(diff[i], 2);
 		
 	gsl_M = gsl_matrix_view_array(M, npixels, DIM_FIT);
+
+	if(my_rank == 2){
+		FILE* out = fopen("./robbaccia_giusta","w");
+		gsl_matrix_fprintf(out,&gsl_M.matrix,"%f");
+	}
+
 	differenze = gsl_vector_view_array(diff, npixels);
 		
 	/* Compute matrix = M'*M */
@@ -247,7 +254,7 @@ void writeImage(unsigned char* image, char* dest, int w, int h) {
 				Initialize of the fit
 ****************************************************************************************************************/
 
-int initialization(char* parameter, double* input, double* fit, unsigned char** matrix, unsigned char** cropped, int* dimx, int* dimy){
+int initialization(char* parameter, double* input, double* fit, unsigned char** matrix, unsigned char** cropped, int* dimx, int* dimy, int p){
 		
 	/* parameters for the cookie cutter */
 	double x0 = 0.0, y0 = 0.0;
@@ -319,7 +326,7 @@ int initialization(char* parameter, double* input, double* fit, unsigned char** 
 		/* determination of the dimension of the crop */
 		*dimx = 2 * span_x + 1;
 		*dimy = 2 * span_y + 1;
-	
+		
 		/* inizialization of the position coordinates */
 		x = (int) x0;
 		y = (int) y0;

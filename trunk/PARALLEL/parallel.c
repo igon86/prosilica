@@ -1,10 +1,12 @@
 #include "fit.h"
 #include "parallel.h"
 
+int my_rank;
+
 int main(int argc, char* argv[]){
 	
 	/* MPI Variables */
-	int my_rank = 0, p = 0; /* p is the number of processes */
+	int p = 0; /* p is the number of processes */
 #ifdef ON_DEMAND
 	int flag = 0, junk = 0, j = 0;
 #endif
@@ -53,6 +55,12 @@ int main(int argc, char* argv[]){
 	/* Total number of processes */
 	MPI_Comm_size (MPI_COMM_WORLD, &p);
 
+	if(p <= PS){
+		fprintf(stderr, "Number of process not valid\n");
+		MPI_Finalize();
+		exit(EXIT_FAILURE);
+	}
+
 /*********************************************************************
 						EMITTER
 *********************************************************************/		
@@ -63,7 +71,7 @@ int main(int argc, char* argv[]){
 		printf("EMITTER: RANK %d\n",my_rank);
 	#endif		
 		/* initialization of the fit */
-		initialization(argv[1], input, fit, &matrix, &cropped, &dimx, &dimy);
+		initialization(argv[1], input, fit, &matrix, &cropped, &dimx, &dimy, p);
 		
 		/* send to the workers the parameters and images */
 		dim = dimx * dimy;
@@ -146,9 +154,9 @@ int main(int argc, char* argv[]){
 	#endif
 		/* prendo il tempo */
 		gettimeofday(&tv1,NULL);
-		
+
 		for(i = 0; i < STREAMLENGTH; i++){
-		
+
 #ifdef ON_DEMAND
 			/* se su domanda testo per vedere quale worker ha finito */	
 			j = 0;
@@ -222,12 +230,15 @@ int main(int argc, char* argv[]){
 			
 			/* image procedure */
 			procedure (cropped, dimx, dimy, fit, matrice, vettore);
-
+			gsl_vector_fprintf (stdout, &vettore.vector, "%f");
 			gsl_linalg_LU_decomp(&matrice.matrix, permutation, &error); /* TEST ERRORE--> TODO*/
 			gsl_linalg_LU_solve(&matrice.matrix, permutation, &vettore.vector, delta);
 
-			for(i = 0; i < DIM_FIT; i++)
+			for(i = 0; i < DIM_FIT; i++){
+				printf("%d: %f + %f =" , i, fit[i], gsl_vector_get(delta, i));
 				fit[i]  = fit[i]  + gsl_vector_get(delta, i);
+				printf("%f\n", fit[i]);
+			}
 
 			MPI_Send(fit, DIM_FIT, MPI_DOUBLE, COLLECTOR , RESULTS, MPI_COMM_WORLD);
 		}
@@ -255,11 +266,10 @@ int main(int argc, char* argv[]){
 			gsl_linalg_LU_decomp(&matrice.matrix, permutation, &error); /* TEST ERRORE--> TODO*/
 			gsl_linalg_LU_solve(&matrice.matrix, permutation, &vettore.vector, delta);
 
-			int j;
 			for(j = 0; j < DIM_FIT; j++){
-				printf("%d: %f + %f =" ,j,input[j],gsl_vector_get(delta, j));
+				printf("%d: %f + %f =" , j, fit[j], gsl_vector_get(delta, j));
 				fit[j]  = fit[j]  + gsl_vector_get(delta, j);
-				printf("%f\n",fit[j]);
+				printf("%f\n", fit[j]);
 			}
 
 			MPI_Send(fit, DIM_FIT, MPI_DOUBLE, COLLECTOR , RESULTS, MPI_COMM_WORLD);

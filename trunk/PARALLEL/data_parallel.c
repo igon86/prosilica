@@ -1,10 +1,12 @@
 #include "fit_dp.h"
-#include "d_parallel.h"
+#include "data_parallel.h"
+
+int my_rank;
 
 int main(int argc, char* argv[]){
 	
 	/* MPI Variables */
-	int my_rank = 0, p = 0; /* p is the number of processes */
+	int p = 0; /* p is the number of processes */
 
 	MPI_Status status;
 
@@ -48,8 +50,9 @@ int main(int argc, char* argv[]){
 
 	/* usato solo per la reduce... si fa in place? loop unrolling? */
 	double* ret = (double*) malloc(sizeof(double) * DIM_FIT * (DIM_FIT + 1));
-	
-	
+	gsl_matrix_view r_matrice = gsl_matrix_view_array(ret, DIM_FIT, DIM_FIT);
+	gsl_vector_view r_vettore = gsl_vector_view_array(ret + (DIM_FIT * DIM_FIT), DIM_FIT);
+
 	/* check the input parameters */
 	if(argc != 2){
 		fprintf(stderr, "Invalid number of parameters\n");
@@ -73,7 +76,7 @@ int main(int argc, char* argv[]){
 		printf("EMITTER: RANK %d\n",my_rank);
 #endif		
 		/* initialization of the fit */
-		initialization(argv[1], input, fit, &matrix, &cropped, &dimx, &dimy);
+		initialization(argv[1], input, fit, &matrix, &cropped, &dimx, &dimy, p);
 	
 		/* send to the workers the parameters and images */
 		dim = dimx * dimy;
@@ -88,7 +91,7 @@ int main(int argc, char* argv[]){
 		
 		/* I have to determine the number of pixels per worker (risky since they must be multiples of the processes) */
 		ppw = (dimx*dimy)/p;
-		printf("Pixel per worker: %f",(double) (dimx*dimy)/ (double )p);
+		printf("Pixel per worker: %f\n",(double) (dimx*dimy)/ (double )p);
 		fflush(stdout);
 	}
 	else{
@@ -114,51 +117,50 @@ int main(int argc, char* argv[]){
 	 *********************************************************************/		
 	
 	ppw = (dimx*dimy)/p;
-	partition = (unsigned char*) malloc(sizeof(unsigned char)*ppw);
+	partition = (unsigned char*) malloc(sizeof(unsigned char) * ppw);
 	
 	printf("processo %d sopravvissuto alla init\n",my_rank);
 	MPI_Barrier(MPI_COMM_WORLD);
 
-	for (i=0;i<STREAMLENGTH;i++){
+	for (i = 0; i < STREAMLENGTH; i++){
 	
 		printf("LOOP %d\n",i);
 		
-		MPI_Scatter ( cropped, ppw, MPI_UNSIGNED_CHAR, 
-						 partition, 
-						 ppw, 
-						 MPI_UNSIGNED_CHAR, 
-						 EMITTER, 
-						 MPI_COMM_WORLD);
+		MPI_Scatter ( 	cropped,   ppw, MPI_UNSIGNED_CHAR, 
+			      	partition, ppw, MPI_UNSIGNED_CHAR, 
+			      	EMITTER, 	MPI_COMM_WORLD);
 						 
-		printf("processo %d sopravvissuto alla scatter\n",my_rank);
-		MPI_Barrier(MPI_COMM_WORLD);				 
+/*		printf("processo %d sopravvissuto alla scatter\n",my_rank);
+		MPI_Barrier(MPI_COMM_WORLD);				 */
+		printf("%d\n",dimy/p);
+		procedure (partition, dimx, dimy/p, fit, matrice, vettore);
 		
-		procedure (partition, dimx/p, dimy/p, fit, matrice, vettore);
-		
-		printf("processo %d sopravvissuto alla PROCEDURE\n",my_rank);
-		MPI_Barrier(MPI_COMM_WORLD);
+/*		printf("processo %d sopravvissuto alla PROCEDURE\n",my_rank);
+		MPI_Barrier(MPI_COMM_WORLD);*/
+
+		if(my_rank == EMITTER ) gsl_vector_fprintf (stdout, &r_vettore.vector, "%f");
 		
 		MPI_Reduce (data, ret, DIM_FIT * (DIM_FIT + 1), MPI_DOUBLE, MPI_SUM, EMITTER, MPI_COMM_WORLD);
 		
-		printf("processo %d sopravvissuto alla REDUCE\n",my_rank);
+		if(my_rank == EMITTER ) gsl_vector_fprintf (stdout, &r_vettore.vector, "%f");
+/*		printf("processo %d sopravvissuto alla REDUCE\n",my_rank);
 		fflush(stdout);
-		MPI_Barrier(MPI_COMM_WORLD);
+		MPI_Barrier(MPI_COMM_WORLD);*/
 		
-		/* da cambiare con il collettore? */
 		if (my_rank == EMITTER){
-			gsl_linalg_LU_decomp(&matrice.matrix, permutation, &error); /* TEST ERRORE--> TODO*/
-			gsl_linalg_LU_solve(&matrice.matrix, permutation, &vettore.vector, delta);
-
+			gsl_linalg_LU_decomp(&r_matrice.matrix, permutation, &error); /* TEST ERRORE--> TODO*/
+			gsl_linalg_LU_solve(&r_matrice.matrix, permutation, &r_vettore.vector, delta);
+			
 			for(j = 0; j < DIM_FIT; j++){
-				printf("%d: %f + %f =" ,j,input[j],gsl_vector_get(delta, j));
+				printf("%d: %f + %f =" , j, fit[j], gsl_vector_get(delta, j));
 				fit[j]  = fit[j]  + gsl_vector_get(delta, j);
-				printf("%f\n",fit[j]);
+				printf("%f\n", fit[j]);
 			}
-			printf("finito l'update\n");
-		}
-		fflush(stdout);
-		MPI_Barrier(MPI_COMM_WORLD);
-		
+	#ifdef DEBUG
+			printf("IMMAGINE %d %f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\n", i , fit[PAR_A], fit[PAR_X],
+			 fit[PAR_Y], fit[PAR_SX], fit[PAR_SY], fit[PAR_a], fit[PAR_b], fit[PAR_c]);
+	#endif
+		}		
 	}
 	
 	

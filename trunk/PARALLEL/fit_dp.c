@@ -1,6 +1,8 @@
 #include "fit_dp.h"
+#include "data_parallel.h" 
 
 static unsigned char *crop = NULL;
+extern int my_rank;
 
 /***************************************************************************************************************
 							Centroid
@@ -109,6 +111,23 @@ unsigned char *cropImage(const unsigned char *input, int w, int h, int x1, int x
 }
 
 /***************************************************************************************************************
+ Crop function
+ ****************************************************************************************************************/
+
+unsigned char *cropImage2(const unsigned char *input, int w, int h, int x0, int y0, int dimx, int dimy) {
+	int count = 0, i = 0;
+	int limit = w * (y0+dimy + 1);
+	int dimension = dimx * dimy;
+	//if (crop == NULL)
+		crop = (unsigned char*) malloc(dimension);
+	for (i = 0; i < w*h; i++)
+		if (i % w >= x0 && i % w <= x0+dimx-1 && i / w >= y0 && i / w <= y0 + dimy-1)
+			crop[count++] = input[i];
+	printf("DEBUG: count %d dimension %d\n",count,dimension);
+	return crop;
+}
+
+/***************************************************************************************************************
  Evaluate Gaussian at coordinates (x,y)
  ****************************************************************************************************************/
 
@@ -126,24 +145,28 @@ double evaluateGaussian(double* gaussian, int x, int y) {
 
 int procedure (const unsigned char *data, int w, int h,double * results, gsl_matrix_view matrice,gsl_vector_view vettore) {
 	int npixels = w * h;
-	double *diff = (double*) malloc (sizeof(double) * npixels);
+	
 	int i = 0, x = 0, y = 0, base = 0;
 	
 	/* vedtors for calculations */
-
 	gsl_matrix_view gsl_M;
 	gsl_vector_view differenze;
 
+	char* bandeimpara2 = (char*) malloc(100);
+	sprintf(bandeimpara2,"data%d",my_rank);
+	writeImage((unsigned char *) data,bandeimpara2, w, h);
 
 	/** variables used to keep track of the square error*/
 	double *M = (double*) malloc(sizeof(double) * DIM_FIT * npixels);
+
+	double *diff = (double*) malloc (sizeof(double) * npixels);
 	
 	double square = 0.0, diff_x = 0.0, diff_y = 0.0, frac_x = 0.0, frac_y = 0.0, sig2x = 0.0, sig2y = 0.0, dexp = 0.0;
 		
 	/* Task over the image */
 	for (i = 0; i < npixels; i++) {
 		x = (i + 1) % w;
-		y = (i + 1) / w;
+		y = ((i + 1) / w )+h*my_rank;
 			
 		base = i * DIM_FIT;
 		diff[i] = data[i] - evaluateGaussian(results, x, y);
@@ -171,6 +194,14 @@ int procedure (const unsigned char *data, int w, int h,double * results, gsl_mat
 		square = square + pow(diff[i], 2);
 		
 	gsl_M = gsl_matrix_view_array(M, npixels, DIM_FIT);
+
+		char* bandeimpara = (char*) malloc(100);
+		sprintf(bandeimpara,"robbaccia%d",my_rank);
+		FILE* out = fopen(bandeimpara,"w");
+		gsl_matrix_fprintf(out,&gsl_M.matrix,"%f");
+	
+
+	
 	differenze = gsl_vector_view_array(diff, npixels);
 		
 	/* Compute matrix = M'*M */
@@ -247,7 +278,7 @@ void writeImage(unsigned char* image, char* dest, int w, int h) {
 				Initialize of the fit
 ****************************************************************************************************************/
 
-int initialization(char* parameter, double* input, double* fit, unsigned char** matrix, unsigned char** cropped, int* dimx, int* dimy){
+int initialization(char* parameter, double* input, double* fit, unsigned char** matrix, unsigned char** cropped, int* dimx, int* dimy, int p){
 		
 	/* parameters for the cookie cutter */
 	double x0 = 0.0, y0 = 0.0;
@@ -315,11 +346,17 @@ int initialization(char* parameter, double* input, double* fit, unsigned char** 
 		/* inizialization for the diameter of the gaussian*/
 		span_x = (int) (2 * FWHM_x);
 		span_y = (int) (2 * FWHM_y);
-	
-		/* determination of the dimension of the crop */
+
 		*dimx = 2 * span_x + 1;
 		*dimy = 2 * span_y + 1;
-	
+		
+		printf("%d - %d\n",*dimx,*dimy);
+		while(*dimx % p != 0)
+			++*dimx;
+		while(*dimy % p != 0)
+			++*dimy;
+		printf("%d - %d\n",*dimx,*dimy);
+		
 		/* inizialization of the position coordinates */
 		x = (int) x0;
 		y = (int) y0;
@@ -340,8 +377,9 @@ int initialization(char* parameter, double* input, double* fit, unsigned char** 
 #if DEBUG
 	printf("%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\n", fit[PAR_A], fit[PAR_X] + x - span_x, fit[PAR_Y] + y - span_y, fit[PAR_SX], fit[PAR_SY], fit[PAR_a], fit[PAR_b], fit[PAR_c]);
 #endif
-		*cropped = cropImage((unsigned char*) *matrix, width, length, x - span_x, x + span_x, y - span_y, y + span_y);
-	
+
+// *cropped = cropImage((unsigned char*) *matrix, width, length, x - span_x, x + span_x, y - span_y, y + span_y); 
+		*cropped = cropImage2((unsigned char*) *matrix, width, length, x - span_x, y - span_y, *dimx, *dimy);	
 #if DEBUG
 		writeImage(*cropped, (char *) "./CROP.tiff", *dimx, *dimy);
 #endif
