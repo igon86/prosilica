@@ -1,4 +1,4 @@
-#include "fit.h"
+#include "fit_dp.h"
 
 static unsigned char *crop = NULL;
 
@@ -124,23 +124,19 @@ double evaluateGaussian(double* gaussian, int x, int y) {
 								fit algorithm
  ****************************************************************************************************************/
 
-int procedure (const unsigned char *data, int w, int h, double * results) {
+int procedure (const unsigned char *data, int w, int h,double * results, gsl_matrix_view matrice,gsl_vector_view vettore) {
 	int npixels = w * h;
 	double *diff = (double*) malloc (sizeof(double) * npixels);
-	int i = 0, x = 0, y = 0, error = 0, base = 0;
-
+	int i = 0, x = 0, y = 0, base = 0;
+	
 	/* vedtors for calculations */
-	gsl_vector *delta = gsl_vector_alloc(DIM_FIT);
-	gsl_vector *vettore = gsl_vector_alloc(DIM_FIT);
+
 	gsl_matrix_view gsl_M;
-	gsl_matrix_view matrice;
 	gsl_vector_view differenze;
-	gsl_permutation *permutation;
+
 
 	/** variables used to keep track of the square error*/
 	double *M = (double*) malloc(sizeof(double) * DIM_FIT * npixels);
-	
-	double matrix [DIM_FIT * DIM_FIT];
 	
 	double square = 0.0, diff_x = 0.0, diff_y = 0.0, frac_x = 0.0, frac_y = 0.0, sig2x = 0.0, sig2y = 0.0, dexp = 0.0;
 		
@@ -175,33 +171,13 @@ int procedure (const unsigned char *data, int w, int h, double * results) {
 		square = square + pow(diff[i], 2);
 		
 	gsl_M = gsl_matrix_view_array(M, npixels, DIM_FIT);
-	matrice = gsl_matrix_view_array(matrix, DIM_FIT, DIM_FIT);
 	differenze = gsl_vector_view_array(diff, npixels);
 		
 	/* Compute matrix = M'*M */
 	gsl_blas_dgemm(CblasTrans, CblasNoTrans, 1.0, &gsl_M.matrix, &gsl_M.matrix, 0.0, &matrice.matrix);
 	/* Compute vector = M'*diff */
-	gsl_blas_dgemv(CblasTrans, 1.0, &gsl_M.matrix, &differenze.vector, 0.0, vettore);
+	gsl_blas_dgemv(CblasTrans, 1.0, &gsl_M.matrix, &differenze.vector, 0.0, &vettore.vector);
 	/* Compute the delta vector of deviation */
-		
-	permutation = gsl_permutation_alloc(DIM_FIT);	
-	gsl_linalg_LU_decomp(&matrice.matrix, permutation, &error); /* TEST ERRORE--> TODO*/
-	gsl_linalg_LU_solve(&matrice.matrix, permutation, vettore, delta);
-
-/*#if DEBUG
-	printf("delta = \n");
-	gsl_vector_fprintf(stdout, delta, "%g");
-#endif*/
-		
-	/** result adjustment */
-	for(i = 0; i < DIM_FIT; i++)
-		results[i]  = results[i]  + gsl_vector_get(delta, i);
-
-	/* free the memory */
-	free(M);
-	free(diff);	
-	gsl_vector_free(vettore);
-	gsl_vector_free(delta);
 
 	return (int) square;
 }
