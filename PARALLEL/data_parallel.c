@@ -1,5 +1,5 @@
-#include "fit_dp.h"
-#include "data_parallel.h"
+#include "fit.h"
+#include "parallel.h"
 
 int my_rank;
 
@@ -7,14 +7,10 @@ int main(int argc, char* argv[]){
 	
 	/* MPI Variables */
 	int p = 0; /* p is the number of processes */
-
 	MPI_Status status;
-
- 	/* dimension of cropped image */
-	int dim = 0;
 	
 	/* pixels per worker */
-	int ppw;
+	int ppw = 0;
 
 	/* time variables */
 	/*struct timeval tv1, tv2;*/
@@ -42,13 +38,13 @@ int main(int argc, char* argv[]){
 	gsl_permutation* permutation = gsl_permutation_alloc(DIM_FIT);
 	
 	/* error status of gsl_LU */
-	int error;
+	int error = 0;
 
 	double* data = (double*) malloc(sizeof(double) * DIM_FIT * (DIM_FIT + 1));
 	gsl_matrix_view matrice = gsl_matrix_view_array(data, DIM_FIT, DIM_FIT);
 	gsl_vector_view vettore = gsl_vector_view_array(data + (DIM_FIT * DIM_FIT), DIM_FIT);
 
-	/* usato solo per la reduce... si fa in place? loop unrolling? */
+	/* output buffer of reduce */
 	double* ret = (double*) malloc(sizeof(double) * DIM_FIT * (DIM_FIT + 1));
 	gsl_matrix_view r_matrice = gsl_matrix_view_array(ret, DIM_FIT, DIM_FIT);
 	gsl_vector_view r_vettore = gsl_vector_view_array(ret + (DIM_FIT * DIM_FIT), DIM_FIT);
@@ -79,7 +75,6 @@ int main(int argc, char* argv[]){
 		initialization(argv[1], input, fit, &matrix, &cropped, &dimx, &dimy, p);
 	
 		/* send to the workers the parameters and images */
-		dim = dimx * dimy;
 		for(i = PS; i < p; i++){
 			MPI_Send(&dimx, 1, MPI_INT, i, PARAMETERS, MPI_COMM_WORLD);
 			MPI_Send(&dimy, 1, MPI_INT, i, PARAMETERS, MPI_COMM_WORLD);
@@ -88,11 +83,6 @@ int main(int argc, char* argv[]){
 			printf("EMITTER: DATI INIZIALI INVIATI A %d\n",i);
 #endif
 		}
-		
-		/* I have to determine the number of pixels per worker (risky since they must be multiples of the processes) */
-		ppw = (dimx*dimy)/p;
-		printf("Pixel per worker: %f\n",(double) (dimx*dimy)/ (double )p);
-		fflush(stdout);
 	}
 	else{
 #if DEBUG
@@ -118,49 +108,32 @@ int main(int argc, char* argv[]){
 	
 	ppw = (dimx*dimy)/p;
 	partition = (unsigned char*) malloc(sizeof(unsigned char) * ppw);
-	
-	printf("processo %d sopravvissuto alla init\n",my_rank);
-	MPI_Barrier(MPI_COMM_WORLD);
 
 	for (i = 0; i < STREAMLENGTH; i++){
-	
-		printf("LOOP %d\n",i);
 		
+		/* the emitter executes the scatter */
 		MPI_Scatter ( 	cropped,   ppw, MPI_UNSIGNED_CHAR, 
 			      	partition, ppw, MPI_UNSIGNED_CHAR, 
 			      	EMITTER, 	MPI_COMM_WORLD);
 						 
-/*		printf("processo %d sopravvissuto alla scatter\n",my_rank);
-		MPI_Barrier(MPI_COMM_WORLD);				 */
-		printf("%d\n",dimy/p);
+		/* execute the procedure over my partition */
 		procedure (partition, dimx, dimy/p, fit, matrice, vettore);
 		
-/*		printf("processo %d sopravvissuto alla PROCEDURE\n",my_rank);
-		MPI_Barrier(MPI_COMM_WORLD);*/
-
-		if(my_rank == EMITTER ) gsl_vector_fprintf (stdout, &r_vettore.vector, "%f");
-		
+		/* if I am the emitter I execute the reduce */
 		MPI_Reduce (data, ret, DIM_FIT * (DIM_FIT + 1), MPI_DOUBLE, MPI_SUM, EMITTER, MPI_COMM_WORLD);
 		
-		if(my_rank == EMITTER ) gsl_vector_fprintf (stdout, &r_vettore.vector, "%f");
-/*		printf("processo %d sopravvissuto alla REDUCE\n",my_rank);
-		fflush(stdout);
-		MPI_Barrier(MPI_COMM_WORLD);*/
-		
+		/* and finish the computation */
 		if (my_rank == EMITTER){
 			gsl_linalg_LU_decomp(&r_matrice.matrix, permutation, &error); /* TEST ERRORE--> TODO*/
 			gsl_linalg_LU_solve(&r_matrice.matrix, permutation, &r_vettore.vector, delta);
 			
-			for(j = 0; j < DIM_FIT; j++){
-				printf("%d: %f + %f =" , j, fit[j], gsl_vector_get(delta, j));
+			for(j = 0; j < DIM_FIT; j++)
 				fit[j]  = fit[j]  + gsl_vector_get(delta, j);
-				printf("%f\n", fit[j]);
-			}
 	#ifdef DEBUG
 			printf("IMMAGINE %d %f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\n", i , fit[PAR_A], fit[PAR_X],
 			 fit[PAR_Y], fit[PAR_SX], fit[PAR_SY], fit[PAR_a], fit[PAR_b], fit[PAR_c]);
 	#endif
-		}		
+		}
 	}
 	
 	

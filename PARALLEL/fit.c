@@ -97,14 +97,14 @@ unsigned char *createMask(unsigned char *image, int w, int h, int max, int min, 
  Crop function
  ****************************************************************************************************************/
 
-unsigned char *cropImage(const unsigned char *input, int w, int h, int x1, int x2, int y1, int y2) {
+unsigned char *cropImage(const unsigned char *input, int w, int h, int x0, int y0, int dimx, int dimy) {
 	int count = 0, i = 0;
-	int limit = w * (y2 + 1);
-	int dimension = (x2 - x1 + 1) * (y2 - y1 + 1);
-	if (crop == NULL)
-		crop = (unsigned char*) malloc(dimension);
-	for (i = 0; i < limit; i++)
-		if (i % w >= x1 && i % w <= x2 && i / w >= y1 && i / w <= y2)
+	int dimension = dimx * dimy;
+	if(crop != NULL)
+		free(crop);
+	crop = (unsigned char*) malloc(dimension);
+	for (i = 0; i < w*h; i++)
+		if (i % w >= x0 && i % w <= x0+dimx-1 && i / w >= y0 && i / w <= y0 + dimy-1)
 			crop[count++] = input[i];
 	return crop;
 }
@@ -144,7 +144,13 @@ int procedure (const unsigned char *data, int w, int h,double * results, gsl_mat
 	/* Task over the image */
 	for (i = 0; i < npixels; i++) {
 		x = (i + 1) % w;
-		y = (i + 1) / w;
+#ifdef FARM
+		y = ((i + 1) / w);
+#endif
+
+#ifdef DATA_PARALLEL
+		y = ((i + 1) / w ) + h * my_rank;
+#endif
 			
 		base = i * DIM_FIT;
 		diff[i] = data[i] - evaluateGaussian(results, x, y);
@@ -173,18 +179,12 @@ int procedure (const unsigned char *data, int w, int h,double * results, gsl_mat
 		
 	gsl_M = gsl_matrix_view_array(M, npixels, DIM_FIT);
 
-	if(my_rank == 2){
-		FILE* out = fopen("./robbaccia_giusta","w");
-		gsl_matrix_fprintf(out,&gsl_M.matrix,"%f");
-	}
-
 	differenze = gsl_vector_view_array(diff, npixels);
 		
 	/* Compute matrix = M'*M */
 	gsl_blas_dgemm(CblasTrans, CblasNoTrans, 1.0, &gsl_M.matrix, &gsl_M.matrix, 0.0, &matrice.matrix);
 	/* Compute vector = M'*diff */
 	gsl_blas_dgemv(CblasTrans, 1.0, &gsl_M.matrix, &differenze.vector, 0.0, &vettore.vector);
-	/* Compute the delta vector of deviation */
 
 	return (int) square;
 }
@@ -322,11 +322,17 @@ int initialization(char* parameter, double* input, double* fit, unsigned char** 
 		/* inizialization for the diameter of the gaussian*/
 		span_x = (int) (2 * FWHM_x);
 		span_y = (int) (2 * FWHM_y);
-	
-		/* determination of the dimension of the crop */
+
 		*dimx = 2 * span_x + 1;
 		*dimy = 2 * span_y + 1;
 		
+#ifdef DATA_PARALLEL
+		while(*dimx % p != 0)
+			++*dimx;
+		while(*dimy % p != 0)
+			++*dimy;
+#endif
+
 		/* inizialization of the position coordinates */
 		x = (int) x0;
 		y = (int) y0;
@@ -347,7 +353,7 @@ int initialization(char* parameter, double* input, double* fit, unsigned char** 
 #if DEBUG
 	printf("%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\n", fit[PAR_A], fit[PAR_X] + x - span_x, fit[PAR_Y] + y - span_y, fit[PAR_SX], fit[PAR_SY], fit[PAR_a], fit[PAR_b], fit[PAR_c]);
 #endif
-		*cropped = cropImage((unsigned char*) *matrix, width, length, x - span_x, x + span_x, y - span_y, y + span_y);
+		*cropped = cropImage((unsigned char*) *matrix, width, length, x - span_x, y - span_y, *dimx, *dimy);	
 	
 #if DEBUG
 		writeImage(*cropped, (char *) "./CROP.tiff", *dimx, *dimy);
