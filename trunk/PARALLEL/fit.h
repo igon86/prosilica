@@ -40,7 +40,7 @@ unsigned char* createMask (unsigned char* image, int w, int h, int max, int min,
 void centroid (unsigned char* image, int w, int h, double* x, double* y, double* sigma_x, double* sigma_y);
 
 /* Reduce the dimension of the image */
-unsigned char* cropImage (const unsigned char *input, int w, int h, int x1, int x2, int y1, int y2);
+unsigned char *cropImage(const unsigned char *input, int w, int h, int x0, int y0, int dimx, int dimy);
 
 /* Task over the image */
 int procedure (const unsigned char* data, int x, int y, double * results, gsl_matrix_view matrice,gsl_vector_view vettore);

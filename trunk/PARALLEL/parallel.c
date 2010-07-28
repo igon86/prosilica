@@ -8,7 +8,7 @@ int main(int argc, char* argv[]){
 	/* MPI Variables */
 	int p = 0; /* p is the number of processes */
 #ifdef ON_DEMAND
-	int flag = 0, junk = 0, j = 0;
+	int flag = 0, junk = 0;
 #endif
 	MPI_Status status;
  	/* dimension of cropped image */
@@ -30,7 +30,7 @@ int main(int argc, char* argv[]){
 	unsigned char *cropped = NULL;
 
 	/* indexes */
-	int i = 0;
+	int i = 0, j = 0;
 
 	/* data for the LU solver */
 	double* data = (double*) malloc(sizeof(double) * DIM_FIT * (DIM_FIT + 1));
