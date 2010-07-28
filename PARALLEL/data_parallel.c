@@ -13,7 +13,7 @@ int main(int argc, char* argv[]){
 	int ppw = 0;
 
 	/* time variables */
-	/*struct timeval tv1, tv2;*/
+	struct timeval tv1, tv2;
 
 	/* Dimension of the cropped image */
 	int dimx = 0, dimy = 0;
@@ -56,47 +56,72 @@ int main(int argc, char* argv[]){
 	}
 			
 	/* Initialize of MPI */
-	MPI_Init (&argc, &argv);
+	if(MPI_Init (&argc, &argv) != MPI_SUCCESS){
+		fprintf(stderr, "MPI_Init failed\n");
+		exit(EXIT_FAILURE);
+	}
 	/* Every process takes their own rank*/
-	MPI_Comm_rank (MPI_COMM_WORLD, &my_rank);
+	if(MPI_Comm_rank (MPI_COMM_WORLD, &my_rank) != MPI_SUCCESS){
+		fprintf(stderr, "MPI_Comm_rank failed\n");
+		exit(EXIT_FAILURE);
+	}
 	/* Total number of processes */
-	MPI_Comm_size (MPI_COMM_WORLD, &p);
+	if(MPI_Comm_size (MPI_COMM_WORLD, &p) != MPI_SUCCESS){
+		fprintf(stderr, "MPI_Comm_size failed\n");
+		exit(EXIT_FAILURE);
+	}
 
 /*********************************************************************
 						INIT
 *********************************************************************/		
 
 	if(my_rank == EMITTER){
-		/* THIS IS THE TASK OF THE EMITTER PROCESS */
 #if DEBUG
-		printf("EMITTER: RANK %d\n",my_rank);
+		printf("Emitter with rank %d\n", my_rank);
 #endif		
 		/* initialization of the fit */
 		initialization(argv[1], input, fit, &matrix, &cropped, &dimx, &dimy, p);
 	
 		/* send to the workers the parameters and images */
 		for(i = PS; i < p; i++){
-			MPI_Send(&dimx, 1, MPI_INT, i, PARAMETERS, MPI_COMM_WORLD);
-			MPI_Send(&dimy, 1, MPI_INT, i, PARAMETERS, MPI_COMM_WORLD);
-			MPI_Send(fit, DIM_FIT, MPI_DOUBLE, i, RESULTS, MPI_COMM_WORLD);
+			if(MPI_Send(&dimx, 1, MPI_INT, i, PARAMETERS, MPI_COMM_WORLD) != MPI_SUCCESS){
+				fprintf(stderr, "MPI_Send failed\n");
+				exit(EXIT_FAILURE);
+			}
+			if(MPI_Send(&dimy, 1, MPI_INT, i, PARAMETERS, MPI_COMM_WORLD) != MPI_SUCCESS){
+				fprintf(stderr, "MPI_Send failed\n");
+				exit(EXIT_FAILURE);
+			}
+			if(MPI_Send(fit, DIM_FIT, MPI_DOUBLE, i, RESULTS, MPI_COMM_WORLD) != MPI_SUCCESS){
+				fprintf(stderr, "MPI_Send failed\n");
+				exit(EXIT_FAILURE);
+			}
 #if DEBUG
-			printf("EMITTER: DATI INIZIALI INVIATI A %d\n",i);
+			printf("Emitter sends data to %d\n",i);
 #endif
 		}
-	}
-	else{
+	} else { 
 #if DEBUG
-		printf("WORKER: RANK %d\n",my_rank);
+		printf("Worker with rank %d\n", my_rank);
 #endif
 		/* receive the dimension of the cropped image */
-		MPI_Recv(&dimx, 1, MPI_INT, EMITTER, PARAMETERS, MPI_COMM_WORLD, &status);
-		MPI_Recv(&dimy, 1, MPI_INT, EMITTER, PARAMETERS, MPI_COMM_WORLD, &status);
+		if(MPI_Recv(&dimx, 1, MPI_INT, EMITTER, PARAMETERS, MPI_COMM_WORLD, &status) != MPI_SUCCESS) {
+			fprintf(stderr, "MPI_recv failed\n");
+			exit(EXIT_FAILURE);
+		}
+		if(MPI_Recv(&dimy, 1, MPI_INT, EMITTER, PARAMETERS, MPI_COMM_WORLD, &status) != MPI_SUCCESS) {
+			fprintf(stderr, "MPI_recv failed\n");
+			exit(EXIT_FAILURE);
+		}
 		/* receive the fit of the Gaussian */
-		MPI_Recv(fit, DIM_FIT, MPI_DOUBLE, EMITTER, RESULTS, MPI_COMM_WORLD, &status);
+		if(MPI_Recv(fit, DIM_FIT, MPI_DOUBLE, EMITTER, RESULTS, MPI_COMM_WORLD, &status) != MPI_SUCCESS) {
+			fprintf(stderr, "MPI_recv failed\n");
+			exit(EXIT_FAILURE);
+		}
 		
-#if DEBUG
-		printf("PROCESSO %d, the initial fit: %f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\n", my_rank, fit[PAR_A], fit[PAR_X],
-		fit[PAR_Y], fit[PAR_SX], fit[PAR_SY], fit[PAR_a], fit[PAR_b], fit[PAR_c]);
+#ifdef DEBUG
+		printf("Process %d, the initial fit is:\n%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\n", my_rank, fit[PAR_A], fit[PAR_X],
+			fit[PAR_Y], fit[PAR_SX], fit[PAR_SY], fit[PAR_a], fit[PAR_b], fit[PAR_c]);
 #endif
 
 	}
@@ -106,21 +131,29 @@ int main(int argc, char* argv[]){
 	 LOOP on ELEMENTS
 	 *********************************************************************/		
 	
-	ppw = (dimx*dimy)/p;
+	ppw = (dimx * dimy) / p;
 	partition = (unsigned char*) malloc(sizeof(unsigned char) * ppw);
+
+	/* if I am the emitter I take the time */
+	if(my_rank == EMITTER)
+		gettimeofday(&tv1, NULL);
 
 	for (i = 0; i < STREAMLENGTH; i++){
 		
 		/* the emitter executes the scatter */
-		MPI_Scatter ( 	cropped,   ppw, MPI_UNSIGNED_CHAR, 
-			      	partition, ppw, MPI_UNSIGNED_CHAR, 
-			      	EMITTER, 	MPI_COMM_WORLD);
+		if(MPI_Scatter (cropped,   ppw, MPI_UNSIGNED_CHAR, partition, ppw, MPI_UNSIGNED_CHAR, EMITTER, MPI_COMM_WORLD) != MPI_SUCCESS){
+			fprintf(stderr, "MPI_Scatter failed\n");
+			exit(EXIT_FAILURE);
+		}
 						 
 		/* execute the procedure over my partition */
 		procedure (partition, dimx, dimy/p, fit, matrice, vettore);
 		
 		/* if I am the emitter I execute the reduce */
-		MPI_Reduce (data, ret, DIM_FIT * (DIM_FIT + 1), MPI_DOUBLE, MPI_SUM, EMITTER, MPI_COMM_WORLD);
+		if(MPI_Reduce (data, ret, DIM_FIT * (DIM_FIT + 1), MPI_DOUBLE, MPI_SUM, EMITTER, MPI_COMM_WORLD) != MPI_SUCCESS){
+			fprintf(stderr, "MPI_Reduce failed\n");
+			exit(EXIT_FAILURE);
+		}	
 		
 		/* and finish the computation */
 		if (my_rank == EMITTER){
@@ -129,16 +162,24 @@ int main(int argc, char* argv[]){
 			
 			for(j = 0; j < DIM_FIT; j++)
 				fit[j]  = fit[j]  + gsl_vector_get(delta, j);
-	#ifdef DEBUG
-			printf("IMMAGINE %d %f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\n", i , fit[PAR_A], fit[PAR_X],
-			 fit[PAR_Y], fit[PAR_SX], fit[PAR_SY], fit[PAR_a], fit[PAR_b], fit[PAR_c]);
-	#endif
+#ifdef DEBUG
+		printf("Image %d: %f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\n", i , fit[PAR_A], fit[PAR_X], 
+			fit[PAR_Y], fit[PAR_SX], fit[PAR_SY], fit[PAR_a], fit[PAR_b], fit[PAR_c]);
+#endif
 		}
 	}
 	
+	if(my_rank == EMITTER){
+		gettimeofday(&tv2, NULL);
+		printf("Process with rank %d (emitter), the completion time: %ld\n", 
+			my_rank, (tv2.tv_sec - tv1.tv_sec)*1000000 + tv2.tv_usec - tv1.tv_usec);
+	}
 	
 	/* Finalize of MPI */
-	MPI_Finalize();
+	if(MPI_Finalize() != MPI_SUCCESS){
+		fprintf(stderr, "MPI_Finalize failed\n");
+		exit(EXIT_FAILURE);
+	}
 	
 	return 0;
 }
