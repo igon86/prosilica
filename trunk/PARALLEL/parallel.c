@@ -186,7 +186,7 @@ int main(int argc, char* argv[]){
 
 #else
 			/* if NOT ON_DEMAND the colector receives linearly */
-			if/MPI_Recv(fit, DIM_FIT ,MPI_DOUBLE, i % (p - PS) + PS, RESULTS, MPI_COMM_WORLD, &status) != MPI_SUCCESS) {
+			if(MPI_Recv(fit, DIM_FIT ,MPI_DOUBLE, i % (p - PS) + PS, RESULTS, MPI_COMM_WORLD, &status) != MPI_SUCCESS) {
 				fprintf(stderr, "MPI_recv failed\n");
 				exit(EXIT_FAILURE);
 			}
