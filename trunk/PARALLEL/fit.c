@@ -2,17 +2,20 @@
 #include "parallel.h"
 
 static unsigned char *crop = NULL;
+
 extern int my_rank;
+
 /***************************************************************************************************************
 							Centroid
  ****************************************************************************************************************/
 
 /** image need to be the output of a createMask function
  both the center position and the dimension of the centroid depends
- on the filter parameter of the createMask function previously used*/
+ on the filter parameter of the createMask function previously used */
 
 void centroid(unsigned char *image, int w, int h, double *x, double *y, double *sigma_x, double *sigma_y) {	
 	int npixels = w * h;
+	// INCAPIBILE
 	int* counth = (int*) malloc (sizeof(int) * h);
 	int* countw = (int*) malloc (sizeof(int) * w);	
 	int count = 0, i = 0;
@@ -53,15 +56,25 @@ void centroid(unsigned char *image, int w, int h, double *x, double *y, double *
 	*y = h_center;
 	*sigma_x = (right_border - left_border) / 2.0;
 	*sigma_y = (up_border - down_border) / 2.0;
-	/* free the space */
+
 	free(counth);
 	free(countw);
 }
 
 
 /***************************************************************************************************************
- Matrix
+								Create Matrix
  ****************************************************************************************************************/
+ 
+/** 
+Return the image of the gaussian, dimension of the image are given by ( length, width ) parameters while 
+parameters of the gaussian are stored in the array input.
+
+\param	(length, width)		dimension of the returned image
+\param	input				array containing gaussian parameters
+
+\retval		representation of the gaussian as a 8bit image (unsigned char)
+*/ 
 unsigned char * createMatrix (int length, int width, double* input){
 	int i = 0, j = 0;	
 	int dim = length * width;
@@ -75,9 +88,20 @@ unsigned char * createMatrix (int length, int width, double* input){
 }
 
 /***************************************************************************************************************
- Cookie
+										Cookie Mask
  ****************************************************************************************************************/
 
+/** 
+Return the luminosity mask of an image. Pixels above a certain threshold of luminosity (specified 
+by the filter parameter) are white while all the others are black.
+
+\param		image		pointer of the image
+\param		w,h			width and heigth of the image
+\param		max,min		maximimum and minumum luminosity of the image
+\param		filter		determines the threshold for the mask, 0 < filter < 1
+
+\retval		representation of the image mask as a 8bit image (unsigned char)
+*/ 
 unsigned char *createMask(unsigned char *image, int w, int h, int max, int min, double filter) {
 	int threshold = (int) (filter * (max - min));
 	int i = 0;
@@ -94,8 +118,19 @@ unsigned char *createMask(unsigned char *image, int w, int h, int max, int min, 
 }
 
 /***************************************************************************************************************
- Crop function
+										Crop Function
  ****************************************************************************************************************/
+
+/** 
+Return a portion of the input image as specified by the input coordinates and x,y dimensions
+
+\param		image		pointer of the input image
+\param		w,h			width and heigth of the input image
+\param		x0,y0		coordinates of the starting point of the crop
+\param		dimx,dimy	dimensione of the crop 
+
+\retval		representation of the crop as a 8bit image (unsigned char)
+*/ 
 
 unsigned char *cropImage(const unsigned char *input, int w, int h, int x0, int y0, int dimx, int dimy) {
 	int count = 0, i = 0;
@@ -110,9 +145,17 @@ unsigned char *cropImage(const unsigned char *input, int w, int h, int x0, int y
 }
 
 /***************************************************************************************************************
- Evaluate Gaussian at coordinates (x,y)
+								Evaluate Gaussian at Coordinates (x,y)
  ****************************************************************************************************************/
 
+/** 
+Return the value of a given gaussian in a given point 
+
+\param		gaussian	parameters of the gaussian
+\param		x,y			coordinates of the point
+
+\retval		value of the gaussian in the point of given coordinates
+*/ 
 double evaluateGaussian(double* gaussian, int x, int y) {
 	double slope = gaussian[PAR_a] * x + gaussian[PAR_b] * y + gaussian[PAR_c];
 	double x_arg = pow(((double) x - gaussian[PAR_X]), 2.0) / pow(gaussian[PAR_SX], 2.0);
@@ -122,28 +165,45 @@ double evaluateGaussian(double* gaussian, int x, int y) {
 }
 
 /***************************************************************************************************************
-								fit algorithm
+									Fit Algorithm
  ****************************************************************************************************************/
 
-int procedure (const unsigned char *data, int w, int h,double * results, gsl_matrix_view matrice,gsl_vector_view vettore) {
-	int npixels = w * h;
-	double *diff = (double*) malloc (sizeof(double) * npixels);
-	int i = 0, x = 0, y = 0, base = 0;
-	
-	/* vedtors for calculations */
+/** 
+Given an image and an array of previous results return the Gauss matrix and vector
 
+\param		data		image of the gaussian
+\param		w,h			width and height of the image
+\param		results		parameters of the gaussian at the previous step
+\param		matrice		gauss matrix
+\param		vettore		gauss vector
+
+*/ 
+void procedure (const unsigned char *data, int w, int h, double * results, gsl_matrix_view matrice,gsl_vector_view vettore) {
+
+	int npixels = w * h;
+	
+	int i = 0, x = 0, y = 0, base = 0;
+	double diff_x = 0.0, diff_y = 0.0, frac_x = 0.0, frac_y = 0.0, sig2x = 0.0, sig2y = 0.0, dexp = 0.0;
+	
+	/* vectors used in the main loop with relative gsl_view */
 	gsl_matrix_view gsl_M;
 	gsl_vector_view differenze;
-
-
-	/** variables used to keep track of the square error*/
-	double *M = (double*) malloc(sizeof(double) * DIM_FIT * npixels);
 	
-	double square = 0.0, diff_x = 0.0, diff_y = 0.0, frac_x = 0.0, frac_y = 0.0, sig2x = 0.0, sig2y = 0.0, dexp = 0.0;
-		
-	/* Task over the image */
+	double *M = (double*) malloc(sizeof(double) * DIM_FIT * npixels);
+	double *diff = (double*) malloc (sizeof(double) * npixels);
+	
+	gsl_M = gsl_matrix_view_array(M, npixels, DIM_FIT);
+	differenze = gsl_vector_view_array(diff, npixels);
+	
+	/* Task over the image, for every pixels its coordinates are determined first
+	then the actual data is compared with prediction and used to construct the matrix M and
+	the vector diff */
 	for (i = 0; i < npixels; i++) {
 		x = (i + 1) % w;
+
+		/** in case of a data parallel computation the worker owns only a portion of rows of the image
+		thus the correct heigth of the examined point is determined using the rank of the worker */
+			
 #ifdef FARM
 		y = ((i + 1) / w);
 #endif
@@ -173,26 +233,26 @@ int procedure (const unsigned char *data, int w, int h,double * results, gsl_mat
 		M[base + 7] = 1.0;
 	}
 		
-	/* square calculation and array adjustment */
-	for (i = 0; i < npixels; i++)
-		square = square + pow(diff[i], 2);
-		
-	gsl_M = gsl_matrix_view_array(M, npixels, DIM_FIT);
-
-	differenze = gsl_vector_view_array(diff, npixels);
-		
 	/* Compute matrix = M'*M */
 	gsl_blas_dgemm(CblasTrans, CblasNoTrans, 1.0, &gsl_M.matrix, &gsl_M.matrix, 0.0, &matrice.matrix);
 	/* Compute vector = M'*diff */
 	gsl_blas_dgemv(CblasTrans, 1.0, &gsl_M.matrix, &differenze.vector, 0.0, &vettore.vector);
-
-	return (int) square;
+	
 }
 
 /***************************************************************************************************************
- Calculate Max & Min of an image
+							Calculate Max & Min Luminosity of an Image
  ****************************************************************************************************************/
 
+/** 
+Given an image it determines the maximum and minimum luminosity of the image
+
+\param		image		image to be analyzed
+\param		w,h			width and height of the image
+\param		max			maximum of luminosity
+\param		min			minimum luminosity
+
+*/
 void maxmin(unsigned char *image, int w, int h, int *max, int *min) {
     int npixels = w * h, i = 0;
     *max = 0;
@@ -206,9 +266,18 @@ void maxmin(unsigned char *image, int w, int h, int *max, int *min) {
 }
 
 /***************************************************************************************************************
-				Writing mono8 black and white tiff function
+						Write mono8 black and white TIFF
 ****************************************************************************************************************/
 
+/** 
+Given an image represented by an unsigned char matrix it writes the relative TIFF image
+on a specified file
+
+\param		image		image to be written on file
+\param		dest		pathname of the output TIFF file
+\param		w,h			width and height of the image
+
+*/
 void writeImage(unsigned char* image, char* dest, int w, int h) {
 		
 		TIFF* out = TIFFOpen(dest, "w");
@@ -219,16 +288,17 @@ void writeImage(unsigned char* image, char* dest, int w, int h) {
 		/* 8bit image */
 		int sampleperpixel = 1;
 		
-		TIFFSetField (out, TIFFTAG_IMAGEWIDTH, w);  /* set the width of the image */
-		TIFFSetField(out, TIFFTAG_IMAGELENGTH, h);    /* set the height of the image */
-		TIFFSetField(out, TIFFTAG_SAMPLESPERPIXEL, sampleperpixel);   /* set number of channels per pixel */
-		TIFFSetField(out, TIFFTAG_BITSPERSAMPLE, 8);    /* set the size of the channels */
+		TIFFSetField (out, TIFFTAG_IMAGEWIDTH, w);						/* set the width of the image */
+		TIFFSetField(out, TIFFTAG_IMAGELENGTH, h);						/* set the height of the image */
+		TIFFSetField(out, TIFFTAG_SAMPLESPERPIXEL, sampleperpixel);		/* set number of channels per pixel */
+		TIFFSetField(out, TIFFTAG_BITSPERSAMPLE, 8);					/* set the size of the channels */
 		TIFFSetField(out, TIFFTAG_ORIENTATION, ORIENTATION_TOPLEFT);    /* set the origin of the image */
-		/* Some other essential fields to set that you do not have to understand for now */
+		
+		/* Some other essential fields to set */
 		TIFFSetField(out, TIFFTAG_PLANARCONFIG, PLANARCONFIG_CONTIG);
 		TIFFSetField(out, TIFFTAG_PHOTOMETRIC, PHOTOMETRIC_MINISBLACK);
-
-		/* a quanto pare si scrive una row alla volta!!! quindi una row e` lunga: */
+		
+		/* determining the dimension of a single row */
 		linebytes = sampleperpixel * w;     /* length in memory of one row of pixel in the image */
 		
 		/* Allocating memory to store the pixels of current row */
@@ -236,14 +306,13 @@ void writeImage(unsigned char* image, char* dest, int w, int h) {
 			buf =(unsigned char *)_TIFFmalloc(linebytes);
 		else
 			buf = (unsigned char *)_TIFFmalloc(TIFFScanlineSize(out));
-		
-		
-		/* We set the strip size of the file to be size of one row of pixels */
+				
+		/* Set the strip size of the file to be size of one row of pixels */
 		TIFFSetField(out, TIFFTAG_ROWSPERSTRIP, TIFFDefaultStripSize(out, w*sampleperpixel));
 		
-		/* Now writing image to the file one strip at a time */
+		/* Writing image to the file one strip at a time */
 		for (row = 0; row < h; row++) {
-			memcpy(buf, &image[(h-row-1)*linebytes], linebytes);    /* check the index here, and figure out why not using h*linebytes */
+			memcpy(buf, &image[(h-row-1)*linebytes], linebytes);		/* tricky index */
 			if (TIFFWriteScanline(out, buf, row, 0) < 0) break;
 		}
 		(void) TIFFClose(out);
@@ -251,7 +320,7 @@ void writeImage(unsigned char* image, char* dest, int w, int h) {
 }
 
 /***************************************************************************************************************
-				Initialize of the fit
+						Initialization of the Fit
 ****************************************************************************************************************/
 
 int initialization(char* parameter, double* input, double* fit, unsigned char** matrix, unsigned char** cropped, int* dimx, int* dimy, int p){

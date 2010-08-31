@@ -48,6 +48,12 @@ int main(int argc, char* argv[]){
 	double* ret = (double*) malloc(sizeof(double) * DIM_FIT * (DIM_FIT + 1));
 	gsl_matrix_view r_matrice = gsl_matrix_view_array(ret, DIM_FIT, DIM_FIT);
 	gsl_vector_view r_vettore = gsl_vector_view_array(ret + (DIM_FIT * DIM_FIT), DIM_FIT);
+	
+#ifdef DEBUG
+	/* file per la scrittura dei risultati */
+	FILE* risultati;
+	risultati = fopen("dp_result","w");
+#endif
 
 	/* check the input parameters */
 	if(argc != 2){
@@ -128,7 +134,7 @@ int main(int argc, char* argv[]){
 	
 	
 	/*********************************************************************
-	 LOOP on ELEMENTS
+						LOOP on ELEMENTS
 	 *********************************************************************/		
 	
 	ppw = (dimx * dimy) / p;
@@ -167,6 +173,9 @@ int main(int argc, char* argv[]){
 			fit[PAR_Y], fit[PAR_SX], fit[PAR_SY], fit[PAR_a], fit[PAR_b], fit[PAR_c]);
 #endif
 		}
+		
+		/* broadcast of the result */
+		MPI_Bcast ( fit, DIM_FIT, MPI_DOUBLE, EMITTER, MPI_COMM_WORLD );
 	}
 	
 	if(my_rank == EMITTER){

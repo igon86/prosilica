@@ -32,11 +32,13 @@ int main(int argc, char* argv[]){
 	/* indexes */
 	int i = 0, j = 0;
 
-	/* data for the LU solver */
+	/* Gauss matrix and vector have contiguous space in memory */
 	double* data = (double*) malloc(sizeof(double) * DIM_FIT * (DIM_FIT + 1));
 	gsl_matrix_view matrice = gsl_matrix_view_array(data, DIM_FIT, DIM_FIT);
 	gsl_vector_view vettore = gsl_vector_view_array(data + (DIM_FIT * DIM_FIT), DIM_FIT);
+	/* vector of solution */
 	gsl_vector *delta = gsl_vector_alloc(DIM_FIT);
+	/* data for the LU solver */
 	gsl_permutation* permutation = gsl_permutation_alloc(DIM_FIT);
 
 	/* error status of gsl_LU */
@@ -155,7 +157,7 @@ int main(int argc, char* argv[]){
 		
 
 /*********************************************************************
-						COLLETTORE
+						COLLECTOR
 *********************************************************************/
 
 	} else if(my_rank == COLLECTOR){
@@ -192,10 +194,11 @@ int main(int argc, char* argv[]){
 			}
 #endif		
 			
-	#ifdef DEBUG
+#ifdef DEBUG
+			/* PRINTOUT OF THE CURRENT RESULT */
 			printf("Image %d: %f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\n", i , fit[PAR_A], fit[PAR_X], 
 				fit[PAR_Y], fit[PAR_SX], fit[PAR_SY], fit[PAR_a], fit[PAR_b], fit[PAR_c]);
-	#endif
+#endif
 		}
 		/* take the time */
 		gettimeofday(&tv2, NULL);
@@ -258,9 +261,9 @@ int main(int argc, char* argv[]){
 				exit(EXIT_FAILURE);
 			}
 			
-			/* image procedure */
+			/* calculation of the Gauss matrix and vector */
 			procedure (cropped, dimx, dimy, fit, matrice, vettore);
-			gsl_linalg_LU_decomp(&matrice.matrix, permutation, &error); /* TEST ERRORE--> TODO*/
+			gsl_linalg_LU_decomp(&matrice.matrix, permutation, &error); // TEST ERRORE--> TODO
 			gsl_linalg_LU_solve(&matrice.matrix, permutation, &vettore.vector, delta);
 
 			for(i = 0; i < DIM_FIT; i++)
@@ -271,8 +274,9 @@ int main(int argc, char* argv[]){
 				exit(EXIT_FAILURE);
 			}
 		}
-#else	
-		/* NOT ON_DEMAND */
+		
+#else	/* NOT ON_DEMAND */
+		
 		/* receive the number of the images */
 		num_image = STREAMLENGTH / (p - PS);		
 		if(STREAMLENGTH % (p - PS) > (my_rank - PS))
