@@ -4,18 +4,24 @@
 static unsigned char *crop = NULL;
 
 extern int my_rank;
+extern int p;
 
 /***************************************************************************************************************
 							Centroid
  ****************************************************************************************************************/
 
-/** image need to be the output of a createMask function
- both the center position and the dimension of the centroid depends
- on the filter parameter of the createMask function previously used */
+/** 
+Given an image of a gaussian, represented by an unsigned char matrix, it estimates the center and the variance
+of the gaussian along the x and y axis
 
-void centroid(unsigned char *image, int w, int h, double *x, double *y, double *sigma_x, double *sigma_y) {	
+\param		image				image of the gaussian
+\param		w,h					width and height of the image
+\param		x,y					estimated cordinates
+\param		sigma_x,sigma_y		estimated variance in the x and y axis
+
+*/
+void centroid(unsigned char *image, int w, int h, int *x, int *y, int *sigma_x, int *sigma_y) {	
 	int npixels = w * h;
-	// INCAPIBILE
 	int* counth = (int*) malloc (sizeof(int) * h);
 	int* countw = (int*) malloc (sizeof(int) * w);	
 	int count = 0, i = 0;
@@ -52,10 +58,10 @@ void centroid(unsigned char *image, int w, int h, double *x, double *y, double *
 		if (down_border && !up_border && !counth [i])
 			up_border = i;
 	}
-	*x = w_center;
-	*y = h_center;
-	*sigma_x = (right_border - left_border) / 2.0;
-	*sigma_y = (up_border - down_border) / 2.0;
+	*x = (int) w_center;
+	*y = (int) h_center;
+	*sigma_x = right_border - left_border;
+	*sigma_y = up_border - down_border;
 
 	free(counth);
 	free(countw);
@@ -324,24 +330,19 @@ void writeImage(unsigned char* image, char* dest, int w, int h) {
 ****************************************************************************************************************/
 
 /** 
-Given a filename containing
+Given a filename containing the parameters of the gaussian the relative image is created. It is then analyzed and cropped.
 
 \param		parameter	pathname of the file where the gaussian parameters for the simulation are specified
-\param		input		array of double, parameters scecified by parameter are written here -> is it necessary ?
-\param		fit			
-\param		matrix
-\param		cropped
-\param		dimx,dimy
-\param		p
+\param		fit			array of parameters of the gaussian estimated
+\param		matrix		created image of the gaussian
+\param		cropped		crop of the image of the gaussian
+\param		dimx,dimy	dimension of the crop in the x and y axis
 
 */
-void initialization(const char* parameter, double* fit, unsigned char** matrix, unsigned char** cropped, int* dimx, int* dimy, int p){
+void initialization(const char* parameter, double* fit, unsigned char** matrix, unsigned char** cropped, int* dimx, int* dimy){
 		
 	/* parameters for the cookie cutter */
-	double x0 = 0.0, y0 = 0.0;
-	double FWHM_x = 0.0, FWHM_y = 0.0;
-	int span_x = 0, span_y = 0;
-	int x = 0 , y = 0;
+	int x0,y0,span_x,span_y;
 	
 	double input[DIM_FIT];
 	
@@ -398,17 +399,11 @@ void initialization(const char* parameter, double* fit, unsigned char** matrix, 
 		writeImage(mask, (char *) "mask.tiff", width, length);
 #endif
 	
-		centroid(mask, width, length, &x0, &y0, &FWHM_x, &FWHM_y);
+		centroid(mask, width, length, &x0, &y0, &span_x, &span_y);
 	
 #if DEBUG
-		printf("centro in %f - %f\nCon ampiezza %f e %f\n", x0, y0, FWHM_x, FWHM_y);
+		printf("centro in %d - %d\nCon ampiezza %d e %d\n", x0, y0, span_x, span_y);
 #endif
-	
-		free(mask);
-	
-		/* inizialization for the diameter of the gaussian*/
-		span_x = (int) (2 * FWHM_x);
-		span_y = (int) (2 * FWHM_y);
 
 		*dimx = 2 * span_x + 1;
 		*dimy = 2 * span_y + 1;
@@ -419,10 +414,6 @@ void initialization(const char* parameter, double* fit, unsigned char** matrix, 
 		while(*dimy % p != 0)
 			++*dimy;
 #endif
-
-		/* inizialization of the position coordinates */
-		x = (int) x0;
-		y = (int) y0;
 	
 		/**
 		 inizialization of the fit of the Gaussian
@@ -433,17 +424,17 @@ void initialization(const char* parameter, double* fit, unsigned char** matrix, 
 		fit[PAR_A] = max;
 		fit[PAR_X] = span_x;
 		fit[PAR_Y] = span_y;
-		fit[PAR_SX] = FWHM_x;
-		fit[PAR_SY] = FWHM_y;
+		fit[PAR_SX] = span_x/2;
+		fit[PAR_SY] = span_y/2;
 		fit[PAR_c] = min;	
 
 #if DEBUG
-	printf("%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\n", fit[PAR_A], fit[PAR_X] + x - span_x, fit[PAR_Y] + y - span_y, fit[PAR_SX], fit[PAR_SY], fit[PAR_a], fit[PAR_b], fit[PAR_c]);
+	printf("%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\n", fit[PAR_A], fit[PAR_X] + x0 - span_x, fit[PAR_Y] + y0 - span_y, fit[PAR_SX], fit[PAR_SY], fit[PAR_a], fit[PAR_b], fit[PAR_c]);
 #endif
-		*cropped = cropImage((unsigned char*) *matrix, width, length, x - span_x, y - span_y, *dimx, *dimy);	
+		*cropped = cropImage((unsigned char*) *matrix, width, length, x0 - span_x, y0 - span_y, *dimx, *dimy);	
 	
 #if DEBUG
 		writeImage(*cropped, (char *) "./CROP.tiff", *dimx, *dimy);
 #endif
-
+		free(mask);
 }

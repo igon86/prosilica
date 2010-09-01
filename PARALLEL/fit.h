@@ -31,13 +31,14 @@ enum{
 /* Create the image representing the Gaussian fit */
 unsigned char* createMatrix (int length, int width, double* input);
 
+/* Find maximum and minumum luminosity of a 8bit image */
 void maxmin (unsigned char* image, int w, int h, int* max, int* min);
 
 /* Create the pixel mask of the image in order to reduce the dimension */
 unsigned char* createMask (unsigned char* image, int w, int h, int max, int min, double filter);
 
 /* Evaluate the centroid */
-void centroid (unsigned char* image, int w, int h, double* x, double* y, double* sigma_x, double* sigma_y);
+void centroid (unsigned char* image, int w, int h, int* x, int* y, int* sigma_x, int* sigma_y);
 
 /* Reduce the dimension of the image */
 unsigned char *cropImage(const unsigned char *input, int w, int h, int x0, int y0, int dimx, int dimy);
@@ -52,5 +53,5 @@ double evaluateGaussian (double* gaussian, int x, int y);
 void writeImage (unsigned char* image, char *dest, int w, int h);
 
 /* Initialize of the fit */
-void initialization(const char* parameter, double* fit, unsigned char** matrix, unsigned char** cropped, int* dimx, int* dimy, int p);
+void initialization(const char* parameter, double* fit, unsigned char** matrix, unsigned char** cropped, int* dimx, int* dimy);
 #endif
