@@ -18,8 +18,8 @@ int main(int argc, char* argv[]){
 	/* Dimension of the cropped image */
 	int dimx = 0, dimy = 0;
 	
-	/* two fits of Gaussian */
-	double input [DIM_FIT], fit [DIM_FIT];
+	/* fit of the Gaussian */
+	double fit [DIM_FIT];
 	
 	/* image representing Gaussian fit */	
 	unsigned char *matrix = NULL;
@@ -50,9 +50,10 @@ int main(int argc, char* argv[]){
 	gsl_vector_view r_vettore = gsl_vector_view_array(ret + (DIM_FIT * DIM_FIT), DIM_FIT);
 	
 #ifdef DEBUG
-	/* file per la scrittura dei risultati */
+	/* file per la scrittura dei risultati 
 	FILE* risultati;
 	risultati = fopen("dp_result","w");
+	*/
 #endif
 
 	/* check the input parameters */
@@ -86,7 +87,7 @@ int main(int argc, char* argv[]){
 		printf("Emitter with rank %d\n", my_rank);
 #endif		
 		/* initialization of the fit */
-		initialization(argv[1], input, fit, &matrix, &cropped, &dimx, &dimy, p);
+		initialization(argv[1], fit, &matrix, &cropped, &dimx, &dimy, p);
 	
 		/* send to the workers the parameters and images */
 		for(i = PS; i < p; i++){
@@ -147,7 +148,7 @@ int main(int argc, char* argv[]){
 	for (i = 0; i < STREAMLENGTH; i++){
 		
 		/* the emitter executes the scatter */
-		if(MPI_Scatter (cropped,   ppw, MPI_UNSIGNED_CHAR, partition, ppw, MPI_UNSIGNED_CHAR, EMITTER, MPI_COMM_WORLD) != MPI_SUCCESS){
+		if(MPI_Scatter (cropped, ppw, MPI_UNSIGNED_CHAR, partition, ppw, MPI_UNSIGNED_CHAR, EMITTER, MPI_COMM_WORLD) != MPI_SUCCESS){
 			fprintf(stderr, "MPI_Scatter failed\n");
 			exit(EXIT_FAILURE);
 		}

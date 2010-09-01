@@ -323,19 +323,37 @@ void writeImage(unsigned char* image, char* dest, int w, int h) {
 						Initialization of the Fit
 ****************************************************************************************************************/
 
-int initialization(char* parameter, double* input, double* fit, unsigned char** matrix, unsigned char** cropped, int* dimx, int* dimy, int p){
+/** 
+Given a filename containing
+
+\param		parameter	pathname of the file where the gaussian parameters for the simulation are specified
+\param		input		array of double, parameters scecified by parameter are written here -> is it necessary ?
+\param		fit			
+\param		matrix
+\param		cropped
+\param		dimx,dimy
+\param		p
+
+*/
+void initialization(const char* parameter, double* fit, unsigned char** matrix, unsigned char** cropped, int* dimx, int* dimy, int p){
 		
 	/* parameters for the cookie cutter */
 	double x0 = 0.0, y0 = 0.0;
 	double FWHM_x = 0.0, FWHM_y = 0.0;
 	int span_x = 0, span_y = 0;
 	int x = 0 , y = 0;
+	
+	double input[DIM_FIT];
+	
 	/* File conteining parameters*/
 	FILE* parameters = NULL;
+	
 	/* width and length of the input image */
 	int width = 0, length = 0;
-	/* parameters fro create the mask */
+	
+	/* parameters for the mask */
 	int max = 0, min = 0;
+	
 	/* pixel mask for reduce the dimension of the region to analyze */
 	unsigned char *mask = NULL;
 
@@ -428,5 +446,4 @@ int initialization(char* parameter, double* input, double* fit, unsigned char** 
 		writeImage(*cropped, (char *) "./CROP.tiff", *dimx, *dimy);
 #endif
 
-	return 0;
 }
