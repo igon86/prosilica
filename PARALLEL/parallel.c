@@ -22,8 +22,8 @@ int main(int argc, char* argv[]){
 	/* Dimension of the cropped image */
 	int dimx = 0, dimy = 0;
 	
-	/* two fits of Gaussian */
-	double input [DIM_FIT], fit [DIM_FIT];
+	/* fits of Gaussian */
+	double fit [DIM_FIT];
 	/* image representing Gaussian fit */	
 	unsigned char *matrix = NULL;
 	/* cropped image taken from a Gaussian image */
@@ -80,7 +80,7 @@ int main(int argc, char* argv[]){
 		printf("Emitter with rank %d\n", my_rank);
 	#endif		
 		/* initialization of the fit */
-		initialization(argv[1], input, fit, &matrix, &cropped, &dimx, &dimy, p);
+		initialization(argv[1], fit, &matrix, &cropped, &dimx, &dimy, p);
 		
 		/* send to the workers the parameters and images */
 		dim = dimx * dimy;
