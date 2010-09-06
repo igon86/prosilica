@@ -13,9 +13,12 @@ int main(int argc, char *argv[])
 #ifdef ON_DEMAND
     int flag = 0, junk = 0;
 #endif
+	/* return status of MPI functions */
     MPI_Status status;
-    /* dimension of cropped image */
+    /* dimension of the cropped image */
     int dim = 0;
+	/* dimension of the entire image */
+	int width,height;
 #ifndef ON_DEMAND
     /* number of images per worker */
     int num_image = 0;
@@ -79,8 +82,14 @@ int main(int argc, char *argv[])
 #ifdef DEBUG
 	printf("Emitter with rank %d\n", my_rank);
 #endif
-	/* initialization of the fit */
-	initialization(argv[1], fit, &matrix, &cropped, &dimx, &dimy);
+
+	/* an image representing the gaussian is created and returned
+	as a unsigned char matrix */
+	matrix = createImage(argv[1],&width,&height);
+	
+	/* parameters of the gaussian are estimated and the significant 
+	part of the image is cropped */
+	initialization(matrix,width,height, fit, &cropped, &dimx, &dimy);
 
 	/* send to the workers the parameters and images */
 	dim = dimx * dimy;
@@ -234,6 +243,7 @@ int main(int argc, char *argv[])
 
 	/* define the cropped image */
 	dim = dimx * dimy;
+	initBuffers(dim);
 	cropped = (unsigned char *) malloc(dim);
 #ifdef ON_DEMAND
 
@@ -258,8 +268,9 @@ int main(int argc, char *argv[])
 	    }
 	    /* calculation of the Gauss matrix and vector */
 	    procedure(cropped, dimx, dimy, fit, matrice, vettore);
+		
+		/* solve the system */
 	    gsl_linalg_LU_decomp(&matrice.matrix, permutation, &error);
-	    //TEST ERRORE-- > TODO
 		gsl_linalg_LU_solve(&matrice.matrix, permutation, &vettore.vector, delta);
 
 	    for (i = 0; i < DIM_FIT; i++)
