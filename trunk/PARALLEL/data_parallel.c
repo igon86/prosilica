@@ -13,6 +13,9 @@ int main(int argc, char *argv[])
 
     /* pixels per worker */
     int ppw = 0;
+	
+	/* dimension of the entire image */
+	int width,height;
 
     /* time variables */
     struct timeval tv1, tv2;
@@ -84,8 +87,14 @@ int main(int argc, char *argv[])
 #if DEBUG
 	printf("Emitter with rank %d\n", my_rank);
 #endif
-	/* initialization of the fit */
-	initialization(argv[1], fit, &matrix, &cropped, &dimx, &dimy);
+
+	/* an image representing the gaussian is created and returned
+	as a unsigned char matrix */
+	matrix = createImage(argv[1],&width,&height);
+	
+	/* parameters of the gaussian are estimated and the significant 
+	part of the image is cropped */
+	initialization(matrix,width,height, fit, &cropped, &dimx, &dimy);
 
 	/* send to the workers the parameters and images */
 	for (i = PS; i < p; i++) {
@@ -137,6 +146,7 @@ int main(int argc, char *argv[])
 
     ppw = (dimx * dimy) / p;
     partition = (unsigned char *) malloc(sizeof(unsigned char) * ppw);
+	initBuffers(ppw);
 
     /* if I am the emitter I take the time */
     if (my_rank == EMITTER)
@@ -159,7 +169,7 @@ int main(int argc, char *argv[])
 	}
 	/* and finish the computation */
 	if (my_rank == EMITTER) {
-	    gsl_linalg_LU_decomp(&r_matrice.matrix, permutation, &error);	/* TEST ERRORE--> TODO */
+	    gsl_linalg_LU_decomp(&r_matrice.matrix, permutation, &error);	
 	    gsl_linalg_LU_solve(&r_matrice.matrix, permutation, &r_vettore.vector, delta);
 
 	    for (j = 0; j < DIM_FIT; j++)

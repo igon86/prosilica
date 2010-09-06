@@ -28,11 +28,18 @@ enum{
 	PAR_c  		/* third parameter of the plane  */
 };
 
-/* Create the image representing the Gaussian fit */
+/* nice data structure to represent images */
+typedef struct {
+	unsigned char* data;
+	int width;
+	int height;	
+}image_t;
+
+/* Create the image representing the Gaussian */
 unsigned char* createMatrix (int length, int width, double* input);
 
 /* Find maximum and minumum luminosity of a 8bit image */
-void maxmin (unsigned char* image, int w, int h, int* max, int* min);
+void maxmin(unsigned char *image, int w, int h, int *max, int *min);
 
 /* Create the pixel mask of the image in order to reduce the dimension */
 unsigned char* createMask (unsigned char* image, int w, int h, int max, int min, double filter);
@@ -49,9 +56,18 @@ void procedure (const unsigned char* data, int x, int y,  double * results, gsl_
 /* Evaluate the Gaussian at coordinates (x, y) */
 double evaluateGaussian (double* gaussian, int x, int y);
 
-/* Write the image in a .TIFF file named dest (for debugging) */
+/* Write the image in a .TIFF file (useful for debugging) */
 void writeImage (unsigned char* image, char *dest, int w, int h);
 
+/* Create a gaussian Image */
+unsigned char* createImage(const char* parameters, int* width, int* height);
+
 /* Initialize of the fit */
-void initialization(const char* parameter, double* fit, unsigned char** matrix, unsigned char** cropped, int* dimx, int* dimy);
+void initialization(unsigned char *matrix,int width,int height, double *fit,
+					 unsigned char **cropped,
+					int *dimx, int *dimy);
+
+/* Init fit buffers */
+void initBuffers(int npixels);
+
 #endif
