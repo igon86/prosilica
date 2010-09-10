@@ -1,5 +1,6 @@
 #include "fit.h"
 #include "parallel.h"
+#include "image.h"
 
 /* MPI Variables, global for sake of code simplicity */
 
@@ -17,12 +18,14 @@ int main(int argc, char *argv[])
     MPI_Status status;
     /* dimension of the cropped image */
     int dim = 0;
-	/* dimension of the entire image */
-	int width,height;
+    /* dimension of the entire image */
+    int width,height;
+
 #ifndef ON_DEMAND
     /* number of images per worker */
     int num_image = 0;
 #endif
+
     /* time variables */
     struct timeval tv1, tv2;
     /* Dimension of the cropped image */
@@ -56,23 +59,17 @@ int main(int argc, char *argv[])
 	exit(EXIT_FAILURE);
     }
     /* Initialize of MPI */
-    if (MPI_Init(&argc, &argv) != MPI_SUCCESS) {
-	fprintf(stderr, "MPI_Init failed\n");
-	exit(EXIT_FAILURE);
-    }
+    MPI_Init(&argc, &argv);
+    
     /* Every process takes the own rank */
-    if (MPI_Comm_rank(MPI_COMM_WORLD, &my_rank) != MPI_SUCCESS) {
-	fprintf(stderr, "MPI_Comm_rank failed\n");
-	exit(EXIT_FAILURE);
-    }
+    MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
+
     /* Total number of processes */
-    if (MPI_Comm_size(MPI_COMM_WORLD, &p) != MPI_SUCCESS) {
-	fprintf(stderr, "MPI_Comm_size failed\n");
-	exit(EXIT_FAILURE);
-    }
+    MPI_Comm_size(MPI_COMM_WORLD, &p);
+
     if (p <= PS) {
 	fprintf(stderr, "Number of process not valid\n");
-	exit(EXIT_FAILURE);
+	MPI_Abort(MPI_COMM_WORLD, MPI_ERR_OP);
     }
 /*********************************************************************
 						EMITTER
@@ -85,31 +82,23 @@ int main(int argc, char *argv[])
 
 	/* an image representing the gaussian is created and returned
 	as a unsigned char matrix */
-	matrix = createImage(argv[1],&width,&height);
+	matrix = createImage(argv[1], &width, &height);
 	
 	/* parameters of the gaussian are estimated and the significant 
 	part of the image is cropped */
-	initialization(matrix,width,height, fit, &cropped, &dimx, &dimy);
+	initialization(matrix, width, height, fit, &cropped, &dimx, &dimy);
 
 	/* send to the workers the parameters and images */
 	dim = dimx * dimy;
+	
+	MPI_Send(&dim, 1, MPI_INT, COLLECTOR, PARAMETERS, MPI_COMM_WORLD);
+	
 	for (i = PS; i < p; i++) {
-	    if (MPI_Send(&dimx, 1, MPI_INT, i, PARAMETERS, MPI_COMM_WORLD) != MPI_SUCCESS) {
-		fprintf(stderr, "MPI_Send failed\n");
-		exit(EXIT_FAILURE);
-	    }
-	    if (MPI_Send(&dimy, 1, MPI_INT, i, PARAMETERS, MPI_COMM_WORLD) != MPI_SUCCESS) {
-		fprintf(stderr, "MPI_Send failed\n");
-		exit(EXIT_FAILURE);
-	    }
-	    if (MPI_Send(fit, DIM_FIT, MPI_DOUBLE, i, RESULTS, MPI_COMM_WORLD) != MPI_SUCCESS) {
-		fprintf(stderr, "MPI_Send failed\n");
-		exit(EXIT_FAILURE);
-	    }
-	    if (MPI_Send(cropped, dim, MPI_UNSIGNED_CHAR, i, IMAGE, MPI_COMM_WORLD) != MPI_SUCCESS) {
-		fprintf(stderr, "MPI_Send failed\n");
-		exit(EXIT_FAILURE);
-	    }
+	    MPI_Send(&dimx, 1, MPI_INT, i, PARAMETERS, MPI_COMM_WORLD);
+	    MPI_Send(&dimy, 1, MPI_INT, i, PARAMETERS, MPI_COMM_WORLD);
+	    MPI_Send(fit, DIM_FIT, MPI_DOUBLE, i, RESULTS, MPI_COMM_WORLD);
+	    MPI_Send(cropped, dim, MPI_UNSIGNED_CHAR, i, IMAGE, MPI_COMM_WORLD);
+
 #ifdef DEBUG
 	    printf("Emitter sends data to %d\n", i);
 #endif
@@ -123,32 +112,20 @@ int main(int argc, char *argv[])
 #endif
 	    flag = 0;
 	    while (!flag) {
-		if (MPI_Iprobe(j % (p - PS) + PS, MPI_ANY_TAG, MPI_COMM_WORLD, &flag, &status) != MPI_SUCCESS) {
-		    fprintf(stderr, "MPI_Iprobe failed\n");
-		    exit(EXIT_FAILURE);
-		}
+		MPI_Iprobe(j % (p - PS) + PS, MPI_ANY_TAG, MPI_COMM_WORLD, &flag, &status);
 		j++;
 	    }
 
 	    /* receive the request */
-	    if (MPI_Recv(&junk, 1, MPI_INT, (j - 1) % (p - PS) + PS, REQUEST, MPI_COMM_WORLD, &status) != MPI_SUCCESS) {
-		fprintf(stderr, "MPI_Recv failed\n");
-		exit(EXIT_FAILURE);
-	    }
+	    MPI_Recv(&junk, 1, MPI_INT, (j - 1) % (p - PS) + PS, REQUEST, MPI_COMM_WORLD, &status);
+
 	    /* send the image */
-	    if (MPI_Send(cropped, dim, MPI_UNSIGNED_CHAR, j % (p - PS) + PS, IMAGE, MPI_COMM_WORLD) != MPI_SUCCESS) {
-		fprintf(stderr, "MPI_Send failed\n");
-		exit(EXIT_FAILURE);
-	    }
+	    MPI_Send(cropped, dim, MPI_UNSIGNED_CHAR, j % (p - PS) + PS, IMAGE, MPI_COMM_WORLD);
 	}
 
 	/* send the termination message */
-	for (i = PS; i < p; i++) {
-	    if (MPI_Send(NULL, 0, MPI_INT, i, TERMINATION, MPI_COMM_WORLD) != MPI_SUCCESS) {
-		fprintf(stderr, "MPI_Iprobe failed\n");
-		exit(EXIT_FAILURE);
-	    }
-	}
+	for (i = PS; i < p; i++)
+	    MPI_Send(NULL, 0, MPI_INT, i, TERMINATION, MPI_COMM_WORLD);
 #else
 	/* NOT ON_DEMAND */
 
@@ -157,10 +134,7 @@ int main(int argc, char *argv[])
 #ifdef DEBUG
 	    printf("Emitter sends image %d\n", i);
 #endif
-	    if (MPI_Send(cropped, dim, MPI_UNSIGNED_CHAR, i % (p - PS) + PS, IMAGE, MPI_COMM_WORLD) != MPI_SUCCESS) {
-		fprintf(stderr, "MPI_Send failed\n");
-		exit(EXIT_FAILURE);
-	    }
+	    MPI_Send(cropped, dim, MPI_UNSIGNED_CHAR, i % (p - PS) + PS, IMAGE, MPI_COMM_WORLD);
 	}
 #endif
 
@@ -173,6 +147,7 @@ int main(int argc, char *argv[])
 #ifdef DEBUG
 	printf("Collector with rank %d\n", my_rank);
 #endif
+	MPI_Recv(&dim, 1, MPI_INT, EMITTER, PARAMETERS, MPI_COMM_WORLD, &status);
 	/* take the time */
 	gettimeofday(&tv1, NULL);
 
@@ -183,23 +158,14 @@ int main(int argc, char *argv[])
 	    j = 0;
 	    flag = 0;
 	    while (!flag) {
-		if (MPI_Iprobe(j % (p - PS) + PS, MPI_ANY_TAG, MPI_COMM_WORLD, &flag, &status) != MPI_SUCCESS) {
-		    fprintf(stderr, "MPI_Iprobe failed\n");
-		    exit(EXIT_FAILURE);
-		}
+		MPI_Iprobe(j % (p - PS) + PS, MPI_ANY_TAG, MPI_COMM_WORLD, &flag, &status);
 		j++;
 	    }
 	    /* and receive */
-	    if (MPI_Recv(fit, DIM_FIT, MPI_DOUBLE, (j - 1) % (p - PS) + PS, RESULTS, MPI_COMM_WORLD, &status) != MPI_SUCCESS) {
-		fprintf(stderr, "MPI_Recv failed\n");
-		exit(EXIT_FAILURE);
-	    }
+	    MPI_Recv(fit, DIM_FIT, MPI_DOUBLE, (j - 1) % (p - PS) + PS, RESULTS, MPI_COMM_WORLD, &status);
 #else
 	    /* if NOT ON_DEMAND the colector receives linearly */
-	    if (MPI_Recv(fit, DIM_FIT, MPI_DOUBLE, i % (p - PS) + PS, RESULTS, MPI_COMM_WORLD, &status) != MPI_SUCCESS) {
-		fprintf(stderr, "MPI_recv failed\n");
-		exit(EXIT_FAILURE);
-	    }
+	    MPI_Recv(fit, DIM_FIT, MPI_DOUBLE, i % (p - PS) + PS, RESULTS, MPI_COMM_WORLD, &status);
 #endif
 
 #ifdef DEBUG
@@ -211,8 +177,8 @@ int main(int argc, char *argv[])
 	/* take the time */
 	gettimeofday(&tv2, NULL);
 
-	printf("Process with rank %d (collector), the completion time: %ld\n",
-	       my_rank, (tv2.tv_sec - tv1.tv_sec) * 1000000 + tv2.tv_usec - tv1.tv_usec);
+	/* print the rank and the completion time */
+	printf("%d\t%d\t%ld\n", my_rank, dim, (tv2.tv_sec - tv1.tv_sec) * 1000000 + tv2.tv_usec - tv1.tv_usec);
 
 /*********************************************************************
 							WORKER
@@ -223,19 +189,10 @@ int main(int argc, char *argv[])
 	printf("Worker with rank %d\n", my_rank);
 #endif
 	/* receive the dimension of the cropped image */
-	if (MPI_Recv(&dimx, 1, MPI_INT, EMITTER, PARAMETERS, MPI_COMM_WORLD, &status) != MPI_SUCCESS) {
-	    fprintf(stderr, "MPI_recv failed\n");
-	    exit(EXIT_FAILURE);
-	}
-	if (MPI_Recv(&dimy, 1, MPI_INT, EMITTER, PARAMETERS, MPI_COMM_WORLD, &status) != MPI_SUCCESS) {
-	    fprintf(stderr, "MPI_recv failed\n");
-	    exit(EXIT_FAILURE);
-	}
+	MPI_Recv(&dimx, 1, MPI_INT, EMITTER, PARAMETERS, MPI_COMM_WORLD, &status);
+	MPI_Recv(&dimy, 1, MPI_INT, EMITTER, PARAMETERS, MPI_COMM_WORLD, &status);
 	/* receive the fit of the Gaussian */
-	if (MPI_Recv(fit, DIM_FIT, MPI_DOUBLE, EMITTER, RESULTS, MPI_COMM_WORLD, &status) != MPI_SUCCESS) {
-	    fprintf(stderr, "MPI_recv failed\n");
-	    exit(EXIT_FAILURE);
-	}
+	MPI_Recv(fit, DIM_FIT, MPI_DOUBLE, EMITTER, RESULTS, MPI_COMM_WORLD, &status);
 #ifdef DEBUG
 	printf("Process %d, the initial fit is:\n%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\n", my_rank, fit[PAR_A], fit[PAR_X],
 	       fit[PAR_Y], fit[PAR_SX], fit[PAR_SY], fit[PAR_a], fit[PAR_b], fit[PAR_c]);
@@ -251,10 +208,7 @@ int main(int argc, char *argv[])
 	    /* send the request */
 	    MPI_Send(&dim, 1, MPI_INT, EMITTER, REQUEST, MPI_COMM_WORLD);
 	    /* blocking test */
-	    if (MPI_Probe(EMITTER, MPI_ANY_TAG, MPI_COMM_WORLD, &status) != MPI_SUCCESS) {
-		fprintf(stderr, "MPI_Iprobe failed\n");
-		exit(EXIT_FAILURE);
-	    }
+	    MPI_Probe(EMITTER, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
 	    /* workers ends if receives termination message */
 	    if (status.MPI_TAG == TERMINATION) {
 #ifdef DEBUG
@@ -262,10 +216,7 @@ int main(int argc, char *argv[])
 #endif
 		break;
 	    }
-	    if (MPI_Recv(cropped, dim, MPI_UNSIGNED_CHAR, EMITTER, IMAGE, MPI_COMM_WORLD, &status) != MPI_SUCCESS) {
-		fprintf(stderr, "MPI_recv failed\n");
-		exit(EXIT_FAILURE);
-	    }
+	    MPI_Recv(cropped, dim, MPI_UNSIGNED_CHAR, EMITTER, IMAGE, MPI_COMM_WORLD, &status);
 	    /* calculation of the Gauss matrix and vector */
 	    procedure(cropped, dimx, dimy, fit, matrice, vettore);
 		
@@ -276,10 +227,7 @@ int main(int argc, char *argv[])
 	    for (i = 0; i < DIM_FIT; i++)
 		fit[i] = fit[i] + gsl_vector_get(delta, i);
 
-	    if (MPI_Send(fit, DIM_FIT, MPI_DOUBLE, COLLECTOR, RESULTS, MPI_COMM_WORLD) != MPI_SUCCESS) {
-		fprintf(stderr, "MPI_Send failed\n");
-		exit(EXIT_FAILURE);
-	    }
+	    MPI_Send(fit, DIM_FIT, MPI_DOUBLE, COLLECTOR, RESULTS, MPI_COMM_WORLD);
 	}
 
 #else				/* NOT ON_DEMAND */
@@ -291,10 +239,7 @@ int main(int argc, char *argv[])
 
 	/* work on the images and send them to the collector */
 	for (i = 0; i < num_image; i++) {
-	    if (MPI_Recv(cropped, dim, MPI_UNSIGNED_CHAR, EMITTER, IMAGE, MPI_COMM_WORLD, &status) != MPI_SUCCESS) {
-		fprintf(stderr, "MPI_Recv failed\n");
-		exit(EXIT_FAILURE);
-	    }
+	    MPI_Recv(cropped, dim, MPI_UNSIGNED_CHAR, EMITTER, IMAGE, MPI_COMM_WORLD, &status);
 	    /* image procedure */
 	    procedure(cropped, dimx, dimy, fit, matrice, vettore);
 
@@ -304,18 +249,13 @@ int main(int argc, char *argv[])
 	    for (j = 0; j < DIM_FIT; j++)
 		fit[j] = fit[j] + gsl_vector_get(delta, j);
 
-	    if (MPI_Send(fit, DIM_FIT, MPI_DOUBLE, COLLECTOR, RESULTS, MPI_COMM_WORLD) != MPI_SUCCESS) {
-		fprintf(stderr, "MPI_Send failed\n");
-		exit(EXIT_FAILURE);
-	    }
+	    MPI_Send(fit, DIM_FIT, MPI_DOUBLE, COLLECTOR, RESULTS, MPI_COMM_WORLD);
 	}
 #endif
     }
 
     /* Finalize of MPI */
-    if (MPI_Finalize() != MPI_SUCCESS) {
-	fprintf(stderr, "MPI_Finalize failed\n");
-	exit(EXIT_FAILURE);
-    }
+    MPI_Finalize();
+
     return 0;
 }

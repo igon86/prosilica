@@ -1,0 +1,137 @@
+#include "parallel.h"
+#include "image.h"
+
+/***************************************************************************************************************
+ Create Gaussian
+ ****************************************************************************************************************/
+
+/**
+ Given a filename containing the parameters of the gaussian the relative image is created.
+ 
+ \param		parameter	pathname of the file where the gaussian parameters for the simulation are specified
+ \param		dimx,dimy	dimensions of the image
+ 
+ \retval	representation of the image as a unsigned char matrix 
+ */
+unsigned char* createImage(const char *parameter, int* width, int* height){
+	
+    double input[DIM_FIT];
+	int i =0;
+	
+    /* File conteining parameters */
+    FILE *parameters = NULL;
+	
+    /* reading the input parameters */
+    if ((parameters = fopen(parameter, "r")) == NULL) {
+		fprintf(stderr, "File not valid");
+		exit(EXIT_FAILURE);
+    }
+    /* read the dimensione of the image */
+    if (fscanf(parameters, "%d\t%d\t", width, height) == 0) {
+		fprintf(stderr, "File not valid");
+		exit(EXIT_FAILURE);
+    }
+    /* initialize the fit of the Gaussian */
+    for (i = 0; i < DIM_FIT; i++) {
+		/* read the desired parameters from the file */
+		if (fscanf(parameters, "%lf\t", &input[i]) == 0) {
+			fprintf(stderr, "File not valid");
+			exit(EXIT_FAILURE);
+		}
+    }
+	
+    /* image representing the Gaussian fit */
+    return createMatrix(*height, *width, input);
+}
+
+/***************************************************************************************************************
+ Write mono8 black and white TIFF
+ ****************************************************************************************************************/
+
+/**
+ Given an image represented by an unsigned char matrix it writes the relative TIFF image
+ on a specified file
+ 
+ \param		image		image to be written on file
+ \param		dest		pathname of the output TIFF file
+ \param		w,h			width and height of the image
+ 
+ */
+void writeImage(unsigned char *image, char *dest, int w, int h)
+{
+	
+    TIFF *out = TIFFOpen(dest, "w");
+    tsize_t linebytes;
+    uint32 row = 0;
+    /* buffer used to store the row of pixel information for writing to
+	 file */
+    unsigned char *buf = NULL;
+    /* 8bit image */
+    int sampleperpixel = 1;
+	
+    TIFFSetField(out, TIFFTAG_IMAGEWIDTH, w);	/* set the width of the
+	 image */
+    TIFFSetField(out, TIFFTAG_IMAGELENGTH, h);	/* set the height of the
+	 image */
+    TIFFSetField(out, TIFFTAG_SAMPLESPERPIXEL, sampleperpixel);	/* set number of
+	 channels per pixel */
+    TIFFSetField(out, TIFFTAG_BITSPERSAMPLE, 8);	/* set the size of the
+	 channels */
+    TIFFSetField(out, TIFFTAG_ORIENTATION, ORIENTATION_TOPLEFT);	/* set the origin of the
+	 image */
+	
+    /* Some other essential fields to set */
+    TIFFSetField(out, TIFFTAG_PLANARCONFIG, PLANARCONFIG_CONTIG);
+    TIFFSetField(out, TIFFTAG_PHOTOMETRIC, PHOTOMETRIC_MINISBLACK);
+	
+    /* determining the dimension of a single row */
+    linebytes = sampleperpixel * w;	/* length in memory of one row of
+	 pixel in the image */
+	
+    /* Allocating memory to store the pixels of current row */
+    if (TIFFScanlineSize(out) == linebytes)
+		buf = (unsigned char *) _TIFFmalloc(linebytes);
+    else
+		buf = (unsigned char *) _TIFFmalloc(TIFFScanlineSize(out));
+	
+    /* Set the strip size of the file to be size of one row of pixels */
+    TIFFSetField(out, TIFFTAG_ROWSPERSTRIP,
+				 TIFFDefaultStripSize(out, w * sampleperpixel));
+	
+    /* Writing image to the file one strip at a time */
+    for (row = 0; row < h; row++) {
+		memcpy(buf, &image[(h - row - 1) * linebytes], linebytes);	/* tricky index */
+		if (TIFFWriteScanline(out, buf, row, 0) < 0)
+			break;
+    }
+    (void) TIFFClose(out);
+    if (buf)
+		_TIFFfree(buf);
+}
+
+
+/***************************************************************************************************************
+ Create Matrix
+ ****************************************************************************************************************/
+
+/**
+ Return the image of the gaussian, dimension of the image are given by ( length, width ) parameters while
+ parameters of the gaussian are stored in the array input.
+ 
+ \param	height,width		dimensions of the returned image
+ \param	input				array containing gaussian parameters
+ 
+ \retval		representation of the gaussian as a 8bit image (unsigned char)
+ */
+unsigned char *createMatrix(int height, int width, double *input)
+{
+    int i = 0, j = 0;
+    int dim = width * height;
+    unsigned char *matrix = (unsigned char *) malloc(dim);
+    unsigned char *p = matrix;
+    /* build the image */
+    for (i = 0; i < height; i++)
+		for (j = 0; j < width; j++)
+			*p++ = (unsigned char) evaluateGaussian(input, j, i);
+    return matrix;
+}
