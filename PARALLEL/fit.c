@@ -1,5 +1,8 @@
 #include "fit.h"
 #include "parallel.h"
+#ifdef DEBUG
+	#include "image.h"
+#endif	
 
 /* is useful if cropped image is invoked multiple times */
 static unsigned char *crop = NULL;
