@@ -1,8 +1,6 @@
 #include "fit.h"
 #include "parallel.h"
-#ifdef DEBUG
-	#include "image.h"
-#endif	
+#include "image.h"
 
 /* is useful if cropped image is invoked multiple times */
 static unsigned char *crop = NULL;
@@ -227,10 +225,10 @@ void maxmin(unsigned char *image, int w, int h, int *max, int *min)
  ****************************************************************************************************************/
 
 /**
- Given a filename containing the parameters of the gaussian the relative image is created. It is then analyzed and cropped.
+ Given a image it is analyzed and cropped.
  
  \param		parameter	pathname of the file where the gaussian parameters for the simulation are specified
- \param		fit			array of parameters of the gaussian estimated
+ \param		fit		array of parameters of the gaussian estimated
  \param		matrix		created image of the gaussian
  \param		cropped		crop of the image of the gaussian
  \param		dimx,dimy	dimension of the crop in the x and y axis

@@ -4,7 +4,7 @@
 
 /* MPI Variables, global for sake of code simplicity */
 
-int my_rank;			/* MPI rank of the process		 */
+int my_rank;			/* MPI rank of the process */
 int p = 0;			/* p is the number of processes */
 
 int main(int argc, char *argv[])
@@ -86,11 +86,11 @@ int main(int argc, char *argv[])
 
 	/* an image representing the gaussian is created and returned
 	as a unsigned char matrix */
-	matrix = createImage(argv[1],&width,&height);
+	matrix = createImage(argv[1], &width, &height);
 	
 	/* parameters of the gaussian are estimated and the significant 
 	part of the image is cropped */
-	initialization(matrix,width,height, fit, &cropped, &dimx, &dimy);
+	initialization(matrix, width, height, fit, &cropped, &dimx, &dimy);
 
 	/* send to the workers the parameters and images */
 	for (i = PS; i < p; i++) {
@@ -102,6 +102,7 @@ int main(int argc, char *argv[])
 #endif
 	}
     } else {
+
 #if DEBUG
 	printf("Worker with rank %d\n", my_rank);
 #endif
@@ -124,7 +125,7 @@ int main(int argc, char *argv[])
 
     ppw = (dimx * dimy) / p;
     partition = (unsigned char *) malloc(sizeof(unsigned char) * ppw);
-	initBuffers(ppw);
+    initBuffers(ppw);
 
     /* if I am the emitter I take the time */
     if (my_rank == EMITTER)

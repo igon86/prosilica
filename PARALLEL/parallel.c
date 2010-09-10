@@ -39,7 +39,7 @@ int main(int argc, char *argv[])
     unsigned char *cropped = NULL;
 
     /* indexes */
-    int i = 0, j = 0;
+    int i = 0, j = 0, w = 0;
 
     /* Gauss matrix and vector have contiguous space in memory */
     double *data = (double *) malloc(sizeof(double) * DIM_FIT * (DIM_FIT + 1));
@@ -53,13 +53,14 @@ int main(int argc, char *argv[])
     /* error status of gsl_LU */
     int error;
 
+    /* Initialize of MPI */
+    MPI_Init(&argc, &argv);
+
     /* check the input parameters */
     if (argc != 2) {
 	fprintf(stderr, "Invalid number of parameters\n");
-	exit(EXIT_FAILURE);
+	MPI_Abort(MPI_COMM_WORLD, MPI_ERR_ARG);
     }
-    /* Initialize of MPI */
-    MPI_Init(&argc, &argv);
     
     /* Every process takes the own rank */
     MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
@@ -76,9 +77,59 @@ int main(int argc, char *argv[])
 *********************************************************************/
 
     if (my_rank == EMITTER) {
+
 #ifdef DEBUG
 	printf("Emitter with rank %d\n", my_rank);
 #endif
+
+/* --------------------------------- NEW */
+
+#ifdef MODULE
+	matrix = createImage(argv[1], &width, &height);
+	initialization(matrix, width, height, fit, &cropped, &dimx, &dimy);
+
+#ifdef ON_DEMAND
+	j = PS;
+#endif
+	for(i = 0; i < STREAMLENGTH; i++){
+		/* receive the image --> TODO, now there is createImage and initialization above */
+
+		/* send to collector and workers the parameters */
+		if(i == 0){
+			dim = dimx * dimy;
+			MPI_Send(&dim, 1, MPI_INT, COLLECTOR, PARAMETERS, MPI_COMM_WORLD);
+			for(w = PS; w < p; w++){
+				MPI_Send(&dimx, 1, MPI_INT, w, PARAMETERS, MPI_COMM_WORLD);
+				MPI_Send(&dimy, 1, MPI_INT, w, PARAMETERS, MPI_COMM_WORLD);
+	    			MPI_Send(fit, DIM_FIT, MPI_DOUBLE, w, RESULTS, MPI_COMM_WORLD);
+			}
+		}
+		/* send the image */
+#ifdef ON_DEMAND
+	    	flag = 0;
+	    	while (!flag) {
+			MPI_Iprobe(j % (p - PS) + PS, MPI_ANY_TAG, MPI_COMM_WORLD, &flag, &status);
+			j++;
+	    	}
+
+		/* receive the request */
+	    	MPI_Recv(&junk, 1, MPI_INT, (j - 1) % (p - PS) + PS, REQUEST, MPI_COMM_WORLD, &status);
+
+	    	/* send the image */
+	    	MPI_Send(cropped, dim, MPI_UNSIGNED_CHAR, j % (p - PS) + PS, IMAGE, MPI_COMM_WORLD);
+#else
+		MPI_Send(cropped, dim, MPI_UNSIGNED_CHAR, i % (p - PS) + PS, IMAGE, MPI_COMM_WORLD);
+#endif
+	}
+
+#ifdef ON_DEMAND
+	/* send the termination message */
+	for (i = PS; i < p; i++)
+	    MPI_Send(NULL, 0, MPI_INT, i, TERMINATION, MPI_COMM_WORLD);
+#endif
+
+#else
+/* --------------------------------- END NEW */
 
 	/* an image representing the gaussian is created and returned
 	as a unsigned char matrix */
@@ -88,11 +139,11 @@ int main(int argc, char *argv[])
 	part of the image is cropped */
 	initialization(matrix, width, height, fit, &cropped, &dimx, &dimy);
 
-	/* send to the workers the parameters and images */
 	dim = dimx * dimy;
-	
+	/* send to collector the parameters */
 	MPI_Send(&dim, 1, MPI_INT, COLLECTOR, PARAMETERS, MPI_COMM_WORLD);
-	
+
+	/* send to the workers the parameters and images */	
 	for (i = PS; i < p; i++) {
 	    MPI_Send(&dimx, 1, MPI_INT, i, PARAMETERS, MPI_COMM_WORLD);
 	    MPI_Send(&dimy, 1, MPI_INT, i, PARAMETERS, MPI_COMM_WORLD);
@@ -138,6 +189,7 @@ int main(int argc, char *argv[])
 	}
 #endif
 
+#endif
 
 /*********************************************************************
 						COLLECTOR
