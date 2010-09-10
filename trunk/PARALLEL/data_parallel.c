@@ -1,5 +1,6 @@
 #include "fit.h"
 #include "parallel.h"
+#include "image.h"
 
 /* MPI Variables, global for sake of code simplicity */
 
@@ -14,8 +15,8 @@ int main(int argc, char *argv[])
     /* pixels per worker */
     int ppw = 0;
 	
-	/* dimension of the entire image */
-	int width,height;
+    /* dimension of the entire image */
+    int width,height;
 
     /* time variables */
     struct timeval tv1, tv2;
@@ -64,21 +65,16 @@ int main(int argc, char *argv[])
 	fprintf(stderr, "Invalid number of parameters\n");
 	exit(EXIT_FAILURE);
     }
+
     /* Initialize of MPI */
-    if (MPI_Init(&argc, &argv) != MPI_SUCCESS) {
-	fprintf(stderr, "MPI_Init failed\n");
-	exit(EXIT_FAILURE);
-    }
+    MPI_Init(&argc, &argv);
+    
     /* Every process takes their own rank */
-    if (MPI_Comm_rank(MPI_COMM_WORLD, &my_rank) != MPI_SUCCESS) {
-	fprintf(stderr, "MPI_Comm_rank failed\n");
-	exit(EXIT_FAILURE);
-    }
+    MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
+
     /* Total number of processes */
-    if (MPI_Comm_size(MPI_COMM_WORLD, &p) != MPI_SUCCESS) {
-	fprintf(stderr, "MPI_Comm_size failed\n");
-	exit(EXIT_FAILURE);
-    }
+    MPI_Comm_size(MPI_COMM_WORLD, &p);
+
 /*********************************************************************
 						INIT
 *********************************************************************/
@@ -98,18 +94,9 @@ int main(int argc, char *argv[])
 
 	/* send to the workers the parameters and images */
 	for (i = PS; i < p; i++) {
-	    if (MPI_Send(&dimx, 1, MPI_INT, i, PARAMETERS, MPI_COMM_WORLD) != MPI_SUCCESS) {
-		fprintf(stderr, "MPI_Send failed\n");
-		exit(EXIT_FAILURE);
-	    }
-	    if (MPI_Send(&dimy, 1, MPI_INT, i, PARAMETERS, MPI_COMM_WORLD) != MPI_SUCCESS) {
-		fprintf(stderr, "MPI_Send failed\n");
-		exit(EXIT_FAILURE);
-	    }
-	    if (MPI_Send(fit, DIM_FIT, MPI_DOUBLE, i, RESULTS, MPI_COMM_WORLD) != MPI_SUCCESS) {
-		fprintf(stderr, "MPI_Send failed\n");
-		exit(EXIT_FAILURE);
-	    }
+	    MPI_Send(&dimx, 1, MPI_INT, i, PARAMETERS, MPI_COMM_WORLD);
+	    MPI_Send(&dimy, 1, MPI_INT, i, PARAMETERS, MPI_COMM_WORLD);
+	    MPI_Send(fit, DIM_FIT, MPI_DOUBLE, i, RESULTS, MPI_COMM_WORLD);
 #if DEBUG
 	    printf("Emitter sends data to %d\n", i);
 #endif
@@ -119,19 +106,10 @@ int main(int argc, char *argv[])
 	printf("Worker with rank %d\n", my_rank);
 #endif
 	/* receive the dimension of the cropped image */
-	if (MPI_Recv(&dimx, 1, MPI_INT, EMITTER, PARAMETERS, MPI_COMM_WORLD, &status) != MPI_SUCCESS) {
-	    fprintf(stderr, "MPI_recv failed\n");
-	    exit(EXIT_FAILURE);
-	}
-	if (MPI_Recv(&dimy, 1, MPI_INT, EMITTER, PARAMETERS, MPI_COMM_WORLD, &status) != MPI_SUCCESS) {
-	    fprintf(stderr, "MPI_recv failed\n");
-	    exit(EXIT_FAILURE);
-	}
+	MPI_Recv(&dimx, 1, MPI_INT, EMITTER, PARAMETERS, MPI_COMM_WORLD, &status);
+	MPI_Recv(&dimy, 1, MPI_INT, EMITTER, PARAMETERS, MPI_COMM_WORLD, &status);
 	/* receive the fit of the Gaussian */
-	if (MPI_Recv(fit, DIM_FIT, MPI_DOUBLE, EMITTER, RESULTS, MPI_COMM_WORLD, &status) != MPI_SUCCESS) {
-	    fprintf(stderr, "MPI_recv failed\n");
-	    exit(EXIT_FAILURE);
-	}
+	MPI_Recv(fit, DIM_FIT, MPI_DOUBLE, EMITTER, RESULTS, MPI_COMM_WORLD, &status);
 #ifdef DEBUG
 	printf("Process %d, the initial fit is:\n%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\n", my_rank, fit[PAR_A], fit[PAR_X],
 	       fit[PAR_Y], fit[PAR_SX], fit[PAR_SY], fit[PAR_a], fit[PAR_b], fit[PAR_c]);
@@ -155,18 +133,13 @@ int main(int argc, char *argv[])
     for (i = 0; i < STREAMLENGTH; i++) {
 
 	/* the emitter executes the scatter */
-	if (MPI_Scatter(cropped, ppw, MPI_UNSIGNED_CHAR, partition, ppw, MPI_UNSIGNED_CHAR, EMITTER, MPI_COMM_WORLD) != MPI_SUCCESS) {
-	    fprintf(stderr, "MPI_Scatter failed\n");
-	    exit(EXIT_FAILURE);
-	}
+	MPI_Scatter(cropped, ppw, MPI_UNSIGNED_CHAR, partition, ppw, MPI_UNSIGNED_CHAR, EMITTER, MPI_COMM_WORLD);
 	/* execute the procedure over my partition */
 	procedure(partition, dimx, dimy / p, fit, matrice, vettore);
 
 	/* if I am the emitter I execute the reduce */
-	if (MPI_Reduce(data, ret, DIM_FIT * (DIM_FIT + 1), MPI_DOUBLE, MPI_SUM, EMITTER, MPI_COMM_WORLD) != MPI_SUCCESS) {
-	    fprintf(stderr, "MPI_Reduce failed\n");
-	    exit(EXIT_FAILURE);
-	}
+	MPI_Reduce(data, ret, DIM_FIT * (DIM_FIT + 1), MPI_DOUBLE, MPI_SUM, EMITTER, MPI_COMM_WORLD);
+
 	/* and finish the computation */
 	if (my_rank == EMITTER) {
 	    gsl_linalg_LU_decomp(&r_matrice.matrix, permutation, &error);	
@@ -179,19 +152,19 @@ int main(int argc, char *argv[])
 		   fit[PAR_Y], fit[PAR_SX], fit[PAR_SY], fit[PAR_a], fit[PAR_b], fit[PAR_c]);
 #endif
 	}
+
 	/* broadcast of the result */
 	MPI_Bcast(fit, DIM_FIT, MPI_DOUBLE, EMITTER, MPI_COMM_WORLD);
     }
 
     if (my_rank == EMITTER) {
 	gettimeofday(&tv2, NULL);
-	printf("Process with rank %d (emitter), the completion time: %ld\n",
-	       my_rank, (tv2.tv_sec - tv1.tv_sec) * 1000000 + tv2.tv_usec - tv1.tv_usec);
+	/* print the rank and the completion time */
+	printf("%d\t%d\t%ld\n", my_rank, dimx * dimy,  (tv2.tv_sec - tv1.tv_sec) * 1000000 + tv2.tv_usec - tv1.tv_usec);
     }
+    
     /* Finalize of MPI */
-    if (MPI_Finalize() != MPI_SUCCESS) {
-	fprintf(stderr, "MPI_Finalize failed\n");
-	exit(EXIT_FAILURE);
-    }
+    MPI_Finalize();
+    
     return 0;
 }
