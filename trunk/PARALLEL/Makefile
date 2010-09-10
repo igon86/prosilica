@@ -11,10 +11,10 @@ P=4
 .PHONY : farm test_farm dataparallel test_dataparallel clean valgrind regression backup new
 
 farm:
-	$(CC)$(CVER) -D_$(ARCH) -D_$(OS) $(FLAGS) -DFARM $(GSL_INCLUDE_DIR) $(LIB) ./parallel.c ./fit.c $(GSL_LIB_DIR) -o farm
+	$(CC)$(CVER) -D_$(ARCH) -D_$(OS) $(FLAGS) -DFARM $(GSL_INCLUDE_DIR) $(LIB) ./parallel.c ./fit.c ./image.c $(GSL_LIB_DIR) -o farm
 
 dataparallel:
-	$(CC)$(CVER) -D_$(ARCH) -D_$(OS) $(FLAGS) -DDATA_PARALLEL $(GSL_INCLUDE_DIR) $(LIB) ./data_parallel.c ./fit.c $(GSL_LIB_DIR) -o dataparallel
+	$(CC)$(CVER) -D_$(ARCH) -D_$(OS) $(FLAGS) -DDATA_PARALLEL $(GSL_INCLUDE_DIR) $(LIB) ./data_parallel.c ./fit.c ./image.c $(GSL_LIB_DIR) -o dataparallel
 
 test_farm:
 	mpirun -np $(NP) ./farm ./parameters
