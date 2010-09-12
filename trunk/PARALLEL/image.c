@@ -121,7 +121,7 @@ void writeImage(unsigned char *image, char *dest, int w, int h)
  \param	height,width		dimensions of the returned image
  \param	input				array containing gaussian parameters
  
- \retval		representation of the gaussian as a 8bit image (unsigned char)
+ \retval					representation of the gaussian as a 8bit image (unsigned char)
  */
 unsigned char *createMatrix(int height, int width, double *input)
 {
@@ -129,9 +129,51 @@ unsigned char *createMatrix(int height, int width, double *input)
     int dim = width * height;
     unsigned char *matrix = (unsigned char *) malloc(dim);
     unsigned char *p = matrix;
+#if DEBUG
+	printf("Sono nella createMatrix e ho allocato %d\nLA GAUSSIANA RICHIESTA HA I SEGUENTI PARAMETRI:\n",dim);
+	for (i=0;i<DIM_FIT;i++) printf("%f\t",input[i]);
+	printf("\n");
+#endif	
     /* build the image */
     for (i = 0; i < height; i++)
 		for (j = 0; j < width; j++)
 			*p++ = (unsigned char) evaluateGaussian(input, j, i);
     return matrix;
+}
+
+/***************************************************************************************************************
+ Create Gaussian
+ ****************************************************************************************************************/
+
+/**
+ Given a specified width and length it return a representation of the gaussian
+ 
+ \param		dimx,dimy	dimensions of the image
+ \retval	representation of the image as a unsigned char matrix 
+ */
+unsigned char* createGaussian(int width, int height){
+	
+    double input[DIM_FIT];
+	int i,max;
+	
+	for(i=0;i<DIM_FIT;i++) input[i] = 0;
+	
+	
+	/* random amplitude value with mean AVERAGE
+	 and a maximum deviation of DEVIATION */
+	max = AVERAGE + ( rand() % DEVIATION ) - DEVIATION/2;
+#if DEBUG
+	printf("Max is %d\n",max);
+#endif
+		
+	/* values of the gaussian are chosen with respect of the dimension
+	of the image in order to have a nice centered gaussian */ 	
+	input[PAR_A] = max;
+	input[PAR_X] = width/2;
+	input[PAR_Y] = height/2;
+	input[PAR_SX] = width/4;
+	input[PAR_SY] = height/4;
+	
+    /* image representing the Gaussian fit */
+    return createMatrix(height, width, input);
 }
