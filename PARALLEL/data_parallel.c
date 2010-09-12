@@ -55,15 +55,13 @@ int main(int argc, char *argv[])
     gsl_matrix_view r_matrice = gsl_matrix_view_array(ret, DIM_FIT, DIM_FIT);
     gsl_vector_view r_vettore = gsl_vector_view_array(ret + (DIM_FIT * DIM_FIT), DIM_FIT);
 
-#ifdef DEBUG
-    /* file per la scrittura dei risultati FILE* risultati; risultati =
-       fopen("dp_result","w"); */
-#endif
+    /* Initialize of MPI */
+    MPI_Init(&argc, &argv);
 
-    /* check the input parameters */
+	/* check the input parameters */
     if (argc != 2) {
-	fprintf(stderr, "Invalid number of parameters\n");
-	exit(EXIT_FAILURE);
+		fprintf(stderr, "Invalid number of parameters\n");
+		MPI_Abort(MPI_COMM_WORLD,MPI_ERR_ARG);
     }
 
     /* Initialize of MPI */

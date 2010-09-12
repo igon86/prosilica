@@ -54,4 +54,6 @@ void initialization(unsigned char *matrix,int width,int height, double *fit,
 /* Init fit buffers */
 void initBuffers(int npixels);
 
+void init2(unsigned char *matrix,int width,int height, double *fit);
+
 #endif

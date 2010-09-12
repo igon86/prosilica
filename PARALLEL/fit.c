@@ -442,3 +442,70 @@ void procedure(const unsigned char *data, int w, int h, double *results,
 				   &vettore.vector);
 	
 }
+
+/***************************************************************************************************************
+ Initialization of the Fit
+ ****************************************************************************************************************/
+
+/**
+ Given a image it is analyzed and cropped.
+ 
+ \param		parameter	pathname of the file where the gaussian parameters for the simulation are specified
+ \param		fit		array of parameters of the gaussian estimated
+ \param		matrix		created image of the gaussian
+ \param		cropped		crop of the image of the gaussian
+ \param		dimx,dimy	dimension of the crop in the x and y axis
+ 
+ */
+void init2(unsigned char *matrix,int width,int height, double *fit)
+{
+	
+	printf("SONO NELLA INIT 2\nwidth: %d\nheight: %d\n",width,height);
+    /* parameters for the cookie cutter */
+    int x0, y0, span_x, span_y;
+	
+    /* parameters for the mask */
+    int max = 0, min = 0;
+	
+    /* pixel mask for reduce the dimension of the region to analyze */
+    unsigned char *mask = NULL;
+	
+    /* writing the image to be fitted in a TIFF file */
+#if DEBUG
+    writeImage(matrix, (char *) "gaussiana.tiff", width,
+			   height);
+#endif
+    maxmin(matrix, width, height, &max, &min);
+	
+#if DEBUG
+    printf("MAX: %d MIN: %d\n", max, min);
+#endif
+	
+    /* a pixel mask is created in order to reduce the dimensione of the
+	 region to analyze with the centroid */
+    mask =
+	createMask(matrix, width, height, max, min,
+			   CROP_PARAMETER);
+	
+#if DEBUG
+    writeImage(mask, (char *) "mask.tiff", width, height);
+#endif
+	
+    centroid(mask, width, height, &x0, &y0, &span_x, &span_y);
+	
+#if DEBUG
+    printf("centro in %d - %d\nCon ampiezza %d e %d\n", x0, y0, span_x,
+		   span_y);
+#endif
+	
+    fit[PAR_A] = max;
+    fit[PAR_X] = span_x;
+    fit[PAR_Y] = span_y;
+    fit[PAR_SX] = span_x / 2;
+    fit[PAR_SY] = span_y / 2;
+	fit[PAR_a] = fit[PAR_b] = 0;
+    fit[PAR_c] = min;
+	
+	if(mask)
+		free(mask);
+}
