@@ -86,7 +86,7 @@ int main(int argc, char *argv[])
 		/* y dimension of the image is adjusted (if needed) */
 		while (height % p != 0) height++;
 		/* image is created */
-		image = createGaussian(width, height);
+		image = createImage(width, height);
 
 		/* parameters of the gaussian are estimated */
 		init2(image, width, height,fit);

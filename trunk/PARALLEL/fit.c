@@ -2,9 +2,6 @@
 #include "parallel.h"
 #include "image.h"
 
-/* is useful if cropped image is invoked multiple times */
-static unsigned char *crop = NULL;
-
 /* vectors used in the main loop with relative gsl_view */
 static gsl_matrix_view gsl_M;
 static gsl_vector_view gsl_diff;
@@ -137,37 +134,6 @@ unsigned char *createMask(unsigned char *image, int w, int h, int max,
 }
 
 /***************************************************************************************************************
- Crop Function
- ****************************************************************************************************************/
-
-/**
- Return a portion of the input image as specified by the input coordinates and x,y dimensions
- The image is actually saved as a static variables
- 
- \param		image		pointer of the input image
- \param		w,h			width and heigth of the input image
- \param		x0,y0		coordinates of the starting point of the crop
- \param		dimx,dimy	dimensione of the crop
- 
- \retval		representation of the crop as a 8bit image (unsigned char)
- */
-
-unsigned char *cropImage(const unsigned char *input, int w, int h, int x0,
-						 int y0, int dimx, int dimy)
-{
-    int count = 0, i = 0;
-    int dimension = dimx * dimy;
-    if (crop != NULL)
-		free(crop);
-    crop = (unsigned char *) malloc(dimension);
-    for (i = 0; i < w * h; i++)
-		if (i % w >= x0 && i % w <= x0 + dimx - 1 && i / w >= y0
-			&& i / w <= y0 + dimy - 1)
-			crop[count++] = input[i];
-    return crop;
-}
-
-/***************************************************************************************************************
  Evaluate Gaussian at Coordinates (x,y)
  ****************************************************************************************************************/
 
@@ -218,104 +184,6 @@ void maxmin(unsigned char *image, int w, int h, int *max, int *min)
 			*min = image[i];
     }
 }
-
-
-/***************************************************************************************************************
- Initialization of the Fit
- ****************************************************************************************************************/
-
-/**
- Given a image it is analyzed and cropped.
- 
- \param		parameter	pathname of the file where the gaussian parameters for the simulation are specified
- \param		fit		array of parameters of the gaussian estimated
- \param		matrix		created image of the gaussian
- \param		cropped		crop of the image of the gaussian
- \param		dimx,dimy	dimension of the crop in the x and y axis
- 
- */
-void initialization(unsigned char *matrix,int width,int height, double *fit,
-					 unsigned char **cropped,
-					int *dimx, int *dimy)
-{
-	
-    /* parameters for the cookie cutter */
-    int x0, y0, span_x, span_y;
-	
-    /* parameters for the mask */
-    int max = 0, min = 0;
-	
-    /* pixel mask for reduce the dimension of the region to analyze */
-    unsigned char *mask = NULL;
-	
-    /* writing the image to be fitted in a TIFF file */
-#if DEBUG
-    writeImage(matrix, (char *) "gaussiana.tiff", width,
-			   height);
-#endif
-    maxmin(matrix, width, height, &max, &min);
-	
-#if DEBUG
-    printf("MAX: %d MIN: %d\n", max, min);
-#endif
-	
-    /* a pixel mask is created in order to reduce the dimensione of the
-	 region to analyze with the centroid */
-    mask =
-	createMask(matrix, width, height, max, min,
-			   CROP_PARAMETER);
-	
-#if DEBUG
-    writeImage(mask, (char *) "mask.tiff", width, height);
-#endif
-	
-    centroid(mask, width, height, &x0, &y0, &span_x, &span_y);
-	
-#if DEBUG
-    printf("centro in %d - %d\nCon ampiezza %d e %d\n", x0, y0, span_x,
-		   span_y);
-#endif
-	
-    *dimx = 2 * span_x + 1;
-    *dimy = 2 * span_y + 1;
-	
-#ifdef DATA_PARALLEL
-    while (*dimx % p != 0)
-		++ * dimx;
-    while (*dimy % p != 0)
-		++ * dimy;
-#endif
-	
-    /**
-     inizialization of the fit of the Gaussian
-     NOTE: the coordinates of the position (x,y) are relative to the cropped portion of the image.
-     The value of span_x, which is approximately the diameter of the gaussian, is generally not as bad
-     as you may think to start the fit.
-     */
-    fit[PAR_A] = max;
-    fit[PAR_X] = span_x;
-    fit[PAR_Y] = span_y;
-    fit[PAR_SX] = span_x / 2;
-    fit[PAR_SY] = span_y / 2;
-	fit[PAR_a] = fit[PAR_b] = 0;
-    fit[PAR_c] = min;
-	
-#if DEBUG
-    printf("%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\n", fit[PAR_A],
-		   fit[PAR_X] + x0 - span_x, fit[PAR_Y] + y0 - span_y, fit[PAR_SX],
-		   fit[PAR_SY], fit[PAR_a], fit[PAR_b], fit[PAR_c]);
-#endif
-    *cropped =
-	cropImage(matrix, width, height, x0 - span_x,
-			  y0 - span_y, *dimx, *dimy);
-	
-#if DEBUG
-    writeImage(*cropped, (char *) "./CROP.tiff", *dimx, *dimy);
-#endif
-	if(mask)
-		free(mask);
-}
-
 
 /***************************************************************************************************************
  Init Fit Buffers

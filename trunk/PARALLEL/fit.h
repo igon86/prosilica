@@ -37,23 +37,16 @@ unsigned char* createMask (unsigned char* image, int w, int h, int max, int min,
 /* Evaluate the centroid */
 void centroid (unsigned char* image, int w, int h, int* x, int* y, int* sigma_x, int* sigma_y);
 
-/* Reduce the dimension of the image */
-unsigned char *cropImage(const unsigned char *input, int w, int h, int x0, int y0, int dimx, int dimy);
-
 /* Task over the image */
 void procedure (const unsigned char* data, int x, int y,  double * results, gsl_matrix_view matrice,gsl_vector_view vettore);
 
 /* Evaluate the Gaussian at coordinates (x, y) */
 double evaluateGaussian (double* gaussian, int x, int y);
 
-/* Initialize of the fit */
-void initialization(unsigned char *matrix,int width,int height, double *fit,
-					 unsigned char **cropped,
-					int *dimx, int *dimy);
-
 /* Init fit buffers */
 void initBuffers(int npixels);
 
+/* Estimate the parameters of the gaussian */
 void init2(unsigned char *matrix,int width,int height, double *fit);
 
 #endif
