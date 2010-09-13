@@ -459,8 +459,6 @@ void procedure(const unsigned char *data, int w, int h, double *results,
  */
 void init2(unsigned char *matrix,int width,int height, double *fit)
 {
-	
-	printf("SONO NELLA INIT 2\nwidth: %d\nheight: %d\n",width,height);
     /* parameters for the cookie cutter */
     int x0, y0, span_x, span_y;
 	

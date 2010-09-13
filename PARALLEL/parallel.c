@@ -86,17 +86,6 @@ int main(int argc, char *argv[])
 		printf("Emitter with rank %d\n", my_rank);
 #endif
 		
-		/* an image representing the gaussian is created and returned
-		 as a unsigned char matrix */
-		width = atoi(argv[1]);
-		height = atoi(argv[2]);
-		image = createGaussian(width, height);
-		
-		/* parameters of the gaussian are estimated */
-		init2(image, width, height,fit);
-		
-		dim = width * height;
-		
 #ifdef MODULE  /* --------------------------------- NEW */	
 		
 #ifdef ON_DEMAND
@@ -139,6 +128,17 @@ int main(int argc, char *argv[])
 #endif
 		
 #else  /* --------------------------------- END NEW */
+
+		/* an image representing the gaussian is created and returned
+		as a unsigned char matrix */
+		width = atoi(argv[1]);
+		height = atoi(argv[2]);
+		image = createGaussian(width, height);
+		
+		/* parameters of the gaussian are estimated */
+		init2(image, width, height,fit);
+		
+		dim = width * height;
 		
 		/* send to collector the number of pixels */
 		MPI_Send(&dim, 1, MPI_INT, COLLECTOR, PARAMETERS, MPI_COMM_WORLD);
@@ -174,6 +174,7 @@ int main(int argc, char *argv[])
 			
 			/* send the image */
 			MPI_Send(image, dim, MPI_UNSIGNED_CHAR, j % (p - PS) + PS, IMAGE, MPI_COMM_WORLD);
+
 #else		/* NOT ON_DEMAND */
 			MPI_Send(image, dim, MPI_UNSIGNED_CHAR, i % (p - PS) + PS, IMAGE, MPI_COMM_WORLD);
 #endif			
