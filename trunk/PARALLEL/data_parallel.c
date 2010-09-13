@@ -89,7 +89,7 @@ int main(int argc, char *argv[])
 		image = createImage(width, height);
 
 		/* parameters of the gaussian are estimated */
-		init2(image, width, height,fit);
+		initialization(image, width, height,fit);
 		
 #if DEBUG
 		printf("Emitter sopravvissuto alla init\n");
