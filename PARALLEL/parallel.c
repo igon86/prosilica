@@ -29,7 +29,7 @@ int main(int argc, char *argv[])
     unsigned char* image = NULL;
 	
 	/* indexes */
-    int i = 0, j = 0;
+    int i = 0;
 	
 #ifdef MODULO
 	int w = 0;
@@ -39,13 +39,6 @@ int main(int argc, char *argv[])
     double *data = (double *) malloc(sizeof(double) * DIM_FIT * (DIM_FIT + 1));
     gsl_matrix_view matrice = gsl_matrix_view_array(data, DIM_FIT, DIM_FIT);
     gsl_vector_view vettore = gsl_vector_view_array(data + (DIM_FIT * DIM_FIT), DIM_FIT);
-    /* vector of solution */
-    gsl_vector *delta = gsl_vector_alloc(DIM_FIT);
-    /* data for the LU solver */
-    gsl_permutation *permutation = gsl_permutation_alloc(DIM_FIT);
-	
-    /* error status of gsl_LU */
-    int error;
 	
 	/* random number generator seed */
 	srand(time(NULL));
@@ -123,15 +116,15 @@ int main(int argc, char *argv[])
 #endif
 		
 #else  /* --------------------------------- END NEW */
-
+		
 		/* an image representing the gaussian is created and returned
-		as a unsigned char matrix */
+		 as a unsigned char matrix */
 		width = atoi(argv[1]);
 		height = atoi(argv[2]);
 		image = createImage(width, height);
 		
 		/* parameters of the gaussian are estimated */
-		init2(image, width, height,fit);
+		initialization(image, width, height,fit);
 		
 		dim = width * height;
 		
@@ -150,13 +143,12 @@ int main(int argc, char *argv[])
 			MPI_Send(image, dim, MPI_UNSIGNED_CHAR, i, IMAGE, MPI_COMM_WORLD);
 		}
 		
-		j = PS;
 		for (i = p - PS; i < STREAMLENGTH; i++) {
-		
+			
 #ifdef DEBUG
 			printf("Emitter sends image %d\n", i);
 #endif
-
+			
 #ifdef ON_DEMAND  /* ON_DEMAND */
 			
 			/* receive the request */
@@ -164,7 +156,7 @@ int main(int argc, char *argv[])
 			
 			/* send the image */
 			MPI_Send(image, dim, MPI_UNSIGNED_CHAR, status.MPI_SOURCE, IMAGE, MPI_COMM_WORLD);
-
+			
 #else		/* NOT ON_DEMAND */
 			MPI_Send(image, dim, MPI_UNSIGNED_CHAR, i % (p - PS) + PS, IMAGE, MPI_COMM_WORLD);
 #endif			
@@ -195,10 +187,16 @@ int main(int argc, char *argv[])
 		MPI_Recv(&dim, 1, MPI_INT, EMITTER, PARAMETERS, MPI_COMM_WORLD, &status);
 		/* take the time */
 		gettimeofday(&tv1, NULL);
-		
-		for (i = 0; i < STREAMLENGTH; i++) {
+		i = 0;
+		while (i < p - PS) {
 			
-			MPI_Recv(fit, DIM_FIT, MPI_DOUBLE, MPI_ANY_SOURCE, RESULTS, MPI_COMM_WORLD, &status);	
+			MPI_Recv(fit, DIM_FIT, MPI_DOUBLE, MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
+			if (status.MPI_TAG == TERMINATION) {
+#ifdef DEBUG
+				printf("Worker %d has ended\n", status.MPI_SOURCE);
+#endif
+				i++;
+			}	
 #ifdef DEBUG
 			/* PRINTOUT OF THE CURRENT RESULT */
 			printf("Image %d: %f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\n", i, fit[PAR_A], fit[PAR_X],
@@ -229,11 +227,10 @@ int main(int argc, char *argv[])
 			   fit[PAR_Y], fit[PAR_SX], fit[PAR_SY], fit[PAR_a], fit[PAR_b], fit[PAR_c]);
 #endif
 		
-		/* calculate number of pixels and initializa buffers for the fit */
+		/* calculate number of pixels and initialize buffers for the fit */
 		dim = width * height;
 		initBuffers(dim);
 		image = (unsigned char *) malloc(dim);
-
 		
 		while (TRUE) {
 #ifdef ON_DEMAND		
@@ -247,19 +244,17 @@ int main(int argc, char *argv[])
 #ifdef DEBUG
 				printf("Worker %d ends\n", my_rank);
 #endif
+				/* last result is sent to the collector with a different TAG */
+				MPI_Send(fit, DIM_FIT, MPI_DOUBLE, COLLECTOR, TERMINATION, MPI_COMM_WORLD);
 				break;
 			}
+			/* receive the image from the emitter */
 			MPI_Recv(image, dim, MPI_UNSIGNED_CHAR, EMITTER, IMAGE, MPI_COMM_WORLD, &status);
 			/* calculation of the Gauss matrix and vector */
 			procedure(image, width, height, fit, matrice, vettore);
-			
-			/* solve the system */
-			gsl_linalg_LU_decomp(&matrice.matrix, permutation, &error);
-			gsl_linalg_LU_solve(&matrice.matrix, permutation, &vettore.vector, delta);
-			
-			for (i = 0; i < DIM_FIT; i++)
-				fit[i] = fit[i] + gsl_vector_get(delta, i);
-			
+			/* solve the system and adjust the fit vector */
+			postProcedure(matrice,vettore,fit);
+			/* send the result to the collector */
 			MPI_Send(fit, DIM_FIT, MPI_DOUBLE, COLLECTOR, RESULTS, MPI_COMM_WORLD);
 		}
     }

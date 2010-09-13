@@ -11,9 +11,9 @@ static double* diff = NULL;
 extern int my_rank;
 extern int p;
 
-/***************************************************************************************************************
- Post Procedure
- ****************************************************************************************************************/
+/*********************************************************************
+ POST PROCEDURE
+ *********************************************************************/
 
 /**
  Given a pixel mask of a gaussian image, represented by an unsigned char matrix, it estimates the center and the variance
@@ -29,18 +29,18 @@ void postProcedure(gsl_matrix_view matrice,gsl_vector_view vettore, double* fit)
 	/* data for the LU solver */
     gsl_vector *delta = gsl_vector_alloc(DIM_FIT);
     gsl_permutation *permutation = gsl_permutation_alloc(DIM_FIT);
-	int j,error;
+	int i,error;
 	
 	gsl_linalg_LU_decomp(&matrice.matrix, permutation, &error);	
 	gsl_linalg_LU_solve(&matrice.matrix, permutation, &vettore.vector, delta);
 	
-	for (j = 0; j < DIM_FIT; j++)
-		fit[j] = fit[j] + gsl_vector_get(delta, j);
+	for (i = 0; i < DIM_FIT; i++)
+	fit[i] = fit[i] + gsl_vector_get(delta, i);
 }
 
-/***************************************************************************************************************
- Centroid
- ****************************************************************************************************************/
+/*********************************************************************
+ CENTROID
+ *********************************************************************/
 
 /**
  Given a pixel mask of a gaussian image, represented by an unsigned char matrix, it estimates the center and the variance
@@ -64,9 +64,9 @@ void centroid(unsigned char *image, int w, int h, int *x, int *y,
     int down_border = 0, up_border = 0;
 	
     for (i = 0; i < h; i++)
-		counth[i] = 0;
+	counth[i] = 0;
     for (i = 0; i < w; i++)
-		countw[i] = 0;
+	countw[i] = 0;
     for (i = 0; i < npixels; i++) {
 		if (image[i]) {
 			++count;
@@ -79,18 +79,18 @@ void centroid(unsigned char *image, int w, int h, int *x, int *y,
     for (i = 0; i < w; i++) {
 		w_center = w_center + ((double) countw[i] / count) * (i + 1);
 		if (!left_border && countw[i])
-			left_border = i;
+		left_border = i;
 		if (left_border && !right_border && !countw[i])
-			right_border = i;
+		right_border = i;
     }
 	
     /* H CENTER */
     for (i = 0; i < h; i++) {
 		h_center = h_center + ((double) counth[i] / count) * (i + 1);
 		if (!down_border && counth[i])
-			down_border = i;
+		down_border = i;
 		if (down_border && !up_border && !counth[i])
-			up_border = i;
+		up_border = i;
     }
     *x = (int) w_center;
     *y = (int) h_center;
@@ -101,9 +101,9 @@ void centroid(unsigned char *image, int w, int h, int *x, int *y,
     free(countw);
 }
 
-/***************************************************************************************************************
- Cookie Mask
- ****************************************************************************************************************/
+/*********************************************************************
+ COOKIE MASK
+ *********************************************************************/
 
 /**
  Return the luminosity mask of an image. Pixels above a certain threshold of luminosity (specified
@@ -126,16 +126,16 @@ unsigned char *createMask(unsigned char *image, int w, int h, int max,
     for (i = 0; i < npixels; i++) {
 		unsigned char temp = image[i];
 		if (temp > threshold)
-			cookie[i] = MAXIMUM;
+		cookie[i] = MAXIMUM;
 		else
-			cookie[i] = 0;
+		cookie[i] = 0;
     }
     return cookie;
 }
 
-/***************************************************************************************************************
- Evaluate Gaussian at Coordinates (x,y)
- ****************************************************************************************************************/
+/*********************************************************************
+ EVALUATE GAUSSIAN
+ *********************************************************************/
 
 /**
  Return the value of a given gaussian in a given point
@@ -159,9 +159,9 @@ double evaluateGaussian(double *gaussian, int x, int y)
     return gaussian[PAR_A] * exp(arg) + slope;
 }
 
-/***************************************************************************************************************
- Calculate Max & Min Luminosity of an Image
- ****************************************************************************************************************/
+/*********************************************************************
+ MAXIMUM LUMINOSITY
+ *********************************************************************/
 
 /**
  Given an image it determines the maximum and minimum luminosity of the image
@@ -179,17 +179,17 @@ void maxmin(unsigned char *image, int w, int h, int *max, int *min)
     *min = MAXIMUM;
     for (i = 0; i < npixels; i++) {
 		if (image[i] > *max)
-			*max = image[i];
+		*max = image[i];
 		if (image[i] < *min)
-			*min = image[i];
+		*min = image[i];
     }
 }
 
-/***************************************************************************************************************
- Init Fit Buffers
- ****************************************************************************************************************/
- 
- /**
+/*********************************************************************
+ INIT FIT BUFFERS
+ *********************************************************************/
+
+/**
  Computes the gradients of the gaussian relative to the given coordinates (x,y), results
  are stored in the given gradient matrix M
  
@@ -200,7 +200,7 @@ void maxmin(unsigned char *image, int w, int h, int *max, int *min)
  \param		vettore		gauss vector
  
  */
- void initBuffers(int npixels){
+void initBuffers(int npixels){
 #ifdef DEBUG
 	printf("Sono il processo %d e mi sono stati chiesti %d pixels\n",p,npixels);
 #endif
@@ -208,11 +208,11 @@ void maxmin(unsigned char *image, int w, int h, int *max, int *min)
     diff = (double *) malloc(sizeof(double) * npixels);
 	gsl_M = gsl_matrix_view_array(M, npixels, DIM_FIT);
     gsl_diff = gsl_vector_view_array(diff, npixels);
- }
+}
 
-/***************************************************************************************************************
- Gaussian Gradients
- ****************************************************************************************************************/
+/*********************************************************************
+ GAUSSIAN GRADIENTS
+ *********************************************************************/
 
 /**
  Computes the gradients of the gaussian relative to the given coordinates (x,y), results
@@ -226,7 +226,7 @@ void maxmin(unsigned char *image, int w, int h, int *max, int *min)
  
  */
 void computeGradient(double* M, int x , int y, double* results){
-
+	
 	double diff_x = 0.0, diff_y = 0.0, frac_x = 0.0, frac_y = 0.0, sig2x =
 	0.0, sig2y = 0.0, dexp = 0.0;
 	
@@ -256,9 +256,9 @@ void computeGradient(double* M, int x , int y, double* results){
 	M[7] = 1.0;
 }
 
-/***************************************************************************************************************
- Fit Algorithm
- ****************************************************************************************************************/
+/*********************************************************************
+ FIT ALGORITHM
+ *********************************************************************/
 
 /**
  Given an image and an array of previous results return the Gauss matrix and vector
@@ -311,21 +311,17 @@ void procedure(const unsigned char *data, int w, int h, double *results,
 	
 }
 
-/***************************************************************************************************************
- Initialization of the Fit
- ****************************************************************************************************************/
-
+/*********************************************************************
+ INITIALIZATION OF THE FIT
+ *********************************************************************/
 /**
- Given a image it is analyzed and cropped.
+ Given a gaussian image it estimates its parameters.
  
- \param		parameter	pathname of the file where the gaussian parameters for the simulation are specified
- \param		fit		array of parameters of the gaussian estimated
- \param		matrix		created image of the gaussian
- \param		cropped		crop of the image of the gaussian
- \param		dimx,dimy	dimension of the crop in the x and y axis
+ \param		matrix			image of the gaussian
+ \param		width,height	dimensions of the image in the x and y axis
  
  */
-void init2(unsigned char *matrix,int width,int height, double *fit)
+void initialization(unsigned char *matrix,int width,int height, double *fit)
 {
     /* parameters for the cookie cutter */
     int x0, y0, span_x, span_y;
@@ -373,5 +369,5 @@ void init2(unsigned char *matrix,int width,int height, double *fit)
     fit[PAR_c] = min;
 	
 	if(mask)
-		free(mask);
+	free(mask);
 }
