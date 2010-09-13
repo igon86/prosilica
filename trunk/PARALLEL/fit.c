@@ -292,7 +292,11 @@ void procedure(const unsigned char *data, int w, int h, double *results,
 #endif
 		
 #ifdef DATA_PARALLEL
+#ifdef PADDED
+		y = ((i + 1) / w) + h * (my_rank-1);
+#else
 		y = ((i + 1) / w) + h * my_rank;
+#endif				
 #endif
 		
 		base = i * DIM_FIT;

@@ -37,15 +37,9 @@ int main(int argc, char *argv[])
     unsigned char *partition;
 	
     /* indexes */
-    int i = 0, j = 0;
+    int i = 0;
 	
-    /* data for the LU solver */
-    gsl_vector *delta = gsl_vector_alloc(DIM_FIT);
-    gsl_permutation *permutation = gsl_permutation_alloc(DIM_FIT);
-	
-    /* error status of gsl_LU */
-    int error = 0;
-	
+	/* buffer for fit procedure */
     double *data = (double *) malloc(sizeof(double) * DIM_FIT * (DIM_FIT + 1));
     gsl_matrix_view matrice = gsl_matrix_view_array(data, DIM_FIT, DIM_FIT);
     gsl_vector_view vettore = gsl_vector_view_array(data + (DIM_FIT * DIM_FIT), DIM_FIT);
@@ -80,14 +74,14 @@ int main(int argc, char *argv[])
 #endif
 		
 		/* an image representing the gaussian is created and returned
-		as a unsigned char matrix */
+		 as a unsigned char matrix */
 		width = atoi(argv[1]);
 		height = atoi(argv[2]);
 		/* y dimension of the image is adjusted (if needed) */
 		while (height % p != 0) height++;
 		/* image is created */
 		image = createImage(width, height);
-
+		
 		/* parameters of the gaussian are estimated */
 		initialization(image, width, height,fit);
 		
@@ -120,13 +114,13 @@ int main(int argc, char *argv[])
 #endif
 		
     }
-		
+	
     /*********************************************************************
 	 LOOP on ELEMENTS
      *********************************************************************/
 	
 	/* dimension of the local partition are determined and relative buffers
-	are initialized */  
+	 are initialized */  
 	dim = width * height;
 	dimx = width;
 	dimy = height / p;
@@ -150,15 +144,12 @@ int main(int argc, char *argv[])
 		
 		/* and finish the computation */
 		if (my_rank == EMITTER) {
-			gsl_linalg_LU_decomp(&r_matrice.matrix, permutation, &error);	
-			gsl_linalg_LU_solve(&r_matrice.matrix, permutation, &r_vettore.vector, delta);
-			
-			for (j = 0; j < DIM_FIT; j++)
-				fit[j] = fit[j] + gsl_vector_get(delta, j);
+			postProcedure(r_matrice,r_vettore,fit);
 #ifdef DEBUG
 			printf("Image %d: %f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\n", i, fit[PAR_A], fit[PAR_X],
 				   fit[PAR_Y], fit[PAR_SX], fit[PAR_SY], fit[PAR_a], fit[PAR_b], fit[PAR_c]);
 #endif
+			
 		}
 		
 		/* broadcast of the result */
@@ -171,8 +162,8 @@ int main(int argc, char *argv[])
 	
     if (my_rank == EMITTER) {
 		gettimeofday(&tv2, NULL);
-		/* print the rank and the completion time */
-		printf("%d\t%d\t%ld\n", my_rank, dim,  (tv2.tv_sec - tv1.tv_sec) * 1000000 + tv2.tv_usec - tv1.tv_usec);
+		/* print the parallelism degree, data size and the completion time */
+		printf("%d\t%d\t%ld\n", p, dim,  (tv2.tv_sec - tv1.tv_sec) * 1000000 + tv2.tv_usec - tv1.tv_usec);
     }
     
     /* Finalize of MPI */
