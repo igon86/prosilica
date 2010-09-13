@@ -2,49 +2,6 @@
 #include "image.h"
 
 /***************************************************************************************************************
- Create Gaussian
- ****************************************************************************************************************/
-
-/**
- Given a filename containing the parameters of the gaussian the relative image is created.
- 
- \param		parameter	pathname of the file where the gaussian parameters for the simulation are specified
- \param		dimx,dimy	dimensions of the image
- 
- \retval	representation of the image as a unsigned char matrix 
- */
-unsigned char* createImage(const char *parameter, int* width, int* height){
-	
-    double input[DIM_FIT];
-	int i =0;
-	
-    /* File conteining parameters */
-    FILE *parameters = NULL;
-	
-    /* reading the input parameters */
-    if ((parameters = fopen(parameter, "r")) == NULL) {
-		fprintf(stderr, "File not valid");
-		exit(EXIT_FAILURE);
-    }
-    /* read the dimensione of the image */
-    if (fscanf(parameters, "%d\t%d\t", width, height) == 0) {
-		fprintf(stderr, "File not valid");
-		exit(EXIT_FAILURE);
-    }
-    /* initialize the fit of the Gaussian */
-    for (i = 0; i < DIM_FIT; i++) {
-		/* read the desired parameters from the file */
-		if (fscanf(parameters, "%lf\t", &input[i]) == 0) {
-			fprintf(stderr, "File not valid");
-			exit(EXIT_FAILURE);
-		}
-    }
-	
-    /* image representing the Gaussian fit */
-    return createMatrix(*height, *width, input);
-}
-
-/***************************************************************************************************************
  Write mono8 black and white TIFF
  ****************************************************************************************************************/
 
@@ -151,7 +108,7 @@ unsigned char *createMatrix(int height, int width, double *input)
  \param		dimx,dimy	dimensions of the image
  \retval	representation of the image as a unsigned char matrix 
  */
-unsigned char* createGaussian(int width, int height){
+unsigned char* createImage(int width, int height){
 	
     double input[DIM_FIT];
 	int i,max;

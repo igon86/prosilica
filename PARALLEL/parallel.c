@@ -11,7 +11,7 @@ int main(int argc, char *argv[])
 {
 	
 #ifdef ON_DEMAND
-    int flag = 0, junk = 0;
+    int junk = 0;
 #endif
 	/* return status of MPI functions */
     MPI_Status status;
@@ -19,11 +19,6 @@ int main(int argc, char *argv[])
     int dim = 0;
     /* dimensions of the image */
     int width,height;
-	
-#ifndef ON_DEMAND
-    /* number of images per worker */
-    int num_image = 0;
-#endif
 	
     /* time variables */
     struct timeval tv1, tv2;
@@ -133,7 +128,7 @@ int main(int argc, char *argv[])
 		as a unsigned char matrix */
 		width = atoi(argv[1]);
 		height = atoi(argv[2]);
-		image = createGaussian(width, height);
+		image = createImage(width, height);
 		
 		/* parameters of the gaussian are estimated */
 		init2(image, width, height,fit);
@@ -163,17 +158,12 @@ int main(int argc, char *argv[])
 #endif
 
 #ifdef ON_DEMAND  /* ON_DEMAND */
-			flag = 0;
-			while (!flag) {
-				MPI_Iprobe(j % (p - PS) + PS, MPI_ANY_TAG, MPI_COMM_WORLD, &flag, &status);
-				j++;
-			}
 			
 			/* receive the request */
-			MPI_Recv(&junk, 1, MPI_INT, (j - 1) % (p - PS) + PS, REQUEST, MPI_COMM_WORLD, &status);
+			MPI_Recv(&junk, 1, MPI_INT, MPI_ANY_SOURCE, REQUEST, MPI_COMM_WORLD, &status);
 			
 			/* send the image */
-			MPI_Send(image, dim, MPI_UNSIGNED_CHAR, j % (p - PS) + PS, IMAGE, MPI_COMM_WORLD);
+			MPI_Send(image, dim, MPI_UNSIGNED_CHAR, status.MPI_SOURCE, IMAGE, MPI_COMM_WORLD);
 
 #else		/* NOT ON_DEMAND */
 			MPI_Send(image, dim, MPI_UNSIGNED_CHAR, i % (p - PS) + PS, IMAGE, MPI_COMM_WORLD);
@@ -208,21 +198,7 @@ int main(int argc, char *argv[])
 		
 		for (i = 0; i < STREAMLENGTH; i++) {
 			
-#ifdef ON_DEMAND
-			/* the collector tests for know which worker has terminated */
-			j = 0;
-			flag = 0;
-			while (!flag) {
-				MPI_Iprobe(j % (p - PS) + PS, MPI_ANY_TAG, MPI_COMM_WORLD, &flag, &status);
-				j++;
-			}
-			/* and receive */
-			MPI_Recv(fit, DIM_FIT, MPI_DOUBLE, (j - 1) % (p - PS) + PS, RESULTS, MPI_COMM_WORLD, &status);
-#else
-			/* if NOT ON_DEMAND the colector receives linearly */
-			MPI_Recv(fit, DIM_FIT, MPI_DOUBLE, i % (p - PS) + PS, RESULTS, MPI_COMM_WORLD, &status);
-#endif
-			
+			MPI_Recv(fit, DIM_FIT, MPI_DOUBLE, MPI_ANY_SOURCE, RESULTS, MPI_COMM_WORLD, &status);	
 #ifdef DEBUG
 			/* PRINTOUT OF THE CURRENT RESULT */
 			printf("Image %d: %f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\n", i, fit[PAR_A], fit[PAR_X],
@@ -232,8 +208,8 @@ int main(int argc, char *argv[])
 		/* take the time */
 		gettimeofday(&tv2, NULL);
 		
-		/* print the rank and the completion time */
-		printf("%d\t%d\t%ld\n", my_rank, dim, (tv2.tv_sec - tv1.tv_sec) * 1000000 + tv2.tv_usec - tv1.tv_usec);
+		/* print parallelism degree, data size and the completion time */
+		printf("%d\t%d\t%ld\n", p, dim, (tv2.tv_sec - tv1.tv_sec) * 1000000 + tv2.tv_usec - tv1.tv_usec);
 		
 		/*********************************************************************
 		 WORKER

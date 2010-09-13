@@ -7,9 +7,6 @@
 #define AVERAGE 200
 #define DEVIATION 50
 
-/* Create a gaussian Image */
-unsigned char* createGaussian(int width, int height);
-
 /* Create the image representing the Gaussian */
 unsigned char* createMatrix (int length, int width, double* input);
 
@@ -17,6 +14,6 @@ unsigned char* createMatrix (int length, int width, double* input);
 void writeImage (unsigned char* image, char *dest, int w, int h);
 
 /* Create a gaussian Image */
-unsigned char* createImage(const char* parameters, int* width, int* height);
+unsigned char* createImage(int width, int height);
 
 #endif
