@@ -20,7 +20,7 @@
 #endif
 
 #ifdef DATA_PARALLEL
-#define PS 1
+#define PS 0
 #endif
 
 /* define MPI tags of the messages */
