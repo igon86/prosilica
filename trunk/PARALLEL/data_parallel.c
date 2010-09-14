@@ -137,7 +137,7 @@ int main(int argc, char *argv[])
 		/* the emitter executes the scatter */
 		MPI_Scatter(image, ppw, MPI_UNSIGNED_CHAR, partition, ppw, MPI_UNSIGNED_CHAR, EMITTER, MPI_COMM_WORLD);
 		/* execute the procedure over my partition */
-		procedure(partition, dimx, dimy , fit, matrice, vettore);
+		procedure(partition, dimx, dimy , fit, matrice, vettore,dimy*my_rank);
 		
 		/* if I am the emitter I execute the reduce */
 		MPI_Reduce(data, ret, DIM_FIT * (DIM_FIT + 1), MPI_DOUBLE, MPI_SUM, EMITTER, MPI_COMM_WORLD);

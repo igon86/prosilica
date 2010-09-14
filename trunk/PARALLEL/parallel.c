@@ -19,7 +19,8 @@ int main(int argc, char *argv[])
     int dim = 0;
     /* dimensions of the image */
     int width,height;
-	
+	/* image count */
+	int num_image=0,num_worker;
     /* time variables */
     struct timeval tv1, tv2;
 	
@@ -73,50 +74,8 @@ int main(int argc, char *argv[])
 #ifdef DEBUG
 		printf("Emitter with rank %d\n", my_rank);
 #endif
-		
-#ifdef MODULE  /* --------------------------------- NEW */	
-		
-#ifdef ON_DEMAND
-		j = PS;
-#endif
-		for(i = 0; i < STREAMLENGTH; i++){
-			/* receive the image --> TODO, now there is createImage and initialization above */
-			
-			/* send to collector and workers the parameters */
-			if(i == 0){
-				MPI_Send(&dim, 1, MPI_INT, COLLECTOR, PARAMETERS, MPI_COMM_WORLD);
-				for(w = PS; w < p; w++){
-					MPI_Send(&width, 1, MPI_INT, w, PARAMETERS, MPI_COMM_WORLD);
-					MPI_Send(&height, 1, MPI_INT, w, PARAMETERS, MPI_COMM_WORLD);
-					MPI_Send(fit, DIM_FIT, MPI_DOUBLE, w, RESULTS, MPI_COMM_WORLD);
-				}
-			}
-			/* send the image */
-#ifdef ON_DEMAND
-	    	flag = 0;
-	    	while (!flag) {
-				MPI_Iprobe(j % (p - PS) + PS, MPI_ANY_TAG, MPI_COMM_WORLD, &flag, &status);
-				j++;
-	    	}
-			
-			/* receive the request */
-	    	MPI_Recv(&junk, 1, MPI_INT, (j - 1) % (p - PS) + PS, REQUEST, MPI_COMM_WORLD, &status);
-			
-	    	/* send the image */
-	    	MPI_Send(image, dim, MPI_UNSIGNED_CHAR, j % (p - PS) + PS, IMAGE, MPI_COMM_WORLD);
-#else
-			MPI_Send(image, dim, MPI_UNSIGNED_CHAR, i % (p - PS) + PS, IMAGE, MPI_COMM_WORLD);
-#endif
-		}
-		
-#ifdef ON_DEMAND
-		/* send the termination message */
-		for (i = PS; i < p; i++)
-			MPI_Send(NULL, 0, MPI_INT, i, TERMINATION, MPI_COMM_WORLD);
-#endif
-		
-#else  /* --------------------------------- END NEW */
-		
+		/* number of workers */
+		num_worker = p-PS;		
 		/* an image representing the gaussian is created and returned
 		 as a unsigned char matrix */
 		width = atoi(argv[1]);
@@ -125,56 +84,47 @@ int main(int argc, char *argv[])
 		
 		/* parameters of the gaussian are estimated */
 		initialization(image, width, height,fit);
-		
+		/* dimension of the image */
 		dim = width * height;
 		
-		/* send to collector the number of pixels */
+		/* send to collector the number of pixels, used for printouts */
 		MPI_Send(&dim, 1, MPI_INT, COLLECTOR, PARAMETERS, MPI_COMM_WORLD);
 		
-		/* send to the workers the parameters and images */	
-		for (i = PS; i < p; i++) {
-			MPI_Send(&width, 1, MPI_INT, i, PARAMETERS, MPI_COMM_WORLD);
-			MPI_Send(&height, 1, MPI_INT, i, PARAMETERS, MPI_COMM_WORLD);
-			MPI_Send(fit, DIM_FIT, MPI_DOUBLE, i, RESULTS, MPI_COMM_WORLD);
-			/*	first image is sent */
-#ifdef MODULE
-			/* image = metodo_da_fare */
-#endif				
-			MPI_Send(image, dim, MPI_UNSIGNED_CHAR, i, IMAGE, MPI_COMM_WORLD);
-		}
-		
-		for (i = p - PS; i < STREAMLENGTH; i++) {
-			
+		for (i = 0; i < STREAMLENGTH; i++) {
 #ifdef DEBUG
 			printf("Emitter sends image %d\n", i);
 #endif
-			
+#ifdef MODULE
+				/* image = metodo_da_fare */
+#endif
+			/* send to the workers the parameters and first images */
+			if(i < num_worker){
+				MPI_Send(&width, 1, MPI_INT, i+PS, PARAMETERS, MPI_COMM_WORLD);
+				MPI_Send(&height, 1, MPI_INT, i+PS, PARAMETERS, MPI_COMM_WORLD);
+				MPI_Send(fit, DIM_FIT, MPI_DOUBLE, i+PS, RESULTS, MPI_COMM_WORLD);
+				/*	first image is sent to worker */				
+				MPI_Send(image, dim, MPI_UNSIGNED_CHAR, i+PS, IMAGE, MPI_COMM_WORLD);
+			}
+			else{
+				
 #ifdef ON_DEMAND  /* ON_DEMAND */
-			
-			/* receive the request */
-			MPI_Recv(&junk, 1, MPI_INT, MPI_ANY_SOURCE, REQUEST, MPI_COMM_WORLD, &status);
-			
-			/* send the image */
-			MPI_Send(image, dim, MPI_UNSIGNED_CHAR, status.MPI_SOURCE, IMAGE, MPI_COMM_WORLD);
-			
+				
+				/* receive the request */
+				MPI_Recv(&junk, 1, MPI_INT, MPI_ANY_SOURCE, REQUEST, MPI_COMM_WORLD, &status);
+				
+				/* send the image */
+				MPI_Send(image, dim, MPI_UNSIGNED_CHAR, status.MPI_SOURCE, IMAGE, MPI_COMM_WORLD);
+				
 #else		/* NOT ON_DEMAND */
-			MPI_Send(image, dim, MPI_UNSIGNED_CHAR, i % (p - PS) + PS, IMAGE, MPI_COMM_WORLD);
-#endif			
+				MPI_Send(image, dim, MPI_UNSIGNED_CHAR, i % num_worker + PS, IMAGE, MPI_COMM_WORLD);
+#endif	
+			}
 		}
 		
 		/* send the termination message */
 		for (i = PS; i < p; i++)
 			MPI_Send(NULL, 0, MPI_INT, i, TERMINATION, MPI_COMM_WORLD);
 		
-		/* send the image */
-		for (i = p - PS; i < STREAMLENGTH; i++) {
-#ifdef DEBUG
-			printf("Emitter sends image %d\n", i);
-#endif
-			
-		}
-		
-#endif
 		
 		/*********************************************************************
 		 COLLECTOR
@@ -191,15 +141,19 @@ int main(int argc, char *argv[])
 		while (i < p - PS) {
 			
 			MPI_Recv(fit, DIM_FIT, MPI_DOUBLE, MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
+			
 			if (status.MPI_TAG == TERMINATION) {
 #ifdef DEBUG
 				printf("Worker %d has ended\n", status.MPI_SOURCE);
 #endif
 				i++;
+			}
+			else{
+				num_image++;
 			}	
 #ifdef DEBUG
 			/* PRINTOUT OF THE CURRENT RESULT */
-			printf("Image %d: %f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\n", i, fit[PAR_A], fit[PAR_X],
+			printf("Image %d from worker %d: %f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\n", num_image,status.MPI_SOURCE, fit[PAR_A], fit[PAR_X],
 				   fit[PAR_Y], fit[PAR_SX], fit[PAR_SY], fit[PAR_a], fit[PAR_b], fit[PAR_c]);
 #endif
 		}
@@ -242,16 +196,19 @@ int main(int argc, char *argv[])
 			/* workers ends if receives termination message */
 			if (status.MPI_TAG == TERMINATION) {
 #ifdef DEBUG
-				printf("Worker %d ends\n", my_rank);
+				printf("Worker %d ends after %d images\n", my_rank,num_image);
 #endif
 				/* last result is sent to the collector with a different TAG */
 				MPI_Send(fit, DIM_FIT, MPI_DOUBLE, COLLECTOR, TERMINATION, MPI_COMM_WORLD);
 				break;
 			}
+			else{
+				num_image++;
+			}
 			/* receive the image from the emitter */
 			MPI_Recv(image, dim, MPI_UNSIGNED_CHAR, EMITTER, IMAGE, MPI_COMM_WORLD, &status);
 			/* calculation of the Gauss matrix and vector */
-			procedure(image, width, height, fit, matrice, vettore);
+			procedure(image, width, height, fit, matrice, vettore,0);
 			/* solve the system and adjust the fit vector */
 			postProcedure(matrice,vettore,fit);
 			/* send the result to the collector */

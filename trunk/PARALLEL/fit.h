@@ -38,7 +38,7 @@ unsigned char* createMask (unsigned char* image, int w, int h, int max, int min,
 void centroid (unsigned char* image, int w, int h, int* x, int* y, int* sigma_x, int* sigma_y);
 
 /* Task over the image */
-void procedure (const unsigned char* data, int x, int y,  double * results, gsl_matrix_view matrice,gsl_vector_view vettore);
+void procedure (const unsigned char* data, int x, int y,  double * results, gsl_matrix_view matrice,gsl_vector_view vettore,int offset);
 
 /* Result update */
 void postProcedure(gsl_matrix_view matrice,gsl_vector_view vettore, double* fit);
