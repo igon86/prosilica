@@ -44,6 +44,10 @@ int main(int argc, char *argv[])
 	/* random number generator seed */
 	srand(time(NULL));
 	
+	/*********************************************************************
+	 INIT
+	 *********************************************************************/
+	
     /* Initialize of MPI */
     MPI_Init(&argc, &argv);
 	
@@ -65,17 +69,16 @@ int main(int argc, char *argv[])
 		MPI_Abort(MPI_COMM_WORLD, MPI_ERR_OP);
     }
 	
-	/*********************************************************************
-	 EMITTER
-	 *********************************************************************/
+	/* number of workers */
+	num_worker = p-PS;	
 	
+	/* first image is used to estimate gaussian parameters */		
     if (my_rank == EMITTER) {
 		
 #ifdef DEBUG
 		printf("Emitter with rank %d\n", my_rank);
 #endif
-		/* number of workers */
-		num_worker = p-PS;		
+			
 		/* an image representing the gaussian is created and returned
 		 as a unsigned char matrix */
 		width = atoi(argv[1]);
@@ -84,67 +87,30 @@ int main(int argc, char *argv[])
 		
 		/* parameters of the gaussian are estimated */
 		initialization(image, width, height,fit);
-		/* dimension of the image */
-		dim = width * height;
-		
-#ifdef MODULE  /* --------------------------------- NEW */	
-		
-#ifdef ON_DEMAND
-		j = PS;
-#endif
-		for(i = 0; i < STREAMLENGTH; i++){
-			/* receive the image --> TODO, now there is createImage and initialization above */
-			
-			/* send to collector and workers the parameters */
-			if(i == 0){
-				MPI_Send(&dim, 1, MPI_INT, COLLECTOR, PARAMETERS, MPI_COMM_WORLD);
-				for(w = PS; w < p; w++){
-					MPI_Send(&width, 1, MPI_INT, w, PARAMETERS, MPI_COMM_WORLD);
-					MPI_Send(&height, 1, MPI_INT, w, PARAMETERS, MPI_COMM_WORLD);
-					MPI_Send(fit, DIM_FIT, MPI_DOUBLE, w, RESULTS, MPI_COMM_WORLD);
-				}
-			}
-			/* send the image */
-#ifdef ON_DEMAND
-	    	flag = 0;
-	    	while (!flag) {
-			MPI_Iprobe(j % (p - PS) + PS, MPI_ANY_TAG, MPI_COMM_WORLD, &flag, &status);
-			j++;
-	    	}
-			
-			/* receive the request */
-	    	MPI_Recv(&junk, 1, MPI_INT, (j - 1) % (p - PS) + PS, REQUEST, MPI_COMM_WORLD, &status);
-			
-	    	/* send the image */
-	    	MPI_Send(image, dim, MPI_UNSIGNED_CHAR, j % (p - PS) + PS, IMAGE, MPI_COMM_WORLD);
-#else
-			MPI_Send(image, dim, MPI_UNSIGNED_CHAR, i % (p - PS) + PS, IMAGE, MPI_COMM_WORLD);
-#endif
-		}
-		
-#ifdef ON_DEMAND
-		/* send the termination message */
-		for (i = PS; i < p; i++)
-			MPI_Send(NULL, 0, MPI_INT, i, TERMINATION, MPI_COMM_WORLD);
-#endif
-		
-#else  /* --------------------------------- END NEW */
-		
-		/* send to collector the number of pixels */
-		MPI_Send(&dim, 1, MPI_INT, COLLECTOR, PARAMETERS, MPI_COMM_WORLD);
+	}
+	
+	
+	/* broadcast data of the image */
+	MPI_Bcast(&width,1,MPI_INT,EMITTER,MPI_COMM_WORLD);
+	MPI_Bcast(&height,1,MPI_INT,EMITTER,MPI_COMM_WORLD);
+	MPI_Bcast(&fit,DIM_FIT,MPI_DOUBLE,EMITTER,MPI_COMM_WORLD);
+	
+	/* dimension of the image */
+	dim = width * height;
+	
+	/*********************************************************************
+	 EMITTER
+	 *********************************************************************/		
+	
+	if (my_rank == EMITTER) {	
 		
 		for (i = 0; i < STREAMLENGTH; i++) {
 #ifdef DEBUG
 			printf("Emitter sends image %d\n", i);
 #endif
-#ifdef MODULE
-				/* image = metodo_da_fare */
-#endif
-			/* send to the workers the parameters and first images */
+
+			/* send to the workers the first images */
 			if(i < num_worker){
-				MPI_Send(&width, 1, MPI_INT, i+PS, PARAMETERS, MPI_COMM_WORLD);
-				MPI_Send(&height, 1, MPI_INT, i+PS, PARAMETERS, MPI_COMM_WORLD);
-				MPI_Send(fit, DIM_FIT, MPI_DOUBLE, i+PS, RESULTS, MPI_COMM_WORLD);
 				/*	first image is sent to worker */				
 				MPI_Send(image, dim, MPI_UNSIGNED_CHAR, i+PS, IMAGE, MPI_COMM_WORLD);
 			}
@@ -162,6 +128,9 @@ int main(int argc, char *argv[])
 				MPI_Send(image, dim, MPI_UNSIGNED_CHAR, i % num_worker + PS, IMAGE, MPI_COMM_WORLD);
 #endif	
 			}
+#ifdef MODULE
+			/* image = metodo_da_fare */
+#endif
 		}
 		
 		/* send the termination message */
@@ -177,11 +146,11 @@ int main(int argc, char *argv[])
 #ifdef DEBUG
 		printf("Collector with rank %d\n", my_rank);
 #endif
-		MPI_Recv(&dim, 1, MPI_INT, EMITTER, PARAMETERS, MPI_COMM_WORLD, &status);
+
 		/* take the time */
 		gettimeofday(&tv1, NULL);
 		i = 0;
-		while (i < p - PS) {
+		while (i < num_worker) {
 			
 			MPI_Recv(fit, DIM_FIT, MPI_DOUBLE, MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &status);
 			
@@ -193,13 +162,15 @@ int main(int argc, char *argv[])
 			}
 			else{
 				num_image++;
-			}	
 #ifdef DEBUG
-			/* PRINTOUT OF THE CURRENT RESULT */
-			printf("Image %d from worker %d: %f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\n", num_image,status.MPI_SOURCE, fit[PAR_A], fit[PAR_X],
-				   fit[PAR_Y], fit[PAR_SX], fit[PAR_SY], fit[PAR_a], fit[PAR_b], fit[PAR_c]);
+				/* PRINTOUT OF THE CURRENT RESULT */
+				printf("Image %d from worker %d: %f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\n", num_image,status.MPI_SOURCE, fit[PAR_A], fit[PAR_X],
+					   fit[PAR_Y], fit[PAR_SX], fit[PAR_SY], fit[PAR_a], fit[PAR_b], fit[PAR_c]);
 #endif
+			}	
+			
 		}
+		
 		/* take the time */
 		gettimeofday(&tv2, NULL);
 		
@@ -213,13 +184,6 @@ int main(int argc, char *argv[])
     } else {
 #ifdef DEBUG
 		printf("Worker with rank %d\n", my_rank);
-#endif
-		/* receive the dimension of the image */
-		MPI_Recv(&width, 1, MPI_INT, EMITTER, PARAMETERS, MPI_COMM_WORLD, &status);
-		MPI_Recv(&height, 1, MPI_INT, EMITTER, PARAMETERS, MPI_COMM_WORLD, &status);
-		/* receive the fit of the Gaussian */
-		MPI_Recv(fit, DIM_FIT, MPI_DOUBLE, EMITTER, RESULTS, MPI_COMM_WORLD, &status);
-#ifdef DEBUG
 		printf("Process %d, the initial fit is:\n%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\n", my_rank, fit[PAR_A], fit[PAR_X],
 			   fit[PAR_Y], fit[PAR_SX], fit[PAR_SY], fit[PAR_a], fit[PAR_b], fit[PAR_c]);
 #endif
