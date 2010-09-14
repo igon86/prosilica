@@ -210,7 +210,7 @@ int main(int argc, char *argv[])
 				break;
 			}
 			else{
-				num_image++;
+				//num_image++;
 			}
 			/* receive the image from the emitter */
 			MPI_Recv(image, dim, MPI_UNSIGNED_CHAR, EMITTER, IMAGE, MPI_COMM_WORLD, &status);
