@@ -10,8 +10,6 @@ int p = 0;			/* p is the number of processes */
 int main(int argc, char *argv[])
 {
 	
-    MPI_Status status;
-	
     /* pixels per worker */
     int ppw = 0;
 	
@@ -89,36 +87,17 @@ int main(int argc, char *argv[])
 		printf("Emitter sopravvissuto alla init\n");
 #endif	
 		
-		/* send to the workers the parameters and images */
-		for (i = PS; i < p; i++) {
-			MPI_Send(&width, 1, MPI_INT, i, PARAMETERS, MPI_COMM_WORLD);
-			MPI_Send(&height, 1, MPI_INT, i, PARAMETERS, MPI_COMM_WORLD);
-			MPI_Send(fit, DIM_FIT, MPI_DOUBLE, i, RESULTS, MPI_COMM_WORLD);
-#if DEBUG
-			printf("Emitter sends data to %d\n", i);
-#endif
-		}
-    } else {
-		
-#if DEBUG
-		printf("Worker with rank %d\n", my_rank);
-#endif
-		/* receive the dimension of the image */
-		MPI_Recv(&width, 1, MPI_INT, EMITTER, PARAMETERS, MPI_COMM_WORLD, &status);
-		MPI_Recv(&height, 1, MPI_INT, EMITTER, PARAMETERS, MPI_COMM_WORLD, &status);
-		/* receive the fit of the Gaussian */
-		MPI_Recv(fit, DIM_FIT, MPI_DOUBLE, EMITTER, RESULTS, MPI_COMM_WORLD, &status);
+    } 
+	
+	/* broadcast data of the image */
+	MPI_Bcast(&width,1,MPI_INT,EMITTER,MPI_COMM_WORLD);
+	MPI_Bcast(&height,1,MPI_INT,EMITTER,MPI_COMM_WORLD);
+	MPI_Bcast(&fit,DIM_FIT,MPI_DOUBLE,EMITTER,MPI_COMM_WORLD);
+	
 #ifdef DEBUG
-		printf("Process %d, the initial fit is:\n%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\n", my_rank, fit[PAR_A], fit[PAR_X],
-			   fit[PAR_Y], fit[PAR_SX], fit[PAR_SY], fit[PAR_a], fit[PAR_b], fit[PAR_c]);
+	printf("Process %d, the initial fit is:\n%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\n", my_rank, fit[PAR_A], fit[PAR_X],
+		   fit[PAR_Y], fit[PAR_SX], fit[PAR_SY], fit[PAR_a], fit[PAR_b], fit[PAR_c]);
 #endif
-		
-    }
-	
-    /*********************************************************************
-	 LOOP on ELEMENTS
-     *********************************************************************/
-	
 	/* dimension of the local partition are determined and relative buffers
 	 are initialized */  
 	dim = width * height;
@@ -132,6 +111,10 @@ int main(int argc, char *argv[])
     if (my_rank == EMITTER)
 		gettimeofday(&tv1, NULL);
 	
+    /*********************************************************************
+	 LOOP on ELEMENTS
+     *********************************************************************/		
+	
     for (i = 0; i < STREAMLENGTH; i++) {
 		
 		/* the emitter executes the scatter */
@@ -139,24 +122,36 @@ int main(int argc, char *argv[])
 		/* execute the procedure over my partition */
 		procedure(partition, dimx, dimy , fit, matrice, vettore,dimy*my_rank);
 		
-		/* if I am the emitter I execute the reduce */
+#ifdef PADDED
+		/* execute the reduce of matrix and vector */
+		MPI_Allreduce(data, ret, DIM_FIT * (DIM_FIT + 1), MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+		
+		/*  adjust fit results  */
+		postProcedure(r_matrice,r_vettore,fit);
+#else		
+		/* execute the reduce of matrix and vector */
 		MPI_Reduce(data, ret, DIM_FIT * (DIM_FIT + 1), MPI_DOUBLE, MPI_SUM, EMITTER, MPI_COMM_WORLD);
 		
-		/* and finish the computation */
 		if (my_rank == EMITTER) {
-			postProcedure(r_matrice,r_vettore,fit);
-#ifdef DEBUG
-			printf("Image %d: %f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\n", i, fit[PAR_A], fit[PAR_X],
-				   fit[PAR_Y], fit[PAR_SX], fit[PAR_SY], fit[PAR_a], fit[PAR_b], fit[PAR_c]);
-#endif
-			
+			/* adjust fit results */
+			postProcedure(r_matrice,r_vettore,fit);	
 		}
 		
 		/* broadcast of the result */
 		MPI_Bcast(fit, DIM_FIT, MPI_DOUBLE, EMITTER, MPI_COMM_WORLD);
+#endif
+
+#ifdef DEBUG
+		if (my_rank == EMITTER) {
+			printf("Image %d: %f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\n", i, fit[PAR_A], fit[PAR_X],
+				   fit[PAR_Y], fit[PAR_SX], fit[PAR_SY], fit[PAR_a], fit[PAR_b], fit[PAR_c]);
+		}
+#endif
 		
 #ifdef MODULE
-		/* new image is stored in buffer image */
+		if (my_rank == EMITTER) {
+			/* new image is stored in buffer image of the emitter*/
+		}
 #endif			
     }
 	

@@ -22,7 +22,7 @@ alldataparallel:
 	$(CC)$(CVER) -D_$(ARCH) -D_$(OS) $(FLAGS) -DDATA_PARALLEL $(GSL_INCLUDE_DIR) $(LIB) ./data_parallel_all_reduce.c ./fit.c ./image.c $(GSL_LIB_DIR) -o dataparallel
 
 paddataparallel:
-	$(CC)$(CVER) -D_$(ARCH) -D_$(OS) $(FLAGS) -DDATA_PARALLEL -DPADDED $(GSL_INCLUDE_DIR) $(LIB) ./data_parallel_padded.c ./fit.c ./image.c $(GSL_LIB_DIR) -o dataparallel
+	$(CC)$(CVER) -D_$(ARCH) -D_$(OS) $(FLAGS) -DDATA_PARALLEL -DPADDED $(GSL_INCLUDE_DIR) $(LIB) ./data_parallel.c ./fit.c ./image.c $(GSL_LIB_DIR) -o dataparallel
 
 test_farm:
 	mpirun -np $(NP) ./farm $(WIDTH) $(HEIGHT)
