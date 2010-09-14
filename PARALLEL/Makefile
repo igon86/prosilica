@@ -1,7 +1,7 @@
 include ../conf
 
 CC = mpicc
-FLAGS = -Wall -pedantic -DDEBUG -DON_DEMAND
+FLAGS = -Wall -pedantic -DDEBUG
 GSL_LIB = -lgsl -lgslcblas
 LIB = $(GSL_LIB) -lm -ltiff
 

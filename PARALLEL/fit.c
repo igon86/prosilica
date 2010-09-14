@@ -271,7 +271,7 @@ void computeGradient(double* M, int x , int y, double* results){
  
  */
 void procedure(const unsigned char *data, int w, int h, double *results,
-			   gsl_matrix_view matrice, gsl_vector_view vettore)
+			   gsl_matrix_view matrice, gsl_vector_view vettore,int offset)
 {
 	
     int npixels = w * h;
@@ -285,19 +285,9 @@ void procedure(const unsigned char *data, int w, int h, double *results,
 		x = (i + 1) % w;
 		
 		/** in case of a data parallel computation the worker owns only a portion of rows of the image
-		 thus the correct heigth of the examined point is determined using the rank of the worker */
+		 thus the correct heigth of the examined point is determined using the offset */
 		
-#ifdef FARM
-		y = ((i + 1) / w);
-#endif
-		
-#ifdef DATA_PARALLEL
-#ifdef PADDED
-		y = ((i + 1) / w) + h * (my_rank-1);
-#else
-		y = ((i + 1) / w) + h * my_rank;
-#endif				
-#endif
+		y = ((i + 1) / w) + offset;
 		
 		base = i * DIM_FIT;
 		
