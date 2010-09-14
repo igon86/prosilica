@@ -87,7 +87,50 @@ int main(int argc, char *argv[])
 		/* dimension of the image */
 		dim = width * height;
 		
-		/* send to collector the number of pixels, used for printouts */
+#ifdef MODULE  /* --------------------------------- NEW */	
+		
+#ifdef ON_DEMAND
+		j = PS;
+#endif
+		for(i = 0; i < STREAMLENGTH; i++){
+			/* receive the image --> TODO, now there is createImage and initialization above */
+			
+			/* send to collector and workers the parameters */
+			if(i == 0){
+				MPI_Send(&dim, 1, MPI_INT, COLLECTOR, PARAMETERS, MPI_COMM_WORLD);
+				for(w = PS; w < p; w++){
+					MPI_Send(&width, 1, MPI_INT, w, PARAMETERS, MPI_COMM_WORLD);
+					MPI_Send(&height, 1, MPI_INT, w, PARAMETERS, MPI_COMM_WORLD);
+					MPI_Send(fit, DIM_FIT, MPI_DOUBLE, w, RESULTS, MPI_COMM_WORLD);
+				}
+			}
+			/* send the image */
+#ifdef ON_DEMAND
+	    	flag = 0;
+	    	while (!flag) {
+			MPI_Iprobe(j % (p - PS) + PS, MPI_ANY_TAG, MPI_COMM_WORLD, &flag, &status);
+			j++;
+	    	}
+			
+			/* receive the request */
+	    	MPI_Recv(&junk, 1, MPI_INT, (j - 1) % (p - PS) + PS, REQUEST, MPI_COMM_WORLD, &status);
+			
+	    	/* send the image */
+	    	MPI_Send(image, dim, MPI_UNSIGNED_CHAR, j % (p - PS) + PS, IMAGE, MPI_COMM_WORLD);
+#else
+			MPI_Send(image, dim, MPI_UNSIGNED_CHAR, i % (p - PS) + PS, IMAGE, MPI_COMM_WORLD);
+#endif
+		}
+		
+#ifdef ON_DEMAND
+		/* send the termination message */
+		for (i = PS; i < p; i++)
+			MPI_Send(NULL, 0, MPI_INT, i, TERMINATION, MPI_COMM_WORLD);
+#endif
+		
+#else  /* --------------------------------- END NEW */
+		
+		/* send to collector the number of pixels */
 		MPI_Send(&dim, 1, MPI_INT, COLLECTOR, PARAMETERS, MPI_COMM_WORLD);
 		
 		for (i = 0; i < STREAMLENGTH; i++) {
@@ -115,7 +158,7 @@ int main(int argc, char *argv[])
 				/* send the image */
 				MPI_Send(image, dim, MPI_UNSIGNED_CHAR, status.MPI_SOURCE, IMAGE, MPI_COMM_WORLD);
 				
-#else		/* NOT ON_DEMAND */
+#else			/* NOT ON_DEMAND */
 				MPI_Send(image, dim, MPI_UNSIGNED_CHAR, i % num_worker + PS, IMAGE, MPI_COMM_WORLD);
 #endif	
 			}
