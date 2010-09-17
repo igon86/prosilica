@@ -2,10 +2,10 @@
 
 /**
  * Main function
- * @param the server name
+ * @param the server address
  */
 
-int main(int argc, char *argv[]) {
+int main(int argc, char *argv []) {
 
 	int sock, count = 0;
 	char buffer [N_BUF];
@@ -23,13 +23,13 @@ int main(int argc, char *argv[]) {
 	if ((server = gethostbyname(argv[1])) == NULL)
 		error("Error in Ip address");
 
-	memset((char *) buffer, 0, N_BUF);
-	memcpy((char *) buffer, "mamma", N_BUF);
+	memset((char *) buffer, ZERO, N_BUF);
+	memcpy((char *) buffer, "mamma", strlen("mamma"));
 
 	/* set the address and the port of the server */
-	memset((char *) &serv_addr, 0, sizeof(serv_addr));
+	memset((char *) &serv_addr, ZERO, sizeof(serv_addr));
 	serv_addr.sin_family = AF_INET;
-	memcpy((char *)server->h_addr, (char *) &serv_addr.sin_addr.s_addr, server->h_length);
+	memcpy((char *) &serv_addr.sin_addr.s_addr, (char *)server->h_addr, server->h_length);
 	serv_addr.sin_port = htons(PORT);
     
 	/* connect the client to server */
@@ -42,7 +42,7 @@ int main(int argc, char *argv[]) {
 	}
 
 	/* write and close the socket */
-	if(write(sock, buffer, N_BUF) < 0)
+	if(write(sock, buffer, strlen(buffer)) < 0)
 		error("Error writing in socket");
 	
 	if (close(sock) < 0)
