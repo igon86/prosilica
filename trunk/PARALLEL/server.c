@@ -2,7 +2,6 @@
 
 int main(int argc, char *argv[])
 {
-
 	int sock, new_sock;
 	char buffer [N_BUF];
 	struct sockaddr_in serv_addr;
@@ -11,8 +10,8 @@ int main(int argc, char *argv[])
 	if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0)
 		error("Error opening socket");
 
-	memset((char *) buffer, 0, N_BUF);
-	memset((char *) &serv_addr, 0, sizeof(serv_addr));
+	memset((char *) buffer, ZERO, N_BUF);
+	memset((char *) &serv_addr, ZERO, sizeof(serv_addr));
 
 	serv_addr.sin_family = AF_INET;
 	serv_addr.sin_addr.s_addr = INADDR_ANY;

@@ -11,6 +11,7 @@
 #include <netdb.h>
 #include <errno.h>
 
+#define ZERO '\0'
 #define PORT 9999
 #define N_BUF 100
 #define MAX_TRY 3
