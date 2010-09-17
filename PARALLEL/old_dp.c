@@ -1,4 +1,5 @@
 #include "fit.h"
+#include "scatter.h"
 #include "parallel.h"
 #include "image.h"
 
@@ -59,7 +60,7 @@ int main(int argc, char *argv[])
 	/*********************************************************************
 	 INIT
 	 *********************************************************************/	
-	
+	 
 	srand(time(NULL));
 	
     /* Initialize of MPI */
@@ -83,8 +84,7 @@ int main(int argc, char *argv[])
     if (my_rank == EMITTER) {
 #if DEBUG
 		printf("Emitter with rank %d\n", my_rank);
-#endif
-		
+#endif		
 		/* an image representing the gaussian is created and returned
 		 as a unsigned char matrix */
 		width = atoi(argv[1]);
@@ -92,15 +92,10 @@ int main(int argc, char *argv[])
 		/* y dimension of the image is adjusted (if needed) */
 		while (height % num_worker != 0) height++;
 		/* image is created */
-		image = createImage(width, height);
-		
+		image = createImage(width, height);		
 		/* parameters of the gaussian are estimated */
 		initialization(image, width, height,fit);
-		
-#if DEBUG
-		printf("Emitter survived init\n");
-#endif	
-		
+				
     } 
 	
 	/* broadcast data of the image */
@@ -143,37 +138,27 @@ int main(int argc, char *argv[])
     for (i = 0; i < STREAMLENGTH; i++) {
 		
 		/* the emitter executes the scatter */
-		MPI_Scatter(image, ppw, MPI_UNSIGNED_CHAR, partition, ppw, MPI_UNSIGNED_CHAR, EMITTER, MPI_COMM_WORLD);
+		scatterImage(image, dim, partition);
+		
 		/* execute the procedure over my partition */		
 		if(my_rank >= PS){
-			procedure(partition, dimx, dimy , fit, matrice, vettore, dimy*(my_rank-PS));
+			procedure(partition, dimx, dimy , fit, matrice, vettore, dimy*(my_rank-PS));	
 		}
+				
+		/* gather/reduce is executed */
+		reduceMatrix(ret, buffer_size, data);
 		
-#ifdef ALL
-		/* execute the reduce of matrix and vector */
-		MPI_Allreduce(data, ret, buffer_size , MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
-		
-		/*  adjust fit results  */
-		postProcedure(r_matrice,r_vettore,fit);
-#else		
-		/* execute the reduce of matrix and vector */
-		MPI_Reduce(data, ret, buffer_size , MPI_DOUBLE, MPI_SUM, EMITTER, MPI_COMM_WORLD);
-		
-		if (my_rank == EMITTER) {
-			/* adjust fit results */			
-			postProcedure(r_matrice,r_vettore,fit);	
+		if (my_rank == COLLECTOR) {
+			/* adjust fit results */
+			postProcedure(r_matrice,r_vettore,fit);
+#if DEBUG			
+			printf("Image %d: %f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\n", i, fit[PAR_A], fit[PAR_X],
+				   fit[PAR_Y], fit[PAR_SX], fit[PAR_SY], fit[PAR_a], fit[PAR_b], fit[PAR_c]);
+#endif				   
 		}
 		
 		/* broadcast of the result */
-		MPI_Bcast(fit, DIM_FIT, MPI_DOUBLE, EMITTER, MPI_COMM_WORLD);
-#endif
-
-#ifdef DEBUG
-		if (my_rank == EMITTER) {
-			printf("Image %d: %f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\n", i, fit[PAR_A], fit[PAR_X],
-				   fit[PAR_Y], fit[PAR_SX], fit[PAR_SY], fit[PAR_a], fit[PAR_b], fit[PAR_c]);
-		}
-#endif
+		MPI_Bcast(fit, DIM_FIT, MPI_DOUBLE, COLLECTOR, MPI_COMM_WORLD);
 		
 #ifdef MODULE
 		if (my_rank == EMITTER) {

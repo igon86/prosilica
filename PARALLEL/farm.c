@@ -89,7 +89,6 @@ int main(int argc, char *argv[])
 		initialization(image, width, height,fit);
 	}
 	
-	
 	/* broadcast data of the image */
 	MPI_Bcast(&width,1,MPI_INT,EMITTER,MPI_COMM_WORLD);
 	MPI_Bcast(&height,1,MPI_INT,EMITTER,MPI_COMM_WORLD);
@@ -184,8 +183,6 @@ int main(int argc, char *argv[])
     } else {
 #ifdef DEBUG
 		printf("Worker with rank %d\n", my_rank);
-		printf("Process %d, the initial fit is:\n%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\n", my_rank, fit[PAR_A], fit[PAR_X],
-			   fit[PAR_Y], fit[PAR_SX], fit[PAR_SY], fit[PAR_a], fit[PAR_b], fit[PAR_c]);
 #endif
 		
 		/* calculate number of pixels and initialize buffers for the fit */
@@ -207,11 +204,14 @@ int main(int argc, char *argv[])
 #endif
 				/* last result is sent to the collector with a different TAG */
 				MPI_Send(fit, DIM_FIT, MPI_DOUBLE, COLLECTOR, TERMINATION, MPI_COMM_WORLD);
+				freeBuffers();
 				break;
 			}
+#ifdef OLD			
 			else{
-				//num_image++;
+				num_image++;
 			}
+#endif			
 			/* receive the image from the emitter */
 			MPI_Recv(image, dim, MPI_UNSIGNED_CHAR, EMITTER, IMAGE, MPI_COMM_WORLD, &status);
 			/* calculation of the Gauss matrix and vector */

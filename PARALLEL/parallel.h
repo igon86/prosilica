@@ -5,7 +5,7 @@
 #include <sys/time.h>
 
 /* length of the stream */
-#define STREAMLENGTH 40
+#define STREAMLENGTH 10
 
 /* rank emettitor */
 #define EMITTER 0

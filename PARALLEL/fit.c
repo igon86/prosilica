@@ -1,3 +1,9 @@
+/** 
+\file	fit.c
+\brief	functions which performs fit of the image, estimation of gaussian
+		parameters and adjustment of current results.
+ */
+ 
 #include "fit.h"
 #include "parallel.h"
 #include "image.h"
@@ -16,16 +22,15 @@ extern int p;
  *********************************************************************/
 
 /**
- Given a pixel mask of a gaussian image, represented by an unsigned char matrix, it estimates the center and the variance
- of the gaussian along the x and y axis
+ Given a fit matrix and vector it calculates the delta vector and adjust the 
+ given fit array correspondingly
  
- \param		image				image of the gaussian
- \param		w,h					width and height of the image
- \param		x,y					estimated cordinates
- \param		sigma_x,sigma_y		estimated variance in the x and y axis
+ \param		matrice				fit matrix
+ \param		vector				fit vector
+ \param		fit					array of gaussian parameters
  
  */
-void postProcedure(gsl_matrix_view matrice,gsl_vector_view vettore, double* fit){
+void postProcedure( gsl_matrix_view matrice, const gsl_vector_view vettore, double* fit){
 	/* data for the LU solver */
     gsl_vector *delta = gsl_vector_alloc(DIM_FIT);
     gsl_permutation *permutation = gsl_permutation_alloc(DIM_FIT);
@@ -33,9 +38,11 @@ void postProcedure(gsl_matrix_view matrice,gsl_vector_view vettore, double* fit)
 	
 	gsl_linalg_LU_decomp(&matrice.matrix, permutation, &error);	
 	gsl_linalg_LU_solve(&matrice.matrix, permutation, &vettore.vector, delta);
-	
+#if OLD
+	gsl_vector_fprintf(stdout,delta,"%g");
+#endif	
 	for (i = 0; i < DIM_FIT; i++)
-	fit[i] = fit[i] + gsl_vector_get(delta, i);
+		fit[i] = fit[i] + gsl_vector_get(delta, i);
 }
 
 /*********************************************************************
@@ -190,24 +197,35 @@ void maxmin(unsigned char *image, int w, int h, int *max, int *min)
  *********************************************************************/
 
 /**
- Computes the gradients of the gaussian relative to the given coordinates (x,y), results
- are stored in the given gradient matrix M
+ Allocates fit buffers
  
- \param		data		image of the gaussian
- \param		w,h			width and height of the image
- \param		results		parameters of the gaussian at the previous step
- \param		matrice		gauss matrix
- \param		vettore		gauss vector
+ \param		npixels		number of pixels of the image
  
  */
 void initBuffers(int npixels){
 #ifdef DEBUG
-	printf("Sono il processo %d e mi sono stati chiesti %d pixels\n",p,npixels);
+	printf("Process %d, %d pixels\n",my_rank,npixels);
 #endif
 	M = (double *) malloc(sizeof(double) * DIM_FIT * npixels);
     diff = (double *) malloc(sizeof(double) * npixels);
 	gsl_M = gsl_matrix_view_array(M, npixels, DIM_FIT);
     gsl_diff = gsl_vector_view_array(diff, npixels);
+}
+
+/*********************************************************************
+ FREE FIT BUFFERS
+ *********************************************************************/
+
+/**
+ Free fit buffers
+ 
+ */
+void freeBuffers(){
+#ifdef DEBUG
+	printf("Process %d, cleaning buffers\n",my_rank);
+#endif
+	free(M);
+	free(diff);
 }
 
 /*********************************************************************
