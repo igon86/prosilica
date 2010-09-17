@@ -49,6 +49,9 @@ double evaluateGaussian (double* gaussian, int x, int y);
 /* Init fit buffers */
 void initBuffers(int npixels);
 
+/* Free fit buffers */
+void freeBuffers();
+
 /* Estimate the parameters of the gaussian */
 void initialization(unsigned char *matrix,int width,int height, double *fit);
 
