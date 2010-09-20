@@ -1,6 +1,5 @@
-/*#include "parallel.h"*/
 #include "image.h"
-
+	
 /***************************************************************************************************************
  Write mono8 black and white TIFF
  ****************************************************************************************************************/
@@ -113,12 +112,12 @@ unsigned char* createImage(int width, int height){
     double input[DIM_FIT];
 	int i,max;
 	
+	/* random amplitude value with mean AVERAGE
+	and a maximum deviation of DEVIATION */
+	max = AVERAGE + ( rand() % DEVIATION ) - DEVIATION/2;
+
 	for(i=0;i<DIM_FIT;i++) input[i] = 0;
 	
-	
-	/* random amplitude value with mean AVERAGE
-	 and a maximum deviation of DEVIATION */
-	max = AVERAGE + ( rand() % DEVIATION ) - DEVIATION/2;
 #if DEBUG
 	printf("Max is %d\n",max);
 #endif
