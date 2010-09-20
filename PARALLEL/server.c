@@ -2,15 +2,15 @@
 
 int main(int argc, char *argv[])
 {
-	int sock, new_sock;
-	char buffer [N_BUF];
+	int sock, new_sock, i = 0, dimx = 0, dimy = 0, dim = 0;
+	unsigned char *buffer;
 	struct sockaddr_in serv_addr;
 
 	/* server socket */
 	if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0)
 		error("Error opening socket");
 
-	memset((char *) buffer, ZERO, N_BUF);
+	/*memset((char *) buffer, ZERO, N_BUF);*/
 	memset((char *) &serv_addr, ZERO, sizeof(serv_addr));
 
 	serv_addr.sin_family = AF_INET;
@@ -27,12 +27,20 @@ int main(int argc, char *argv[])
 	/* accept the new connection */
 	if ((new_sock = accept(sock, NULL, 0)) < 0)
 		error("Error on accept");
-	
-	/* read from the socket */
-	if (read(new_sock, buffer, N_BUF) < 0)
-		error("Error reading from socket");
 
-	printf("The message is %s\n", buffer);
+	if (Read(new_sock, &dimx, sizeof(int)) < 0)
+		error("Error reading the integers");
+	if (Read(new_sock, &dimy, sizeof(int)) < 0)
+		error("Error reading the integers");
+
+	dim = dimx * dimy;
+	buffer = (unsigned char *) malloc (dim);
+
+	for(i = 0; i < STREAMLENGTH; i++){
+		/* read from the socket */
+		if (Read(new_sock, buffer, dim) < 0)
+			error("Error reading from socket");
+	}
 
 	/* close the server socket and the socket */
 	if (close(new_sock) < 0)

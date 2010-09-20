@@ -3,16 +3,19 @@
 /**
  * Main function
  * @param the server address
+ * @param dimx
+ * @param dimy
  */
 
 int main(int argc, char *argv []) {
 
-	int sock, count = 0;
-	char buffer [N_BUF];
+	int sock, count = 0, i = 0, dimx = 0, dimy = 0, dim;
+	unsigned char *buffer;
+
 	struct hostent *server;
 	struct sockaddr_in serv_addr;
 
-	if (argc < 2)
+	if (argc < 4)
 		error("Error in the arguments");
 
 	/* open the socket*/
@@ -23,8 +26,14 @@ int main(int argc, char *argv []) {
 	if ((server = gethostbyname(argv[1])) == NULL)
 		error("Error in Ip address");
 
-	memset((char *) buffer, ZERO, N_BUF);
-	memcpy((char *) buffer, "mamma", strlen("mamma"));
+	/* set the dimension */
+	dimx = atoi(argv[2]);
+	dimy = atoi(argv[3]);
+
+	dim = dimx * dimy;	
+
+/*	memset((char *) buffer, ZERO, N_BUF);
+	memcpy((char *) buffer, "mamma", strlen("mamma"));*/
 
 	/* set the address and the port of the server */
 	memset((char *) &serv_addr, ZERO, sizeof(serv_addr));
@@ -41,9 +50,22 @@ int main(int argc, char *argv []) {
 			error("Unable to contact server");
 	}
 
-	/* write and close the socket */
-	if(write(sock, buffer, strlen(buffer)) < 0)
-		error("Error writing in socket");
+	
+	/* send the parameters to server */
+	if(Write(sock, &dimx, sizeof(int)) < sizeof(int))
+		error("Error writing the integer");
+	if(Write(sock, &dimy, sizeof(int)) < sizeof(int))
+		error("Error writing the integer");
+
+	for(i = 0; i < STREAMLENGTH; i++){
+		/* create the image */
+		buffer = createImage(dimx ,dimy);
+		/* write and close the socket */
+		if(Write(sock, buffer, dim) < dim)
+			error("Error writing in socket");
+		/* free the memory*/
+		free(buffer);
+	}
 	
 	if (close(sock) < 0)
 		error("Error closing the socket");
