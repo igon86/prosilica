@@ -7,6 +7,9 @@
 #define AVERAGE 200
 #define DEVIATION 50
 
+/* length of the stream */
+#define STREAMLENGTH 10
+
 /* Create the image representing the Gaussian */
 unsigned char* createMatrix (int length, int width, double* input);
 
