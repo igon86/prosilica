@@ -1,6 +1,10 @@
 #include "fit.h"
 #include "parallel.h"
 #include "image.h"
+#ifdef MODULE
+	#include "camera.h"
+#endif
+#include "macro.h"
 
 /* MPI Variables, global for sake of code simplicity */
 
@@ -13,6 +17,11 @@ int main(int argc, char *argv[])
 #ifdef ON_DEMAND
     int junk = 0;
 #endif
+	
+#ifdef MODULE
+	int sock, new_sock;
+	struct sockaddr_in serv_addr;
+#endif	
 	/* return status of MPI functions */
     MPI_Status status;
     /* number of pixels of the image */
@@ -31,10 +40,6 @@ int main(int argc, char *argv[])
 	
 	/* indexes */
     int i = 0;
-	
-#ifdef MODULO
-	int w = 0;
-#endif
 	
     /* Gauss matrix and vector have contiguous space in memory */
     double *data = (double *) malloc(sizeof(double) * DIM_FIT * (DIM_FIT + 1));
@@ -78,13 +83,47 @@ int main(int argc, char *argv[])
 #ifdef DEBUG
 		printf("Emitter with rank %d\n", my_rank);
 #endif
-			
+		
+#ifdef MODULE			
+		/* server socket */
+		if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0)
+			error("Error opening socket");
+		
+		/*memset((char *) buffer, ZERO, N_BUF);*/
+		memset((char *) &serv_addr, ZERO, sizeof(serv_addr));
+		
+		serv_addr.sin_family = AF_INET;
+		serv_addr.sin_addr.s_addr = INADDR_ANY;
+		serv_addr.sin_port = htons(PORT);
+		
+		if (bind(sock, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0) 
+			error("Error on binding");
+		
+		/* server is listening */
+		if (listen(sock, 0) < 0)
+			error("Error on listen");
+		
+		/* accept the new connection */
+		if ((new_sock = accept(sock, NULL, 0)) < 0)
+			error("Error on accept");
+		
+		if (Read(new_sock, &width, sizeof(int)) < 0)
+			error("Error reading the integers");
+		if (Read(new_sock, &height, sizeof(int)) < 0)
+			error("Error reading the integers");
+		
+		dim = width * height;
+		image = (unsigned char *) malloc (dim);
+		/* read from the socket */
+		if (Read(new_sock, image, dim) < 0)
+			error("Error reading from socket");
+#else
 		/* an image representing the gaussian is created and returned
 		 as a unsigned char matrix */
 		width = atoi(argv[1]);
 		height = atoi(argv[2]);
 		image = createImage(width, height);
-		
+#endif		
 		/* parameters of the gaussian are estimated */
 		initialization(image, width, height,fit);
 	}
@@ -104,10 +143,11 @@ int main(int argc, char *argv[])
 	if (my_rank == EMITTER) {	
 		
 		for (i = 0; i < STREAMLENGTH; i++) {
+			
 #ifdef DEBUG
 			printf("Emitter sends image %d\n", i);
 #endif
-
+			
 			/* send to the workers the first images */
 			if(i < num_worker){
 				/*	first image is sent to worker */				
@@ -128,8 +168,13 @@ int main(int argc, char *argv[])
 #endif	
 			}
 #ifdef MODULE
-			/* image = metodo_da_fare */
-#endif
+			if(i< STREAMLENGTH -1){
+				/* read from the socket */
+				if (Read(new_sock, image, dim) < 0)
+					error("Error reading from socket");
+			}	
+#endif			
+			
 		}
 		
 		/* send the termination message */
@@ -145,7 +190,7 @@ int main(int argc, char *argv[])
 #ifdef DEBUG
 		printf("Collector with rank %d\n", my_rank);
 #endif
-
+		
 		/* take the time */
 		gettimeofday(&tv1, NULL);
 		i = 0;
