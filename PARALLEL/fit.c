@@ -5,7 +5,6 @@
  */
  
 #include "fit.h"
-/*#include "parallel.h"*/
 #include "image.h"
 
 /* vectors used in the main loop with relative gsl_view */
