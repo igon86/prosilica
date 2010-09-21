@@ -25,7 +25,7 @@ dataparallel:
 	$(CC)$(CVER) -D_$(ARCH) -D_$(OS) $(DP_FLAGS) -DDATA_PARALLEL $(GSL_INCLUDE_DIR) $(LIB) ./data_parallel.c ./fit.c ./image.c $(GSL_LIB_DIR) -o dataparallel
 
 old_dp:
-	$(CC)$(CVER) -D_$(ARCH) -D_$(OS) -DFARM $(GSL_INCLUDE_DIR) $(LIB) ./old_dp.c ./fit.c ./image.c ./scatter.c $(GSL_LIB_DIR) -o dataparallel
+	$(CC)$(CVER) -D_$(ARCH) -D_$(OS) $(DP_FLAGS) -DFARM $(GSL_INCLUDE_DIR) $(LIB) ./old_dp.c ./fit.c ./image.c ./scatter.c ./macro.c $(GSL_LIB_DIR) -o dataparallel
 
 test_farm:
 	mpirun -np $(NP) ./farm $(WIDTH) $(HEIGHT)

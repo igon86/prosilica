@@ -54,6 +54,11 @@ int main(int argc, char *argv[])
     gsl_matrix_view r_matrice = gsl_matrix_view_array(ret, DIM_FIT, DIM_FIT);
     gsl_vector_view r_vettore = gsl_vector_view_array(ret + (DIM_FIT * DIM_FIT), DIM_FIT);
 	
+#ifdef MODULE
+	/* socket for the camera */
+	int new_sock;
+#endif	
+	
 	/*********************************************************************
 	 INIT
 	 *********************************************************************/	
@@ -81,7 +86,9 @@ int main(int argc, char *argv[])
     if (my_rank == EMITTER) {
 #if DEBUG
 		printf("Emitter with rank %d\n", my_rank);
-#endif		
+#endif	
+
+#ifndef MODULE
 		/* an image representing the gaussian is created and returned
 		 as a unsigned char matrix */
 		width = atoi(argv[1]);
@@ -89,7 +96,21 @@ int main(int argc, char *argv[])
 		/* y dimension of the image is adjusted (if needed) */
 		while (height % num_worker != 0) height++;
 		/* image is created */
-		image = createImage(width, height);		
+		image = createImage(width, height);
+#else
+		new_sock = Connect();
+		
+		if (Read(new_sock, &width, sizeof(int)) < 0)
+			error("Error reading the integers");
+		if (Read(new_sock, &height, sizeof(int)) < 0)
+			error("Error reading the integers");
+		
+		dim = width * height;
+		image = (unsigned char *) malloc (dim);
+		/* read from the socket */
+		if (Read(new_sock, image, dim) < 0)
+			error("Error reading from socket");
+#endif				
 		/* parameters of the gaussian are estimated */
 		initialization(image, width, height,fit);
 				
@@ -144,8 +165,11 @@ int main(int argc, char *argv[])
 		MPI_Bcast(fit, DIM_FIT, MPI_DOUBLE, COLLECTOR, MPI_COMM_WORLD);
 		
 #ifdef MODULE
-		if (my_rank == EMITTER) {
-			/* new image is stored in buffer image of the emitter*/
+		if (my_rank == EMITTER && i< STREAMLENGTH - 1) {
+			/* read from the socket */
+		if (Read(new_sock, image, dim) < 0)
+			error("Error reading from socket");
+
 		}
 #endif			
     }
