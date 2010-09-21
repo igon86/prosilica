@@ -33,10 +33,7 @@ int main(int argc, char *argv[])
     double fit[DIM_FIT];
 	
     /* image representing Gaussian fit */
-    unsigned char *image = NULL;
-#ifdef PADDED
-	unsigned char *padded = NULL;
-#endif	
+    unsigned char *image = NULL;	
 	
     /* local partition of the image*/
     unsigned char *partition;
@@ -116,20 +113,6 @@ int main(int argc, char *argv[])
     /* if I am the emitter I take the time */
     if (my_rank == EMITTER)
 		gettimeofday(&tv1, NULL);
-		
-#ifdef PADDED
-	if (my_rank == EMITTER){
-		padded =(unsigned char*) malloc(sizeof(unsigned char)*ppw*p);
-		for (i=0; i < dim; i++){
-			padded[i + ppw] = image[i];
-		}
-		for(i=0;i<DIM_FIT * (DIM_FIT + 1);i++){
-			ret[i] = 0;
-		}		
-		free(image);
-		image = padded;
-	}	
-#endif	
 	
     /*********************************************************************
 	 LOOP on ELEMENTS

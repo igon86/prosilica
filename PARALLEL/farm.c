@@ -232,11 +232,7 @@ int main(int argc, char *argv[])
 				freeBuffers();
 				break;
 			}
-#ifdef OLD			
-			else{
-				num_image++;
-			}
-#endif			
+			
 			/* receive the image from the emitter */
 			MPI_Recv(image, dim, MPI_UNSIGNED_CHAR, EMITTER, IMAGE, MPI_COMM_WORLD, &status);
 			/* calculation of the Gauss matrix and vector */

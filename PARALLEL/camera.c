@@ -32,9 +32,6 @@ int main(int argc, char *argv []) {
 
 	dim = dimx * dimy;	
 
-/*	memset((char *) buffer, ZERO, N_BUF);
-	memcpy((char *) buffer, "mamma", strlen("mamma"));*/
-
 	/* set the address and the port of the server */
 	memset((char *) &serv_addr, ZERO, sizeof(serv_addr));
 	serv_addr.sin_family = AF_INET;
