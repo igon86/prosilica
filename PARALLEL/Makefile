@@ -14,7 +14,7 @@ HEIGHT=200
 FARM_FLAGS = $(FLAGS) -DON_DEMAND -DMODULE
 
 # PADDED	ALL	MODULE 			
-DP_FLAGS = $(FLAGS) 
+DP_FLAGS = $(FLAGS) -DMODULE
 
 .PHONY : farm test_farm dataparallel test_dataparallel clean valgrind regression backup
 
@@ -22,7 +22,7 @@ farm:
 	$(CC)$(CVER) -D_$(ARCH) -D_$(OS) $(FARM_FLAGS) -DFARM $(GSL_INCLUDE_DIR) $(LIB) ./farm.c ./fit.c ./image.c ./macro.c $(GSL_LIB_DIR) -o farm
 
 dataparallel:
-	$(CC)$(CVER) -D_$(ARCH) -D_$(OS) $(DP_FLAGS) -DDATA_PARALLEL $(GSL_INCLUDE_DIR) $(LIB) ./data_parallel.c ./fit.c ./image.c $(GSL_LIB_DIR) -o dataparallel
+	$(CC)$(CVER) -D_$(ARCH) -D_$(OS) $(DP_FLAGS) -DDATA_PARALLEL $(GSL_INCLUDE_DIR) $(LIB) ./data_parallel.c ./fit.c ./image.c ./macro.c $(GSL_LIB_DIR) -o dataparallel
 
 old_dp:
 	$(CC)$(CVER) -D_$(ARCH) -D_$(OS) $(DP_FLAGS) -DFARM $(GSL_INCLUDE_DIR) $(LIB) ./old_dp.c ./fit.c ./image.c ./scatter.c ./macro.c $(GSL_LIB_DIR) -o dataparallel

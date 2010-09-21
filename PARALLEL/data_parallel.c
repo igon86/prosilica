@@ -1,6 +1,7 @@
 #include "fit.h"
 #include "parallel.h"
 #include "image.h"
+#include "macro.h"
 
 /* MPI Variables, global for sake of code simplicity */
 
@@ -34,8 +35,13 @@ int main(int argc, char *argv[])
     /* image representing Gaussian fit */
     unsigned char *image = NULL;
 #ifdef PADDED
+	/* buffer for the padded image */
 	unsigned char *padded = NULL;
 #endif	
+#ifdef MODULE
+	/* socket for the camera */
+	int new_sock;
+#endif
 	
     /* local partition of the image*/
     unsigned char *partition;
@@ -85,6 +91,20 @@ int main(int argc, char *argv[])
 		printf("Emitter with rank %d\n", my_rank);
 #endif
 		
+#ifdef MODULE
+		new_sock = Connect();
+		
+		if (Read(new_sock, &width, sizeof(int)) < 0)
+			error("Error reading the integers");
+		if (Read(new_sock, &height, sizeof(int)) < 0)
+			error("Error reading the integers");
+		
+		dim = width * height;
+		image = (unsigned char *) malloc (dim);
+		/* read from the socket */
+		if (Read(new_sock, image, dim) < 0)
+			error("Error reading from socket");
+#else		
 		/* an image representing the gaussian is created and returned
 		 as a unsigned char matrix */
 		width = atoi(argv[1]);
@@ -93,7 +113,7 @@ int main(int argc, char *argv[])
 		while (height % num_worker != 0) height++;
 		/* image is created */
 		image = createImage(width, height);
-		
+#endif		
 		/* parameters of the gaussian are estimated */
 		initialization(image, width, height,fit);
 		
@@ -121,7 +141,7 @@ int main(int argc, char *argv[])
     /* if I am the emitter I take the time */
     if (my_rank == EMITTER)
 		gettimeofday(&tv1, NULL);
-		
+	
 #ifdef PADDED
 	if (my_rank == EMITTER){
 		padded =(unsigned char*) malloc(sizeof(unsigned char)*ppw*p);
@@ -167,7 +187,7 @@ int main(int argc, char *argv[])
 		/* broadcast of the result */
 		MPI_Bcast(fit, DIM_FIT, MPI_DOUBLE, EMITTER, MPI_COMM_WORLD);
 #endif
-
+		
 #ifdef DEBUG
 		if (my_rank == EMITTER) {
 			printf("Image %d: %f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\n", i, fit[PAR_A], fit[PAR_X],
@@ -176,8 +196,10 @@ int main(int argc, char *argv[])
 #endif
 		
 #ifdef MODULE
-		if (my_rank == EMITTER) {
+		if (my_rank == EMITTER && i < STREAMLENGTH - 1) {
 			/* new image is stored in buffer image of the emitter*/
+			if (Read(new_sock, image, dim) < 0)
+				error("Error reading from socket");
 		}
 #endif			
     }
