@@ -52,6 +52,9 @@ void initBuffers(int npixels);
 /* Free fit buffers */
 void freeBuffers();
 
+/* Return a socket with the camera */
+int Connect();
+
 /* Estimate the parameters of the gaussian */
 void initialization(unsigned char *matrix,int width,int height, double *fit);
 

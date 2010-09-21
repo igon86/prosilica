@@ -5,7 +5,7 @@
  */
  
 #include "fit.h"
-#include "image.h"
+#include "camera.h"
 
 /* vectors used in the main loop with relative gsl_view */
 static gsl_matrix_view gsl_M;
@@ -320,6 +320,39 @@ void procedure(const unsigned char *data, int w, int h, double *results,
     gsl_blas_dgemv(CblasTrans, 1.0, &gsl_M.matrix, &gsl_diff.vector, 0.0,
 				   &vettore.vector);
 	
+}
+
+/**
+ * Return the socket with the camera module 
+ */
+
+int Connect(){
+
+	struct sockaddr_in serv_addr;
+	int new_sock, sock;
+
+	/* server socket */
+	if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0)
+		error("Error opening socket");
+		
+	memset((char *) &serv_addr, ZERO, sizeof(serv_addr));
+		
+	serv_addr.sin_family = AF_INET;
+	serv_addr.sin_addr.s_addr = INADDR_ANY;
+	serv_addr.sin_port = htons(PORT);
+		
+	if (bind(sock, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0) 
+		error("Error on binding");
+		
+	/* server is listening */
+	if (listen(sock, 0) < 0)
+		error("Error on listen");
+		
+	/* accept the new connection */
+	if ((new_sock = accept(sock, NULL, 0)) < 0)
+		error("Error on accept");
+
+	return new_sock;
 }
 
 /*********************************************************************
