@@ -13,15 +13,15 @@
 #define IMAGE 0
 #define MATRIX 1
 
-extern int p,my_rank;
+extern int p, my_rank;
 
 /**
  Given an image of dimension dim, represented as a unsigned char matrix.
  It is scattered by EMITTER among the workers.
  
- \param		matrix				image
- \param		dim					dimension of the image
- \param		partition			local buffer of workers
+ @param		matrix				image
+ @param		dim					dimension of the image
+ @param		partition			local buffer of workers
  
  */
 void scatterImage(unsigned char* matrix,int dim,unsigned char* partition){
@@ -45,9 +45,9 @@ void scatterImage(unsigned char* matrix,int dim,unsigned char* partition){
  Given a scattered double matrix, it is collected by the COLLECTOR
  node using MPI_Recv and it is reduced.
  
- \param		matrix				matrix where reduce is performed
- \param		dim					dimension of double matrix
- \param		patition			partition of the matrix among workers
+ @param		matrix				matrix where reduce is performed
+ @param		dim					dimension of double matrix
+ @param		patition			partition of the matrix among workers
  
  */
 void reduceMatrix(double* matrix,int dim,double* partition){

@@ -9,12 +9,9 @@
 
 #ifdef FARM
 #define COLLECTOR 1
-#endif
-
-/* number of service processes */
-#ifdef FARM
 #define PS 2
 #endif
+
 
 #ifdef DATA_PARALLEL
 #ifdef PADDED
