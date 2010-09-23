@@ -144,7 +144,7 @@ int main(int argc, char *argv[])
 	
 #ifdef PADDED
 	if (my_rank == EMITTER){
-		padded =(unsigned char*) malloc(sizeof(unsigned char)*ppw*p);
+		padded =(unsigned char*) malloc(sizeof(unsigned char) * ppw * p);
 		for (i=0; i < dim; i++){
 			padded[i + ppw] = image[i];
 		}
@@ -196,10 +196,15 @@ int main(int argc, char *argv[])
 #endif
 		
 #ifdef MODULE
-		if (my_rank == EMITTER && i < STREAMLENGTH - 1) {
+		if (my_rank == EMITTER && i < STREAMLENGTH - 1) {		
 			/* new image is stored in buffer image of the emitter*/
+#ifdef PADDED
+			if (Read(new_sock, image + ppw, dim) < 0)
+				error("Error reading from socket");
+#else			
 			if (Read(new_sock, image, dim) < 0)
 				error("Error reading from socket");
+#endif				
 		}
 #endif			
     }

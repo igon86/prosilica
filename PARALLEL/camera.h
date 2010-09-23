@@ -12,6 +12,6 @@
 
 #define ZERO '\0'
 #define PORT 9999
-#define MAX_TRY 3
+#define MAX_TRY 1000
 
 #endif
