@@ -14,9 +14,9 @@ HEIGHT=200
 FARM_FLAGS = $(FLAGS) -DON_DEMAND -DMODULE
 
 # PADDED	ALL	MODULE 			
-DP_FLAGS = $(FLAGS) -DMODULE
+DP_FLAGS = $(FLAGS) -DMODULE -DPADDED -DALL
 
-.PHONY : farm test_farm dataparallel test_dataparallel clean valgrind regression backup
+.PHONY : farm test_farm dataparallel test_dataparallel clean valgrind regression backup camera
 
 farm:
 	$(CC)$(CVER) -D_$(ARCH) -D_$(OS) $(FARM_FLAGS) -DFARM $(GSL_INCLUDE_DIR) $(LIB) ./farm.c ./fit.c ./image.c ./macro.c $(GSL_LIB_DIR) -o farm
