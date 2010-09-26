@@ -8,7 +8,7 @@ y=10
 #indici
 k=1
 
-FILE_FLAG=./FLAG_FARM
+FILE_FLAG=./FLAG_DP
 FILE_DIM=./DIMENSIONI
 
 num_flag=$(cat $FILE_FLAG | wc -l )
@@ -17,7 +17,7 @@ echo "numero di diversi flag: $num_flag"
 echo "numero di diverse dimensioni: $num_dim"
 
 #apro il file
-echo "echo INIZIO" > test.sh
+echo "echo DP" >> test.sh
 #diversi flag di compilazione
 while [ $k -le $num_flag ]
 do
@@ -36,7 +36,7 @@ do
 	echo $FLAG_TAGNAME
 	
 	#COMPILO
-	echo "mpicc $FLAGS -DFARM -Wall -pedantic  -I/home/parallel/lottarin/include -lgsl -lgslcblas -lm -ltiff ./farm.c ./fit.c ./image.c ./macro.c -L/home/parallel/lottarin/lib -o farm" >> test.sh
+	echo "mpicc $FLAGS -DDATA_PARALLEL -Wall -pedantic  -I/home/parallel/lottarin/include -lgsl -lgslcblas -lm -ltiff ./scatter.c ./old_dp.c ./data_parallel.c ./fit.c ./image.c ./macro.c -L/home/parallel/lottarin/lib -o dataparallel" >> test.sh
 
 	n=1
 	#diverse dimensioni
@@ -52,10 +52,10 @@ do
 		while [ $i -le $np ]
 		do
 			if [ $(echo $TAGNAME | grep MODULE ) ]; then
-				echo "mpirun -np $i ./farm $dim $dim >> farm_$TAGNAME &" >> test.sh
+				echo "mpirun -np $i ./dataparallel $dim $dim >> ./TEMPI/dp_$TAGNAME &" >> test.sh
 				echo "./camera" >> test.sh
 			else	
-				echo "mpirun -np $i ./farm $dim $dim >> ./TEMPI/farm_$TAGNAME" >> test.sh
+				echo "mpirun -np $i ./dataparallel $dim $dim >> ./TEMPI/dp_$TAGNAME" >> test.sh
 			fi
 			
 			i=$[$i+1]
