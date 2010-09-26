@@ -41,10 +41,9 @@ int main(int argc, char *argv []) {
 	/* connect the client to server */
 	while (connect(sock, (struct sockaddr*) &serv_addr, sizeof(serv_addr)) < 0) {
 
-		printf("%d\nPORCO CAZZO\n",errno);
 		perror("Error connecting");
 		
-		sleep(10);
+		sleep(1);
 		if (++count == MAX_TRY)	
 			error("Unable to contact server");
 	}

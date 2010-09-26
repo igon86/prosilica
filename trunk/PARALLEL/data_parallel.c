@@ -3,6 +3,8 @@
 #include "image.h"
 #include "macro.h"
 
+#include <time.h>
+
 /* MPI Variables, global for sake of code simplicity */
 
 int my_rank;			/* MPI rank of the process */
@@ -67,6 +69,7 @@ int main(int argc, char *argv[])
 	 *********************************************************************/	
 	
 	srand(time(NULL));
+	gsl_set_error_handler (NULL);
 	
     /* Initialize of MPI */
     MPI_Init(&argc, &argv);
