@@ -322,10 +322,14 @@ void procedure(const unsigned char *data, int w, int h, double *results,
 	
 }
 
-/**
- * Return the socket with the camera module 
- */
+/*********************************************************************
+ CONNECTION FUNCTION
+ *********************************************************************/
 
+/**
+ Creates a new server socket and waits for clients.
+ 
+ */
 int Connect(){
 
 	struct sockaddr_in serv_addr;

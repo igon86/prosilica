@@ -5,6 +5,7 @@
 	#include "camera.h"
 #endif
 #include "macro.h"
+
 #include <time.h>
 
 /* MPI Variables, global for sake of code simplicity */
@@ -48,6 +49,7 @@ int main(int argc, char *argv[])
 	
 	/* random number generator seed */
 	srand(time(NULL));
+	gsl_set_error_handler (NULL);
 	
 	/*********************************************************************
 	 INIT
