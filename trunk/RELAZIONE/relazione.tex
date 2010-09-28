@@ -1,0 +1,45 @@
+\documentclass[a4paper,12pt]{article}
+\usepackage[latin1]{inputenc}
+\usepackage[italian]{babel}
+\usepackage{graphicx}
+\usepackage{listings}
+\usepackage{fancyhdr}
+\usepackage{multicol}
+\usepackage[pdftex]{color}
+\usepackage{url}
+\usepackage[final]{pdfpages}
+\newcommand{\fncyblank }{\fancyhf {}}
+
+\definecolor{Gray}{cmyk}{0,0,0,0.50}
+
+\lstset{language=C}
+\lstset{frame=shadowbox, rulesepcolor=\color{Gray}}
+\lstset{tabsize=1,breaklines,commentstyle=\textit}
+\lstset{showstringspaces=false}
+\lstset{basicstyle=\small}
+
+\renewcommand{\lstlistingname}{Listato}
+\renewcommand{\lstlistlistingname}{Elenco dei listati}
+
+\newcommand{\cfile}[1]{\mbox{``\textit{#1}''}}
+\newcommand{\ccode}[1]{\mbox{\textit{#1}}}
+
+\addtolength{\hoffset}{-1cm}
+\addtolength{\textwidth}{2cm}
+\addtolength{\voffset}{-1cm}
+\addtolength{\textheight}{1cm}
+
+\title{System Paradigms and Models Project}
+\author{Andrea Lottarini, Alberto Bandettini}
+\date{September, 27 2010}
+
+\begin{document}
+\maketitle
+\tableofcontents
+\include{introduzione}
+\include{modello}
+\include{implementazione}
+\include{test}
+\include{conclusioni}
+
+\end{document}
