@@ -1,12 +1,13 @@
 #include "fit.h"
 #include "parallel.h"
 #include "image.h"
-#ifdef MODULE
-	#include "camera.h"
-#endif
 #include "macro.h"
 
-#include <time.h>
+#ifdef MODULE
+	#include "camera.h"
+#else
+	#include <time.h>
+#endif
 
 /* MPI Variables, global for sake of code simplicity */
 
@@ -47,13 +48,14 @@ int main(int argc, char *argv[])
     gsl_matrix_view matrice = gsl_matrix_view_array(data, DIM_FIT, DIM_FIT);
     gsl_vector_view vettore = gsl_vector_view_array(data + (DIM_FIT * DIM_FIT), DIM_FIT);
 	
-	/* random number generator seed */
-	srand(time(NULL));
-	gsl_set_error_handler (NULL);
 	
 	/*********************************************************************
 	 INIT
 	 *********************************************************************/
+	 
+	srand(time(NULL));
+	/* in order to recover from an error */
+	gsl_set_error_handler_off();
 	
     /* Initialize of MPI */
     MPI_Init(&argc, &argv);

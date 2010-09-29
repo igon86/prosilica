@@ -6,7 +6,6 @@
  * @param dimx
  * @param dimy
  */
-
 int main(int argc, char *argv []) {
 
 	int sock, count = 0, i = 0, dimx = 0, dimy = 0, dim;
