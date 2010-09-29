@@ -32,7 +32,7 @@ The pseudocode of the algorithm is shown in Figure \ref{code:gauss}.
 \begin{center} 
 \begin{minipage}[c]{.85\textwidth} 
 \centering 
-\begin{pseudo}{}{}
+\begin{pseudo}{}{gauss}
 unsigned char $image[num\_pixel]$;
 double $parameters$[8], $delta\_vector[8]$, $diff\_vector[num\_pixel]$, $gradient\_matrix[num\_pixel][8]$;
 double $error$, $threshold$;
@@ -58,12 +58,15 @@ return $parameters$;
 \end{minipage} 
 \end{center} 
 \caption{Pseudocodice dell'algoritmo di Gauss-Newton.}
-\label{code:gauss}
 \end{figure}
 
-It is important to point out some interesting points.
+It is important to point out some interesting facts.
 Ideally the algorithm could loop for an infinite number of iteration but since we are dealing with finite arithmetics the algorithm would surely converge after a finite number of steps.
 Consider that since we are monitoring a slowly changing enviroment, one iteration is sufficient in order to converge to a result.
 We also had to develop a simulator for the digital camera.
 
-\section{Parallel Implementation}
+\subsection{Parallel Implementation}
+
+As a first thing we have to model the parallel computation using a structured parallel programming scheme.
+Considering the pseudocode in Figure \ref{code:gauss} we can already notice that the main operation is the matrix-matrix multiplication.
+We chosed to realize both a farm and dataparallel scheme that we will further discuss in the next sections.
