@@ -1,1 +1,33 @@
 \section{Introduction}  
+
+In this section we will briefly introduce the aim of this project and the algorithm that we studied and implemented in a parallel fashion.
+The algorithm is the Gauss-Newton algorithm for non linear least square interpolation.
+In this particular case we studied an implementation of the algorithm for 3 dimensional interpolation of images representing gaussian beams.
+The sequential version of the algorithm was developed in summer 2009 for interpolation of images of laser beams monitored by digital camera. 
+By interpolation it is possible to monitor the ouput of a high definition camera with a precision down to micrometers, this operation requires lots of computation nonetheless.
+This constitute the main reason for a parallel version of the program.
+
+\subsection{Experimental/ Real World setup}
+
+In this section we will briefly illunstrate the enviroment where the algorithm is used and the main purpose for its developement.
+Laser beams are used to monitor the position and orientation of suspended mirrors used in the interferometer. 
+The beam is pointed towards the mirror with a 45 degree angle and reflected on the screen of a high resolution digital camera.
+Tilting of the mirror will produce a movement in the position of the laser beam while distortion of the surface of the mirror will produce a change in focus (size) of the beam.
+Using then multiple cameras is possible to have a complete three dimensional displacement of the mirror in real time.
+In order to do so position and size of the beam should be monitored with high precision. 
+As said before the best way to do so is to interpolate the profile of the captured image of the laser beam which, in normal operative conditions, have a perfect gaussian shape.
+Since the output of the camera is used for adjustments on remote controlled machinery it is important to have both a high throughput in terms of number of images elaborated and high precision of the interpolation itself.
+In our opinion this was a nice real life case for studying parallelization.
+Now let's analyze the algorithm used for interpolation.
+
+\subsection{Algorithm}
+
+The algorithm is the well known Gauss-Newton algorithm for non linear least square problems.
+As the name says this algorithm does not perform perfect interpolation but tries to reduce as most the square error.
+It is also applied for a non linear function (gaussian).
+Linear methods as polinomial interpolation can be solved in a single step operating on every point (pixel) only once, non linear methods are iterative and so tends to converge after a  number of steps.
+Here is the pseudocode of the algorithm
+
+It is important to point out some interesting points:
+Ideally the algorithm could go on foverer but since we are dealing with finite arithmetics the algorithm would surely converge after a finite number of steps.
+Consider that since we are monitoring a slowly changing enviroment with respect
