@@ -26,7 +26,40 @@ The algorithm is the well known Gauss-Newton algorithm for non linear least squa
 As the name says this algorithm does not perform perfect interpolation but tries to reduce as most the square error.
 It is also applied for a non linear function (gaussian).
 Linear methods as polinomial interpolation can be solved in a single step operating on every point (pixel) only once, non linear methods are iterative and so tends to converge after a  number of steps.
-Here is the pseudocode of the algorithm
+The pseudocode of the algorithm is shown in Figure \ref{code:gauss}.
+
+\begin{figure}[h]
+\begin{center} 
+\begin{minipage}[c]{.85\textwidth} 
+\centering 
+\begin{pseudo}{}{}
+unsigned char $image[num\_pixel]$;
+double $parameters$[8], $delta\_vector[8]$, $diff\_vector[num\_pixel]$, $gradient\_matrix[num\_pixel][8]$;
+double $error$, $threshold$;
+
+get_image($image$);
+get_parameters($parameters$);
+
+while ($error$ > $threshold$ ) {
+    for($i$ = 0; $i$ < $num\_pixel$; $i$ ++){
+	
+          $diff\_vector$[$i$] = $image$[$i$] - evaluateGaussian($parameters$,$i$); 
+          $gradient\_matrix[i][:]$ = computeGradients($i$,$parameters$);
+	      
+    }
+    
+    $delta\_vector[:]$ = LU_solve ($gradient\_matrix$' * $gradient\_matrix$ , $gradient\_matrix$' * $diff\_vector$);
+    $parameters$ += $delta$;
+    $error$ = compute_square_error($image$, $parameters$);
+}
+return $parameters$;
+
+\end{pseudo}
+\end{minipage} 
+\end{center} 
+\caption{Pseudocodice dell'algoritmo di Gauss-Newton.}
+\label{code:gauss}
+\end{figure}
 
 It is important to point out some interesting points:
 Ideally the algorithm could go on foverer but since we are dealing with finite arithmetics the algorithm would surely converge after a finite number of steps.
