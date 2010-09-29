@@ -29,6 +29,33 @@
 \addtolength{\voffset}{-1cm}
 \addtolength{\textheight}{1cm}
 
+%AMBIENTE PER LO PSEUDOCODICE
+\lstnewenvironment{pseudo}[2] {\lstset{ %
+    language=C++, % choose the language of the code
+%basicstyle=\footnotesize,       % the size of the fonts that are used for the code
+%numbers=right,                   % where to put the line-numbers
+numberstyle=\footnotesize,      % the size of the fonts that are used for the line-numbers
+%stepnumber=1,                   % the step between two line-numbers. If it's 1 each line will be numbered
+numbersep=1pt,                  % how far the line-numbers are from the code
+backgroundcolor=\color{white},  % choose the background color. You must add \usepackage{color}
+showspaces=false,               % show spaces adding particular underscores
+showstringspaces=false,         % underline spaces within strings
+showtabs=false,                 % show tabs within strings adding particular underscores
+frame=single,                   % adds a frame around the code
+frame=shadowbox
+tabsize=2,                      % sets default tabsize to 2 spaces
+captionpos=b,                   % sets the caption-position to bottom
+breaklines=true,                % sets automatic line breaking
+breakatwhitespace=true,        % sets if automatic breaks should only happen at whitespace
+escapeinside={(*@}{@*)},          % if you want to add a comment within your code
+%MIEI =P
+mathescape=true,
+columns=flexible,
+morekeywords={for,forall},
+#1,
+label={code:#2}
+}}{}
+
 \title{System Paradigms and Models Project}
 \author{Andrea Lottarini, Alberto Bandettini}
 \date{September, 27 2010}
