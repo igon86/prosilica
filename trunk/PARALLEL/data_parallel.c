@@ -3,7 +3,11 @@
 #include "image.h"
 #include "macro.h"
 
-#include <time.h>
+#ifdef MODULE
+	#include "camera.h"
+#else
+	#include <time.h>
+#endif
 
 /* MPI Variables, global for sake of code simplicity */
 
@@ -36,10 +40,12 @@ int main(int argc, char *argv[])
 	
     /* image representing Gaussian fit */
     unsigned char *image = NULL;
+	
 #ifdef PADDED
 	/* buffer for the padded image */
 	unsigned char *padded = NULL;
 #endif	
+
 #ifdef MODULE
 	/* socket for the camera */
 	int new_sock;
@@ -69,7 +75,8 @@ int main(int argc, char *argv[])
 	 *********************************************************************/	
 	
 	srand(time(NULL));
-	gsl_set_error_handler (NULL);
+	/* in order to recover from an error */
+	gsl_set_error_handler_off();
 	
     /* Initialize of MPI */
     MPI_Init(&argc, &argv);
@@ -171,14 +178,7 @@ int main(int argc, char *argv[])
 		if(my_rank >= PS){
 			procedure(partition, dimx, dimy , fit, matrice, vettore, dimy*(my_rank-PS));
 		}
-		
-#ifdef ALL
-		/* execute the reduce of matrix and vector */
-		MPI_Allreduce(data, ret, buffer_size , MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
-		
-		/*  adjust fit results  */
-		postProcedure(r_matrice,r_vettore,fit);
-#else		
+	
 		/* execute the reduce of matrix and vector */
 		MPI_Reduce(data, ret, buffer_size , MPI_DOUBLE, MPI_SUM, EMITTER, MPI_COMM_WORLD);
 		
@@ -189,7 +189,6 @@ int main(int argc, char *argv[])
 		
 		/* broadcast of the result */
 		MPI_Bcast(fit, DIM_FIT, MPI_DOUBLE, EMITTER, MPI_COMM_WORLD);
-#endif
 		
 #ifdef DEBUG
 		if (my_rank == EMITTER) {
