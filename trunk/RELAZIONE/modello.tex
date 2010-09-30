@@ -1,11 +1,21 @@
 \section{Cost Model}
 
+In this section we will talk about the cost models of the farm and data parallel paradigms used to parallelize the alghorithm above. The methodology used for measure the performance is based on standard measures, in particular we have taken principally into account the completion time. When we instantiated the problem, we assumed that the emitter in the farm and the scattering module in the data parallel have always an image ready to send. In this way we simulated the minimal interarrival time of images from another module generating the stream (that it will be the camera module during the real behaviour of this application).
+
 \subsection{Farm}
 
-We realized the farm scheme both with a standard and a on demand scheme.
-As we anticipated in the previous section, most of the computation is done in order to execute the matrix-matrix multiplication of the gradient matrix.
-So we expect that the two different implentations will behave exactly the same
+The most important parameter of this paradigm, that is working with computations based on stream, is the service time $T_{s}$. In the farm, the emitter, the generic worker and the collector are organized in pipeline, hence it is equal to
+\[
+T_{s} = \max \lbrace T_{e}, T_{w}, T_{c}\rbrace
+\]
+where, in this specific case, the service time of the emitter and collector (respectively $T_{e}$ and $T_{c}$) is equal to the communication latency $L_{com}$ for sending an image. Following the considerations above this term is equal to minimum interarrival time $T_{a}$ at the system. According to queuing theory we have that the interdeparture time $T_{p}$ from the system is equal to to the interarrival time $L_{com}$ if
+\[
+T_{w} = L_{com} \Leftrightarrow \frac{T_{image}}{nw} = L_{com} \Leftrightarrow nw = \frac{T_{image}}{L_{com}} 
+\]
+where $T_{image}$ is the time spent to execute the Gauss-Newton algorithm over an image and $nw$ is the ideal number of workers. If the purpose is to maximize the bandwidth (loosing a few in efficiency) we can choose the ceiling of this value.
 
-\subsection{Map - Reduce}
-
-Scatter - Padded - Classis
+If the stream lenght $m$ is more bigger than the number of modules of the farm, like in this project, then the completion time is close to
+\[
+T_{C} \simeq m \cdot T_{p} 
+\]
+\subsection{Map}

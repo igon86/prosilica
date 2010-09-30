@@ -8,7 +8,7 @@
 #define DEVIATION 50
 
 /* length of the stream */
-#define STREAMLENGTH 10
+#define STREAMLENGTH 1000
 
 /* Create the image representing the Gaussian */
 unsigned char* createMatrix (int length, int width, double* input);

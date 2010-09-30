@@ -39,9 +39,6 @@ int main(int argc, char *argv []) {
     
 	/* connect the client to server */
 	while (connect(sock, (struct sockaddr*) &serv_addr, sizeof(serv_addr)) < 0) {
-
-		perror("Error connecting");
-		
 		sleep(1);
 		if (++count == MAX_TRY)	
 			error("Unable to contact server");
@@ -58,8 +55,10 @@ int main(int argc, char *argv []) {
 		/* create the image */
 		buffer = createImage(dimx ,dimy);
 		/* write and close the socket */
-		if(Write(sock, buffer, dim) < dim)
+		if(Write(sock, buffer, dim) < dim){
+			printf("error is %d\n", errno);
 			error("Error writing in socket");
+		}
 		/* free the memory*/
 		free(buffer);
 	}

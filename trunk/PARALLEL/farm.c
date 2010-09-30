@@ -22,7 +22,7 @@ int main(int argc, char *argv[])
 #endif
 	
 #ifdef MODULE
-	int new_sock;
+	int new_sock = 0;
 #endif	
 	/* return status of MPI functions */
     MPI_Status status;
