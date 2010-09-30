@@ -60,7 +60,7 @@ int main(int argc, char *argv[])
     /* indexes */
     int i = 0;
 	
-	/* buffer for fit procedure */
+    /* buffer for fit procedure */
     double *data = (double *) malloc( sizeof(double) * buffer_size );
     gsl_matrix_view matrice = gsl_matrix_view_array(data, DIM_FIT, DIM_FIT);
     gsl_vector_view vettore = gsl_vector_view_array(data + (DIM_FIT * DIM_FIT), DIM_FIT);

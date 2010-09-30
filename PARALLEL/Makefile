@@ -43,4 +43,4 @@ backup:
 	cp *.c ./BACKUP
 
 clean:
-	rm -f RESULTS* *.tiff FIT Centroid *~ farm dataparallel valgtest *.o *.BAK
+	rm -f RESULTS* *.tiff FIT Centroid *~ farm dataparallel camera valgtest *.o *.BAK
