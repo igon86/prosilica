@@ -34,7 +34,7 @@ The pseudocode of the algorithm is shown in Figure \ref{code:gauss}.
 \centering 
 \begin{pseudo}{}{gauss}
 unsigned char $image[num\_pixel]$;
-double $parameters$[8], $delta\_vector[8]$, $diff\_vector[num\_pixel]$, $gradient\_matrix[num\_pixel][8]$;
+double $parameters$[8], $delta\_vector[8]$, $diff\_vector[num\_pixel]$, $gradient\_matrix[num\_pixel][8]$, $gradient\_result[8][8]$, $gradient\_vector[8]$;
 double $error$, $threshold$;
 
 get_image($image$);
@@ -47,9 +47,10 @@ while ($error$ > $threshold$ ) {
           $gradient\_matrix[i][:]$ = computeGradients($i$,$parameters$);
 	      
     }
-    
-    $delta\_vector[:]$ = LU_solve ($gradient\_matrix^T$ * $gradient\_matrix$ , $gradient\_matrix^T$ * $diff\_vector$);
-    $parameters$ += $delta$;
+    $gradient\_result$ = $gradient\_matrix^T$ * $gradient\_matrix$;
+    $gradient\_vector$ = $gradient\_matrix^T$ * $diff\_vector$;
+    $delta\_vector[:]$ = LU_solve ($gradient\_result$ , $gradient\_vector$);
+    $parameters[:]$ += $delta\_vector[:]$;
     $error$ = compute_square_error($image$, $parameters$);
 }
 return $parameters$;
@@ -57,7 +58,7 @@ return $parameters$;
 \end{pseudo}
 \end{minipage} 
 \end{center} 
-\caption{Pseudocodice dell'algoritmo di Gauss-Newton.}
+\caption{Pseudocode of Gauss-Newton algorithm}
 \end{figure}
 
 It is important to point out some interesting facts.
@@ -65,8 +66,21 @@ Ideally the algorithm could loop for an infinite number of iteration but since w
 Consider that since we are monitoring a slowly changing enviroment, one iteration is sufficient in order to converge to a result.
 We also had to develop a simulator for the digital camera.
 
-\subsection{Parallel Implementation}
+\subsection{Parallel Scheme}
 
-As a first thing we have to model the parallel computation using a structured parallel programming scheme.
-Considering the pseudocode in Figure \ref{code:gauss} we can already notice that the main operation is the matrix-matrix multiplication.
-We chosed to realize both a farm and dataparallel scheme that we will further discuss in the next sections.
+As a first thing we have to model the parallel computation using a structured parallel programming scheme. We know that there is an (ideal) infinite stream of images, hence a way to parallelize this program can be the farm approach: we can replicate the algorithm in each worker following the cost model that we will introduce soon. For this scheme is not necessary to know the internal structure of the algorithm, but if we analyze it, we recognize some interesting aspects.
+
+Following the pseudocode in Figure 1 we have:
+\begin{enumerate}
+\item the construction of the \textit{diff\_vector} and the \textit{gradient\_matrix} starting from the image.
+\item the multiplication between the \textit{gradient\_matrix} and its own transposed matrix, that is the main operation.
+\item the multiplication between the transposed matrix and the \textit{diff\_vector}.
+\item the LU\_solve operation
+\item the sum of the vector \textit{parameter} with \textit{delta\_vector}.
+\end{enumerate}
+
+From above, we can notice that the first three points could be executed in local in a module if we know a partition of the \textit{gradient\_matrix} and a partition of the \textit{diff\_vector}. In particular, if we consider very fine grain computations, we notice that it is sufficient to have a single element of the matrix and a single element of the vector for computing the partial multiplications between elements. This means that there is no need of communications of values between different partitions of the matrix but it is necessary to communicate the partial results in such way it is possible to sum them and to obtain the $8$x$8\ gradient\_matrix$ and the vector $gradient\_vector$. Finally, we notice that the fourth and the last point must be executed only after the calculations above and they take a negligible time respect than the previous operations.
+
+This situation suggests a parallelization scheme in which the data can be partitionized between different modules for computing the first three points and after we need a reduce communication for obtain the final results and execute the last two parts of the algorithm. This means that our program can be parallelized through a map reduce too.
+
+At this point we chose to realize both a farm and data parallel scheme. We will further discuss their cost model in the next section.
