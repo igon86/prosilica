@@ -1,6 +1,6 @@
 \section{Cost Model}
 
-In this section we will talk about the cost models of the farm and data parallel paradigms used to parallelize the alghorithm above. The methodology used for measure the performance is based on standard measures, in particular we have taken principally into account the completion time and the scalability. When we instantiated the problem, we assumed that the emitter in the farm and the scattering module in the data parallel have always an image ready to send. In this way we simulated the minimal interarrival time of images from another module generating the stream (that it will be the camera module during the real behaviour of this application).
+In this section we will talk about the cost models of the farm and data parallel paradigms used to parallelize the alghorithm above. In both of them there is replication of the function in every worker, but in the second we have partition of data. The methodology used for measure the performance is based on standard measures, in particular we have taken principally into account the completion time and the scalability. When we instantiated the problem, we assumed that the emitter in the farm and the scattering module in the data parallel have always an image ready to send. In this way we simulated the minimal interarrival time of images from another module generating the stream (that it will be the camera module during the real behaviour of this application).
 
 \subsection{Farm}
 
@@ -27,6 +27,13 @@ The scalability is a measure of how much speed is the computation respect than t
 \[
 s = \frac{T_{image}}{T_{s}}
 \]
-\subsection{Map}
+\subsection{Map Reduce}
 
-The data parallel paradigm can be able to reduce the latency of the computation, but in this case it operates on a stream of elements hence the most important parameter is yet the service time. The data parallel computation used for this project is a map. In this case each worker computes the algorithm on own partition of data, hence there is not need to have communications between workers but it is necessary to have scatter and gather communications.
+The data parallel paradigm can be able to reduce the latency of the computation, but in this case it operates on a stream of elements hence the most important parameter is yet the service time. The data parallel computation used for this project is a map with reduce. In this case each worker computes the algorithm on own partition of data, hence there is not need to have communications between workers but it is necessary to have scatter and reduce communications. The scheme of these communications is very important: in the simplest case we have $nw$ send to the workers but is possible to think about tree schemes where the latency becomes logarithmic in the number of workers and no more linear. Another aspect to take into account is the how to partition the pixels of the image: it can be done by rows, columns or in an interleaving way. In this section we are not interesting in details reguarding the implementation but in the next chapters these choices will be explain.
+
+Anyway, in the most general case for a map reduce, the completion time can be evaluated as
+\[
+T_{C} = m \cdot (T_{scatter} + T_{w} + T_{reduce})
+\]
+where $T_{w}$ is the time spent for execute our algorithm over a partition of the image.
+\subsection{Farm vs Map}
