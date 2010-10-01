@@ -1,6 +1,6 @@
 \section{Cost Model}
 
-In this section we will talk about the cost models of the farm and data parallel paradigms used to parallelize the alghorithm above. The methodology used for measure the performance is based on standard measures, in particular we have taken principally into account the completion time. When we instantiated the problem, we assumed that the emitter in the farm and the scattering module in the data parallel have always an image ready to send. In this way we simulated the minimal interarrival time of images from another module generating the stream (that it will be the camera module during the real behaviour of this application).
+In this section we will talk about the cost models of the farm and data parallel paradigms used to parallelize the alghorithm above. The methodology used for measure the performance is based on standard measures, in particular we have taken principally into account the completion time and the scalability. When we instantiated the problem, we assumed that the emitter in the farm and the scattering module in the data parallel have always an image ready to send. In this way we simulated the minimal interarrival time of images from another module generating the stream (that it will be the camera module during the real behaviour of this application).
 
 \subsection{Farm}
 
@@ -8,14 +8,25 @@ The most important parameter of this paradigm, that is working with computations
 \[
 T_{s} = \max \lbrace T_{e}, T_{w}, T_{c}\rbrace
 \]
-where, in this specific case, the service time of the emitter and collector (respectively $T_{e}$ and $T_{c}$) is equal to the communication latency $L_{com}$ for sending an image. Following the considerations above this term is equal to minimum interarrival time $T_{a}$ at the system. According to queuing theory we have that the interdeparture time $T_{p}$ from the system is equal to to the interarrival time $L_{com}$ if
+where, in this specific case, the service time of the emitter and collector (respectively $T_{e}$ and $T_{c}$) is equal to the communication latency $L_{com}$ for sending an image. Following the considerations above this term is equal to minimum interarrival time $T_{a}$ at the system. According to queuing theory we have that the service time $T_{s}$ of the farm system is equal to the interarrival time $L_{com}$ if
 \[
 T_{w} = L_{com} \Leftrightarrow \frac{T_{image}}{nw} = L_{com} \Leftrightarrow nw = \frac{T_{image}}{L_{com}} 
 \]
 where $T_{image}$ is the time spent to execute the Gauss-Newton algorithm over an image and $nw$ is the ideal number of workers. If the purpose is to maximize the bandwidth (loosing a few in efficiency) we can choose the ceiling of this value.
 
-If the stream lenght $m$ is more bigger than the number of modules of the farm, like in this project, then the completion time is close to
+If we let $m$ as the stream length, the completion time can be evaluated as
 \[
-T_{C} \simeq m \cdot T_{p} 
+T_{C} = nw \cdot L_{com} + \frac{m}{nw} \cdot T_{w} + T_{c} 
+\]
+where $\frac{m}{nw}$ is the mean number of tasks for worker.
+If we have that $m \gg nw+2$ (stream length is more bigger than the number of modules of the farm), like in this project, we can consider the completion time close to
+\[
+T_{C} \simeq m \cdot T_{s}
+\]
+The scalability is a measure of how much speed is the computation respect than the sequential case. Formally, it is defined as
+\[
+s = \frac{T_{image}}{T_{s}}
 \]
 \subsection{Map}
+
+The data parallel paradigm can be able to reduce the latency of the computation, but in this case it operates on a stream of elements hence the most important parameter is yet the service time. The data parallel computation used for this project is a map. In this case each worker computes the algorithm on own partition of data, hence there is not need to have communications between workers but it is necessary to have scatter and gather communications.
