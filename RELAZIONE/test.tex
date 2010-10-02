@@ -1,1 +1,36 @@
 \section{Test}
+
+Test were performed on bla bla bla
+process services are bla bla
+communication on MPI?
+hostfile on axth
+
+\begin{figure}[p]
+\centering
+\subfigure[]{\includegraphics[width=\columnwidth,height=3.5in]{./CHART/ottavina_farm_1000_time}%
+\label{graf:ottavina_farm_1000_time}}
+\subfigure[]{\includegraphics[width=\columnwidth,height=3.5in]{./CHART/ottavina_farm_1000_scala}%
+\label{graf:ottavina_farm_1000_scala}}
+\caption{ Service time of the farm implementation \ref{graf:ottavina_farm_1000_time} and relative scalability \ref{graf:ottavina_farm_1000_scala}. Test performed on Intel E5420 @ 2.50 Ghz cpu with images of $10^6$ 8bit pixels. Parallelism degree is starting from 3 because of the service nodes (emitter and collector). }
+\label{chart:ottavina_farm_1000}
+\end{figure}
+
+\begin{figure}[p]
+\centering
+\subfigure[]{\includegraphics[width=\columnwidth,height=3.5in]{./CHART/ottavina_farmvsdata_1000_time}%
+\label{graf:ottavina_data_1000_time}}
+\subfigure[]{\includegraphics[width=\columnwidth,height=3.5in]{./CHART/ottavina_farmvsdata_1000_scala}%
+\label{graf:ottavina_data_1000_scala}}
+\caption{ Service time of the farm and data parallel implementation \ref{graf:ottavina_farm_1000_time} and relative scalabilities \ref{graf:ottavina_farm_1000_scala}. Test performed on Intel E5420 @ 2.50 Ghz cpu with images of $10^6$ 8bit pixels.}
+\label{chart:ottavina_data_1000}
+\end{figure}
+
+\begin{figure}[p]
+\centering
+\subfigure[]{\includegraphics[width=\columnwidth,height=3.5in]{./CHART/ottavina_alldata_1000_time}%
+\label{graf:ottavina_alldata_1000_time}}
+\subfigure[]{\includegraphics[width=\columnwidth,height=3.5in]{./CHART/ottavina_alldata_1000_scala}%
+\label{graf:ottavina_alldata_1000_scala}}
+\caption{ Service time of all the data parallel implementation \ref{graf:ottavina_farm_1000_time} and relative scalabilities, normalized with respect of the number of workers \ref{graf:ottavina_farm_1000_scala}. Test performed on Intel E5420 @ 2.50 Ghz cpu with images of $10^6$ 8bit pixels.}
+\label{chart:ottavina_alldata_1000}
+\end{figure}

@@ -1,13 +1,18 @@
 \documentclass[a4paper,12pt]{article}
-\usepackage[latin1]{inputenc}
-\usepackage[italian]{babel}
+\usepackage [utf8]{inputenc}
+\usepackage{xspace} %better spacing option with :
+\usepackage{amsmath,amsthm,amssymb} %package matematici
+\usepackage{amsfonts} % altri simbolo matematici stronzi
+\usepackage{latexsym} %altri simboli chissa quali
 \usepackage{graphicx}
 \usepackage{listings}
 \usepackage{fancyhdr}
 \usepackage{multicol}
 \usepackage[pdftex]{color}
 \usepackage{url}
+\usepackage{subfigure}
 \usepackage[final]{pdfpages}
+%\usepackage{vmargin}
 \newcommand{\fncyblank }{\fancyhf {}}
 
 \definecolor{Gray}{cmyk}{0,0,0,0.50}
@@ -17,6 +22,8 @@
 \lstset{tabsize=1,breaklines,commentstyle=\textit}
 \lstset{showstringspaces=false}
 \lstset{basicstyle=\small}
+\lstset{xleftmargin=-1cm}
+\lstset{xrightmargin=-1cm}
 
 \renewcommand{\lstlistingname}{Listato}
 \renewcommand{\lstlistlistingname}{Elenco dei listati}
