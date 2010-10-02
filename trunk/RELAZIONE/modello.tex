@@ -1,6 +1,6 @@
 \section{Cost Model}
 
-In this section we will talk about the cost models of the farm and data parallel paradigms used to parallelize the alghorithm above. In both of them there is replication of the function in every worker, but in the second we have partition of data. The methodology used for measure the performance is based on standard measures, in particular we have taken principally into account the service time and the scalability. When we instantiated the problem, we assumed that the emitter in the farm and the scattering module in the data parallel have always an image ready to send. In this way we simulated the minimal interarrival time of images from another module generating the stream (that it will be the camera module during the real behaviour of this application).
+In this section we will talk about the cost models of the farm and data parallel paradigms used to parallelize the algorithm above. In both of them there is replication of the function in every worker, but in the second we have partition of data. The methodology used for measure the performance is based on standard measures, in particular we have taken principally into account the service time and the scalability. When we instantiated the problem, we assumed that the emitter in the farm and the scattering module in the data parallel have always an image ready to send. In this way we simulated the minimal interarrival time of images from another module generating the stream (that it will be the camera module during the real behaviour of this application).
 
 \subsection{Farm}
 
@@ -29,7 +29,7 @@ The scalability is a measure of how much speed is the computation respect than t
 \label{scalability}
 s = \frac{T_{image}}{T_{s}}
 \end{equation}
-where $T_{s}$ changes in fuction of the parallelism degree $n=nw+2$.
+where $T_{s}$ changes in function of the parallelism degree $n=nw+2$.
 
 The Gauss-Newton algorithm practically executes a function for each pixel in the image. The time spent for this function is not variable considering different pixel values, hence we have the maximum loading balance and a round-robin strategy is a well solution. But if this condition was not valid, it was important to find a scheduling solution for balancing the load like, for instance, an on-demand strategy. As we will see in the next sections, the tests will confirm that there is not difference about the circular assignment of images and the on-demand strategy in this project.
 
@@ -57,3 +57,9 @@ In this specific case the associative function of the reduce is simply a sum ove
 The completion time is evaluated like in Formula \ref{completiontime} and the scalability is the same of Formula \ref{scalability}.
 
 \subsection{Farm vs Map}
+
+In general the data parallel solutions require less memory capacity of the architecture nodes respect than the farm scheme. If we think that in the ideal case the entirely data structures of the program should be present in main memory, to have only a single computation over an image respect than different computations over different images can be an advantage from the point of view of the swap information. This can become important especially in shared memory architecture when we increase the grain of the data input.
+
+This latter aspect is fundamental too: to have an optimal dimension of the input data permits to increase the benefits. In the data parallel form this means to found the dimension of the partitions (hence the parallelism degree) of the images, instead in the farm this means to have an adequate dimension of the input images.
+
+We tested our parallel program in both the paradigms with different data grain in such a way to recognize the situations above.
