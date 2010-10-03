@@ -37,7 +37,7 @@ The function $evaluateGaussian$ performs the estimation of the value of the Gaus
 \end{center} 
 This parameters also represents the actual state of the fit and are used by the function $procedure$ to perform one step of interpolation on a given image.
 The gradient matrix and difference vector produced by the fit procedure are then elaborated by the function $post\_procedure$ in order to update the parameters of the Gaussian accordingly to fit results.
-This separation will come in handy when we will discuss the dataparallel implementation of the algorithm.
+This separation will come in handy when we will discuss the data parallel implementation of the algorithm.
 The function \textit{Initialization}, which also use $createMask$, $centroid$ and $maxmin$ functions, is used to produce an initial estimate of the Gaussian parameters starting from the first image.
 This function is necessary because otherwise the gauss-newton algorithm implemented in $procedure$ could diverge during the initial steps.
 
@@ -59,15 +59,15 @@ The \textit{gsl} library is exploited in both $procedure$ and $post\_procedure$ 
 \ \\
 Here we have some definitions very useful in our parallel program. In both farm and data parallel implementation the process with rank equal to zero is the emitter that, in the first paradigm, performs the scheduling strategy of the images, and in the second scheme performs the scatter.
 
-The farm solution is composed by two services processes ($PS$ represents the number of these processes) as usually, instead the data parallel has not services processes in the classic behaviour and one in the padded behaviour. We have this because in \textit{MPI} the reduce and the scatter are performed by workers: this means that a worker will make a scatter and another worker will perform the reduce in addition to their job. Considering our cost model the reduce is not a problem, but the scatter could be hence we realized the \textit{padded} version in which the scatter is not performed by a worker.
+The farm solution is composed by two services processes ($PS$ represents the number of these processes) as usually, instead the data parallel has not services processes in the classic behaviour and one in the padded behaviour. We have this because in \textit{MPI} the reduce and the scatter are performed by workers: this means that a worker will make a scatter and another worker will perform the reduce in addition to their job. Considering our cost model the reduce is not a problem, but the scatter could be, hence we realized the padded version in which the scatter is not performed by a worker.
 \ \\
 \lstinputlisting{./CODE/parallel.h}
 \ \\
-In the next file there is the code of the farm using \textit{MPI} primitives. As we can see, we can have the on-demand scheduling or the classical round-robin. This choice can be adopted during the compilation time setting or no the \textit{ON\_DEMAND} flag.
+In the next file there is the code of the farm using \textit{MPI} primitives. As we can see, we can have the on-demand scheduling or the classical round-robin. This choice can be adopted during the compilation time setting or no the \textit{ON\_DEMAND} flag. Another flag very useful for us and present in both the paradigms is the \textit{DEBUG} flag which has an evident sense.
 \ \\
 \lstinputlisting{./CODE/farm.c}
 \ \\
-The next file contains the data parallel implementation of the algorithm. This implementation of the our map reduce utilizes entirely the \textit{MPI} primitives and it is possible to choice the padded behaviour defining the macro \textit{PADDED} at compilation time.
+The next file contains the data parallel implementation of the algorithm. This implementation of our map reduce utilizes entirely the \textit{MPI} primitives and it is possible to choice the padded behaviour defining the macro \textit{PADDED} at compilation time.
 \ \\
 \lstinputlisting{./CODE/data_parallel.c}
 \ \\
