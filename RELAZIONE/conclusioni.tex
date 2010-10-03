@@ -13,10 +13,25 @@ This effect is noticeable because we are working on a shared memory architecture
 
 The test \ref{chart:ottavina_alldata_1000} tells us that the various implementations of data parallel are not particularly different in terms of scalability but they use a number of service processes (zero, one or two processes) that in an architecture with a few nodes can impact the performance.
 We also notice that our implementation of scatter and reduce communications have similar performances with respect to \textit{MPI} primitives.
-This is mainly due to the really low impact of communication on this architecture as we will see on \ref{graf:communication}.
+This is mainly due to the really low impact of communication on this architecture as we will see on \ref{graf:Communication}.
 
 Test \ref{chart:ottavina_camera} just shows what happens introducing the external camera module. 
 As we can see performance are only slightly affected.
 
+Test \ref{chart:axth} is performed on a distributed memory platform. 
+In this case scalability is far from optimal, farm implementation shows an abrupt stop while data parallel have some kind of graceful degradation.
+This could be because of communicaton cost so we tested the application on a different distributed memory application.
+On pianosa \ref{chart:pianosa} scalability is a lot better although general performance is quite worse.
+Pianosa exploit less powerful CPUs with respect to the AXT lab and an almost identical inter connection network.
+This enforce the hypothesis that performance are limited by communication costs.
 
+On graph \ref{graph:communication} we can see how communication are affecting the performances.
+On axth lab communication cost is limiting performance around 100ms.
+On pianosa, even if communication cost is higher, scalability is good since computation time is proportionally higher.
+We can also notice how in distributed platform and with limited data sets the difference between farm and data parallel implementation is negligible.
 
+Graphs \ref{ottavina_datascale}, \ref{pianosa_datascale} \ref{axth_datascale} just show the behaviour of the application on previous architectures varing the data set (dimension of the image). 
+This is useful to have an idea of general behaviour of the application on different architectures.
+
+We can see that for reasonable size of the data, around 1M-10M similar service time can be obtained by both axth lab and ottavina around 100ms which in turn gives a frame rate of around 10 frames/s.
+We can also conclude that for the real case, distributed platform are excessive due to the limited size of the data set and multicore platforms should be used.
