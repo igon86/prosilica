@@ -34,3 +34,23 @@ hostfile on axth
 \caption{ Service time of all the data parallel implementation \ref{graf:ottavina_farm_1000_time} and relative scalabilities, normalized with respect of the number of workers \ref{graf:ottavina_farm_1000_scala}. Test performed on Intel E5420 @ 2.50 Ghz cpu with images of $10^6$ 8bit pixels.}
 \label{chart:ottavina_alldata_1000}
 \end{figure}
+
+\begin{figure}[p]
+\centering
+\subfigure[]{\includegraphics[width=\columnwidth,height=3.5in]{./CHART/farm_camera}%
+\label{graf:farm_camera}}
+\subfigure[]{\includegraphics[width=\columnwidth,height=3.5in]{./CHART/data_camera}%
+\label{graf:data_camera}}
+\caption{ Comperison of application service time of farm implementation \ref{graf:ottavina_farm_1000_time} and data parallel implementation  \ref{graf:ottavina_farm_1000_scala} with or without external camera module. Test performed on Intel E5420 @ 2.50 Ghz cpu with images of $10^6$ 8bit pixels.}
+\label{chart:ottavina_camera}
+\end{figure}
+
+\begin{figure}[p]
+\centering
+\subfigure[]{\includegraphics[width=\columnwidth,height=3.5in]{./CHART/axth_confronto_time}%
+\label{graf:time_axth}}
+\subfigure[]{\includegraphics[width=\columnwidth,height=3.5in]{./CHART/axth_scalability}%
+\label{graf:scala_axth}}
+\caption{ Comperison of application service time of the various implementation \ref{graf:time_axth} and relative Scalability \ref{graf:scala_axth}. Test performed on a set of 20 nodes with Intel E7400 @ 2.80 Ghz cpu. Images of $10^6$ 8bit pixels.}
+\label{chart:ottavina_camera}
+\end{figure}
