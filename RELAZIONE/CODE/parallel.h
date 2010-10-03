@@ -23,11 +23,11 @@
 
 /* define MPI tags of the messages */
 enum {
-	PARAMETERS = 0,
-	IMAGE,
-	RESULTS,
-	REQUEST,
-	TERMINATION
+    PARAMETERS = 0,
+    IMAGE,
+    RESULTS,
+    REQUEST,
+    TERMINATION
 };
 
 #endif

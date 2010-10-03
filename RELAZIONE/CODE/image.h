@@ -11,12 +11,12 @@
 #define STREAMLENGTH 10
 
 /* Create the image representing the Gaussian */
-unsigned char* createMatrix (int length, int width, double* input);
+unsigned char *createMatrix(int length, int width, double *input);
 
 /* Write the image in a .TIFF file (useful for debugging) */
-void writeImage (unsigned char* image, char *dest, int w, int h);
+void writeImage(unsigned char *image, char *dest, int w, int h);
 
 /* Create a gaussian Image */
-unsigned char* createImage(int width, int height);
+unsigned char *createImage(int width, int height);
 
 #endif
