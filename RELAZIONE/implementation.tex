@@ -3,10 +3,10 @@
 In this section we will present and comment all the code produced for the project.
 As a first thing we want to show the library of fit function which constitute the core of the application.
 These function were used in the sequential version of the application.
-
+\ \\
 \lstinputlisting{./CODE/fit.h}
 
-Let's consider the representation of the fit of an image.
+\ \\Let's consider the representation of the fit of an image.
 This is accomplished by an array of double values which correspond to the parameters of a gaussian function.
 The function $evaluateGaussian$ performs the estimation of the value of the gaussian on a given pixel:
 \begin{center}
@@ -21,13 +21,13 @@ This function is necessary because otherwise the gauss-newton algorithm implemen
 Last but not least there is the Connect function which is used to connect the server to the camera.
 
 Now let's discuss some relevant details about the implementation of these functions.
-
+\ \\
 \lstinputlisting{./CODE/fit.c}
 
-As we can see from the code both the gradient matrix and the difference vector are allocated in static variables in order to avoid creation and disruption of the data structures at every invocation of the fit procedure. 
+\ \\As we can see from the code both the gradient matrix and the difference vector are allocated in static variables in order to avoid creation and disruption of the data structures at every invocation of the fit procedure. 
 These variables are allocated after the inizialization of the application and freed at the end via $InitBuffers$ and $FreeBuffers$ functions.
 The gsl library is exploited in both $procedure$ and $post\_procedure$ functions in orer to perform matrix-matrix, matrix-vector multiplication and solve a linear system.
-
+\ \\
 \lstinputlisting{./CODE/image.h}
 
 \lstinputlisting{./CODE/image.c}

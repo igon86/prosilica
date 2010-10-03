@@ -65,10 +65,15 @@ It is important to point out some interesting facts.
 Ideally the algorithm could loop for an infinite number of iteration but since we are dealing with finite arithmetic the algorithm would surely converge after a finite number of steps.
 Consider that since we are monitoring a slowly changing environment, one iteration is sufficient in order to converge to a result.
 We also had to develop a simulator for the digital camera.
-
+\begin{figure}[h]
+\centering
+\subfigure[]{\includegraphics[width=115mm,height=130mm]{./algorithm}%
+\label{steps}}
+\caption{Gauss-Newton algorithm steps}
+\end{figure}
 \subsection{Parallel Schemes}
 
-As a first thing we have to model the parallel computation using a structured parallel programming scheme. We know that there is an (ideal) infinite stream of images, hence a way to parallelize this program can be the farm approach: we can replicate the algorithm in each worker following the cost model that we will introduce soon. For this scheme is not necessary to know the internal structure of the algorithm, but if we analyse it, we recognize some interesting aspects.
+As a first thing we have to model the parallel computation using a structured parallel programming scheme. We know that there is an (ideal) infinite stream of images and the computation is a pure function, hence a way to parallelize this program can be the farm approach: we can replicate the algorithm in each worker following the cost model that we will introduce soon. For this scheme is not necessary to know the internal structure of the algorithm, but if we analyse it, we recognize some interesting aspects.
 
 Following the pseudo code in Figure 1 we have:
 \begin{enumerate}
