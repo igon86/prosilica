@@ -62,8 +62,9 @@ nw = \frac{T_{image}}{L_{image}}
 \]
 and considering scatter and reduce realized in an opportune scheme such that
 \[
-T_{scatter} \leq L_{image}
+T_{scatter} = nw*T_{setup} + M*T_{trasm} \leq L_{image}
 \]
+where $nw$ is the number of workers and $M$ the dimension of the scattered matrix,
 \[
 T_{reduce} \leq L_{image}
 \] 
@@ -74,14 +75,20 @@ The completion time is evaluated like in Formula \ref{completiontime} and the sc
 
 \subsection{Farm vs Map}
 
-In general the data parallel solutions require less memory with respect to the farm scheme. 
-If we think that in the ideal case the entirely data structures of the program should be present in main memory, to have only a single computation over an image respect than different computations over different images can be an advantage from the point of view of the swap information. This can become important in shared memory architecture especially when we increase the grain of the data input.
+In general the data parallel solutions require less memory with respect to the farm scheme since the data is partitioned among the workers. 
+This can become important in shared memory architecture especially when we increase the grain of the computation.
+Latency is also reduced even if this is not fundamental in our case.
+On the other hand communication patterns on a map reduce scheme are more complex and at a finer grain. 
+This could have a negative impact depending on the architecture.
+This latter aspect is fundamental too: to have an optimal dimension of the input data permits to increase the benefits because, in according to our communications cost model above, we can amortize the $T_{setup}$ cost.
+In the data parallel form this means to found the dimension of the partitions (hence the parallelism degree) of the matrix, instead in the farm this means to have an adequate dimension of the input images.
+We implemented and tested our application exploiting both paradigms with different data grain in such a way to recognize the above pattern.
 
-This latter aspect is fundamental too: to have an optimal dimension of the input data permits to increase the benefits because, in according to our communications cost model above, we can amortize the $T_{setup}$ cost. In the data parallel form this means to found the dimension of the partitions (hence the parallelism degree) of the matrix, instead in the farm this means to have an adequate dimension of the input images. We tested our parallel program in both the paradigms with different data grain in such a way to recognize the situations above.
-
-From above we know that in both the solutions the number of workers $nw$ is the same, hence the parallelism degree of our application becomes
+We know that in both cases the number of workers $nw$ is the same, hence the parallelism degree of our application becomes
 \begin{itemize}
 \item $nw+2$ in the farm
-\item $nw+n_{scatter}+1$ in the map reduce
+\item $nw+n_{scatter} + 1$ in the map reduce
 \end{itemize}
-If the linear scatter is not a bottleneck we have the same parallelism degree of the farm, otherwise some nodes of our architecture will be allocate with service processes. This means an decrease of the performance principally in architecture with a low number of nodes. For verify this, our data parallel will be able to use a single node for the communications instead of the classic behaviour. We will see these things in the next sections.
+If the linear scatter is not a bottleneck we have the same parallelism degree of the farm, otherwise some nodes of our architecture will be allocated as service processes.
+One process is also fixed as collector of the reduce operation.
+We will explain in the next section how we actually implemented the different solutions.
