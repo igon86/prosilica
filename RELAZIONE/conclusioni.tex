@@ -22,16 +22,16 @@ Test \ref{chart:axth} is performed on a distributed memory platform.
 In this case scalability is far from optimal, farm implementation shows an abrupt stop while data parallel have some kind of graceful degradation.
 This could be because of communication cost so we tested the application on a different distributed memory application.
 On pianosa \ref{chart:pianosa} scalability is a lot better although general performance is quite worse.
-Pianosa exploit less powerful CPUs with respect to the AXT lab and an almost identical inter connection network.
+Pianosa exploit less powerful CPUs with respect to the AXTH lab and an almost identical inter connection network.
 This enforce the hypothesis that performance are limited by communication costs.
 
-On graph \ref{graph:communication} we can see how communication are affecting the performances.
-On axth lab communication cost is limiting performance around 100ms.
+On graph \ref{graph:communication} we can see how communications are affecting the performances.
+On AXTH laboratory, communication cost is limiting performance around 100ms.
 On pianosa, even if communication cost is higher, scalability is good since computation time is proportionally higher.
 We can also notice how in distributed platform and with limited data sets the difference between farm and data parallel implementation is negligible.
 
-Graphs \ref{ottavina_datascale}, \ref{pianosa_datascale} \ref{axth_datascale} just show the behaviour of the application on previous architectures varying the data set (dimension of the image). 
+Graphs \ref{ottavina_datascale}, \ref{pianosa_datascale} \ref{axth_datascale} just show the behaviour of the application on previous architectures varying the data set (dimension of the images). 
 This is useful to have an idea of general behaviour of the application on different architectures.
 
-We can see that for reasonable size of the data, around 1M-10M similar service time can be obtained by both axth lab and ottavina around 100ms which in turn gives a frame rate of around 10 frames/s.
+We can see that for reasonable size of the data (around 1M-10M) similar service time can be obtained by both axth lab and ottavina around 100ms which in turn gives a frame rate of around 10 frames/s.
 We can also conclude that for the real case, distributed platform are excessive due to the limited size of the data set and multicore platforms should be used.
