@@ -1,12 +1,13 @@
 \section{Test}
 
-This section contains all the results of the tests performed for verify the correctness and the performance of the parallel program. We executed it over different architectures for analyse the differences and evaluate which configurations perform the better performance. The hardware characteristics of the utilized machines are listed in the points below.
+This section contains all the results of the tests performed for verify the correctness and the performance of the parallel program. We executed it over different architectures for analyse the differences and evaluate which configurations perform the better performance. The hardware characteristics of the utilized machines are listed in the points below. 
 \begin{itemize}
-	\item \textbf{OttavinaReale}: a shared memory multiprocessor with Intel E5420 @ 2.50 GHz CPU.
-	\item \textbf{AXTH}: a cluster of 20 nodes with Intel E7400 @ 2.80 GHz CPU.
-	\item \textbf{Pianosa}: a cluster of 24 nodes with Intel Pentium III @ 800 MHz CPU.
-	\end{itemize}
+\item \textbf{OttavinaReale}: a shared memory multiprocessor with Intel E5420 @ 2.50 GHz CPU.
+\item \textbf{AXTH}: a cluster of 20 nodes with Intel E7400 @ 2.80 GHz CPU.
+\item \textbf{Pianosa}: a cluster of 24 nodes with Intel Pentium III @ 800 MHz CPU.
+\end{itemize}
 
+In particular we have done comparisons between different implementations of the farm and data parallel. For instance, we have the on-demand or round-robin scheduling in the farm, or different number of service processes in the map reduce solutions. Very important is the evaluation of the differences between farm and data parallel over the different architectures for understand what is the behaviour if in the real world the program will be execute on different hardware platforms. We tested the impact of the camera module too because in the real world will be present a real camera that will generate a stream of images. We concluded changing the grain of the input data for measure different dimensions of the Gaussian images because it can happen that there is the need of a higher resolution. Finally, we have measured the communication latencies of the various primitives utilized like MPI or our versions.
 
 \begin{figure}[p]
 \centering
@@ -14,7 +15,7 @@ This section contains all the results of the tests performed for verify the corr
 \label{graf:ottavina_farm_1000_time}}
 \subfigure[]{\includegraphics[width=\columnwidth,height=3.5in]{./CHART/ottavina_farm_1000_scala}%
 \label{graf:ottavina_farm_1000_scala}}
-\caption{ Service time of the farm implementation \ref{graf:ottavina_farm_1000_time} and relative scalability \ref{graf:ottavina_farm_1000_scala}. Test performed on Intel E5420 @ 2.50 Ghz cpu with images of $10^6$ 8bit pixels. Parallelism degree is starting from 3 because of the service nodes (emitter and collector). }
+\caption{ Service time of the farm implementation \ref{graf:ottavina_farm_1000_time} and relative scalability \ref{graf:ottavina_farm_1000_scala}. Test performed on Intel E5420 @ 2.50 Ghz CPU with images of $10^6$ 8bit pixels. Parallelism degree is starting from 3 because of the service nodes (emitter and collector). }
 \label{chart:ottavina_farm_1000}
 \end{figure}
 
@@ -24,7 +25,7 @@ This section contains all the results of the tests performed for verify the corr
 \label{graf:ottavina_data_1000_time}}
 \subfigure[]{\includegraphics[width=\columnwidth,height=3.5in]{./CHART/ottavina_farmvsdata_1000_scala}%
 \label{graf:ottavina_data_1000_scala}}
-\caption{ Service time of the farm and data parallel implementation \ref{graf:ottavina_farm_1000_time} and relative scalabilities \ref{graf:ottavina_farm_1000_scala}. Test performed on Intel E5420 @ 2.50 Ghz cpu with images of $10^6$ 8bit pixels.}
+\caption{ Service time of the farm and data parallel implementation \ref{graf:ottavina_farm_1000_time} and relative scalability \ref{graf:ottavina_farm_1000_scala}. Test performed on Intel E5420 @ 2.50 Ghz CPU with images of $10^6$ 8bit pixels.}
 \label{chart:ottavina_data_1000}
 \end{figure}
 
@@ -34,7 +35,7 @@ This section contains all the results of the tests performed for verify the corr
 \label{graf:ottavina_alldata_1000_time}}
 \subfigure[]{\includegraphics[width=\columnwidth,height=3.5in]{./CHART/ottavina_alldata_1000_scala}%
 \label{graf:ottavina_alldata_1000_scala}}
-\caption{ Service time of all the data parallel implementation \ref{graf:ottavina_farm_1000_time} and relative scalabilities, normalized with respect of the number of workers \ref{graf:ottavina_farm_1000_scala}. Test performed on Intel E5420 @ 2.50 Ghz cpu with images of $10^6$ 8bit pixels.}
+\caption{ Service time of all the data parallel implementation \ref{graf:ottavina_farm_1000_time} and relative scalability, normalized with respect of the number of workers \ref{graf:ottavina_farm_1000_scala}. Test performed on Intel E5420 @ 2.50 Ghz CPU with images of $10^6$ 8bit pixels.}
 \label{chart:ottavina_alldata_1000}
 \end{figure}
 
@@ -44,8 +45,7 @@ This section contains all the results of the tests performed for verify the corr
 \label{graf:farm_camera}}
 \subfigure[]{\includegraphics[width=\columnwidth,height=3.5in]{./CHART/data_camera}%
 \label{graf:data_camera}}
-\caption{ Comperison of application service time of farm implementation \ref{graf:ottavina_farm_1000_time} and data parallel implementation  \ref{graf:ottavina_farm_1000_scala} with or without external camera module. 
-External module was running on a external Test performed on Intel E5420 @ 2.50 Ghz cpu with images of $10^6$ 8bit pixels.}
+\caption{ Comparison of application service time of farm implementation \ref{graf:ottavina_farm_1000_time} and data parallel implementation  \ref{graf:ottavina_farm_1000_scala} with or without external camera module. Test performed on Intel E5420 @ 2.50 Ghz CPU with images of $10^6$ 8bit pixels.}
 \label{chart:ottavina_camera}
 \end{figure}
 
@@ -55,7 +55,7 @@ External module was running on a external Test performed on Intel E5420 @ 2.50 G
 \label{graf:time_axth}}
 \subfigure[]{\includegraphics[width=\columnwidth,height=3.5in]{./CHART/axth_scalability}%
 \label{graf:scala_axth}}
-\caption{ Comparison of application service time of the various implementation \ref{graf:time_axth} and relative Scalability \ref{graf:scala_axth}. Test performed on a set of 20 nodes with Intel E7400 @ 2.80 Ghz cpu. Images of $10^6$ 8bit pixels.}
+\caption{ Comparison of application service time of the various implementation \ref{graf:time_axth} and relative Scalability \ref{graf:scala_axth}. Test performed on a set of 20 nodes with Intel E7400 @ 2.80 Ghz CPU. Images of $10^6$ 8bit pixels.}
 \label{chart:axt}
 \end{figure}
 
@@ -65,7 +65,7 @@ External module was running on a external Test performed on Intel E5420 @ 2.50 G
 \label{graf:pianosa_time}}
 \subfigure[]{\includegraphics[width=\columnwidth,height=3.5in]{./CHART/pianosa_scala}%
 \label{graf:pianosa_scala}}
-\caption{ Service time on the Pianosa cluster of farm and data parallel implementation \ref{graf:time_axth} and relative scalability \ref{graf:pianosa_scala}.  Test is performed on a set of 24 nodes with Intel Pentium III @ 800 Mhz cpu. Images of $10^6$ 8bit pixels.}
+\caption{ Service time on the Pianosa cluster of farm and data parallel implementation \ref{graf:time_axth} and relative scalability \ref{graf:pianosa_scala}.  Test is performed on a set of 24 nodes with Intel Pentium III @ 800 MHz CPU. Images of $10^6$ 8bit pixels.}
 \label{chart:pianosa_comm}
 \end{figure}
 
