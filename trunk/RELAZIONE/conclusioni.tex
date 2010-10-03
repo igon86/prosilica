@@ -11,5 +11,10 @@ For different parallelism degrees of this application, we have a better behaviou
 This agrees with the remarks made in Section \ref{data_cost} and depends on the memory occupation of the data parallel which is less than the task farm case. 
 This effect is noticeable because we are working on a shared memory architecture so data sets of different workers are all stored in the same principal memory.
 
-The test \ref{chart:ottavina_alldata_1000} tells us that the various implementations of data parallel are not particularly different in terms of scalability but they use a number of service processes (zero, one or two processes) that in an architecture with a few nodes can make the difference.
-From this result we can notice that the our implementation of scatter and reduce communications follow the shape of the \textit{MPI} primitives.
+The test \ref{chart:ottavina_alldata_1000} tells us that the various implementations of data parallel are not particularly different in terms of scalability but they use a number of service processes (zero, one or two processes) that in an architecture with a few nodes can impact the performance.
+We also notice that our implementation of scatter and reduce communications have similar performances with respect to \textit{MPI} primitives.
+This is mainly due to the really low impact of communication on this architecture as we will see on \ref{graf:Communication}.
+
+Test \ref{chart:ottavina_camera} just shows what happens introducing the external camera module. 
+As we can see performance are only slightly affected.
+
