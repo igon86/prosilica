@@ -9,14 +9,14 @@ The project is structured in various files:
 \item \textbf{fit.c} and \textbf{fit.h}: they contain the principal functions of the algorithm. These functionality were used in the sequential version of the application. Obviously, in the parallel version they remain the same.
 \item \textbf{image.c} and \textbf{image.h}: these files contain the functions for create and write Gaussian images. They were present in the sequential version too.
 \item \textbf{parallel.h}: defines tags, flags and macro for the parallel fashions of the program.
-\item \textbf{data\_parallel.c}: the map reduce implementation.
+\item \textbf{data\_parallel.c} and \textbf{old\_dp.c}: they are two different versions of our map reduce.
 \item \textbf{farm.c}: the farm implementation.
 \item \textbf{camera.c} and \textbf{camera.h}: files that contain the camera module simulator.
 \item \textbf{macro.c} and \textbf{macro.h}: contain wrapper of read and write operations over file descriptors. They are used, for instance, in the camera module.
 \item \textbf{scatter.c} and \textbf{scatter.h}: this is an our version of scatter and reduce communications. In particular, they have linear latency in function of the number of workers.
 \end{itemize}
 
-It is possible to compile the farm and the data parallel programs and the camera module for various architectures using the appropriate Makefiles. It is necessary to specify in the arguments the width and the height of the images that will compose the stream. Examples of typical invocations used on OttavinaReale multiprocessor are
+It is possible to compile the farm and the data parallel programs and the camera module for various architectures using the appropriate Makefiles. It is necessary to specify in the arguments the width and the height of the images that will compose the stream. Examples of typical invocations executed on OttavinaReale multiprocessor are
 \begin{center}
 mpirun -np $x$ ./farm $w$ $h$
 \end{center}
@@ -71,15 +71,16 @@ The next file contains the data parallel implementation of the algorithm. This i
 \ \\
 \lstinputlisting{./CODE/data_parallel.c}
 \ \\
-We realized an our implementation of scatter and reduce in such a way to compare them with the implementations present in the \textit{MPI} version utilized. We can see that they uses again \textit{MPI} primitives, in particular, the \textit{MPI\_Send} and \textit{MPI\_Recv}. In according to our discussions in the Introduction, the reduce function is very easy to perform as we can see in the code below.
+This version of our map reduce utilizes escusively the communication primitives realized by us in the library that we will present in the next piece of code. This is useful for compare the two versions of data parallel and try to understand if the implementations follow the cost model described in Section 2.
+\ \\
+\lstinputlisting{./CODE/old_dp.c}
+\ \\
+We realized an our implementation of scatter and reduce in such a way to compare them with the implementations present in the \textit{MPI} version utilized. We can see that they use again \textit{MPI} primitives, in particular, the \textit{MPI\_Send} and \textit{MPI\_Recv}. In according to our discussions in the Introduction, the reduce function is very easy to perform as we can see in the code below.
 \ \\
 \lstinputlisting{./CODE/scatter.h}
 \ \\
 \ \\
 \lstinputlisting{./CODE/scatter.c}
-\ \\
-\ \\
-\lstinputlisting{./CODE/old_dp.c}
 \ \\
 Here there is the module that simulate the camera. It is possible to active it in the farm or data parallel program defining the macro \textit{MODULE} during the compilation. In this way this becomes the module that generates the stream of the images. Note that the camera module, using AF\_INET sockets, can be allocated everywhere respect than the allocation of the parallel program.
 \ \\
