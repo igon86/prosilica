@@ -71,8 +71,8 @@ hostfile on axth
 \label{graf:communication}}
 \subfigure[]{\includegraphics[width=\columnwidth,height=3.5in]{./CHART/ottavina_datascale}%
 \label{graf:ottavina_datascale}}
-\caption{ Communication time of the data parallel implementation, using MPI primitives on distributed memory architectures \ref{graf:communication}. Service time of the application executed on Ottavina \ref{graf:ottavina_datascale}.  Test is performed on a set of 24 nodes with Intel Pentium III @ 800 Mhz cpu. Images of $10^6$ 8bit pixels.}
-\label{chart:pianosa_comm}
+\caption{ Communication time of the data parallel implementation, using MPI primitives on distributed memory architectures \ref{graf:communication}. Service time of the application executed on Ottavina varying the data set (dimension of the image) \ref{graf:ottavina_datascale}. }
+\label{chart:ottavina_comm}
 \end{figure}
 
 \begin{figure}[p]
@@ -81,6 +81,7 @@ hostfile on axth
 \label{graf:pianosa_datascale}}
 \subfigure[]{\includegraphics[width=\columnwidth,height=3.5in]{./CHART/axth_datascale}%
 \label{graf:axth_datascale}}
-\caption{ Service time on the Pianosa cluster of farm and data parallel implementation \ref{graf:time_axth} and relative scalability \ref{graf:pianosa_scala}.  Test is performed on a set of 24 nodes with Intel Pentium III @ 800 Mhz cpu. Images of $10^6$ 8bit pixels.}
-\label{chart:pianosa_comm}
+\caption{ Service time of the application executed on Pianosa varying the data set (dimension of the image)  \ref{graf:pianosa_datascale}.
+Service time of the application executed on Axth lab varying the data set (dimension of the image) \ref{graf:axth_datascale}. }
+\label{chart:pianosa_axth}
 \end{figure}
