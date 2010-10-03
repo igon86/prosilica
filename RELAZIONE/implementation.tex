@@ -1,21 +1,35 @@
 \section{Implementation}
 
 In this section we will present and comment all the code produced for the project.
-As a first thing we want to show the library of fit function which constitute the core of the application.
-These function were used in the sequential version of the application.
+
+The application is realized in C language and it uses the \textit{tiff} and \textit{gsl} libraries for, respectively, operates on images and performs algebra computations. Moreover, the \textit{Message Passing Interface MPI} is used for the principal parallel functions.
+
+The project is structured in various files:
+\begin{itemize}
+\item \textbf{fit.c} and \textbf{fit.h}: they contain the principal functions of the algorithm. These functionality were used in the sequential version of the application. Obviously, in the parallel version they remain the same.
+\item \textbf{image.c} and \textbf{image.h}: these files contain the functions for create and write Gaussian images. They were present in the sequential version too.
+\item \textbf{parallel.h}: defines tags, flags and macro for the parallel fashions of the program.
+\item \textbf{data\_parallel.c}: the map reduce implementation.
+\item \textbf{farm.c}: the farm implementation.
+\item \textbf{camera.c} and \textbf{camera.h}: files that contain the camera module simulator.
+\item \textbf{macro.c} and \textbf{macro.h}: contain wrapper of read and write operations over file descriptors. They are used, for instance, in the camera module.
+\item \textbf{scatter.c} and \textbf{scatter.h}: this is an our version of scatter communication. In particular, it has linear latency in function of the number of workers.
+\end{itemize}
+
+As a first thing we want to show the library of fit functions which constitute the core of the application.
 \ \\
 \lstinputlisting{./CODE/fit.h}
 
 \ \\Let's consider the representation of the fit of an image.
-This is accomplished by an array of double values which correspond to the parameters of a gaussian function.
-The function $evaluateGaussian$ performs the estimation of the value of the gaussian on a given pixel:
+This is accomplished by an array of double values which correspond to the parameters of a Gaussian function.
+The function $evaluateGaussian$ performs the estimation of the value of the Gaussian on a given pixel:
 \begin{center}
 	$gaussian(x,y) = A * e^{( \frac{(X-x)^2}{SX} + \frac{(Y-y)^2}{SY} )} +a*x +b*x +c$
 \end{center} 
 This parameters also represents the actual state of the fit and are used by the function $procedure$ to perform one step of interpolation on a given image.
-The gradient matrix and difference vector produced by the fit procedure are then elaborated by the function $post\_procedure$ in order to update the parameters of the gaussian accordingly to fit results.
+The gradient matrix and difference vector produced by the fit procedure are then elaborated by the function $post\_procedure$ in order to update the parameters of the Gaussian accordingly to fit results.
 This separation will come in handy when we will discuss the dataparallel implementation of the algorithm.
-The function \textit{Initialization}, which also use $createMask$, $centroid$ and $maxmin$ functions, is used to produce an initial estimate of the gaussian parameters starting from the first image.
+The function \textit{Initialization}, which also use $createMask$, $centroid$ and $maxmin$ functions, is used to produce an initial estimate of the Gaussian parameters starting from the first image.
 This function is necessary because otherwise the gauss-newton algorithm implemented in $procedure$ could diverge during the initial steps.
 
 Last but not least there is the Connect function which is used to connect the server to the camera.
@@ -25,23 +39,48 @@ Now let's discuss some relevant details about the implementation of these functi
 \lstinputlisting{./CODE/fit.c}
 
 \ \\As we can see from the code both the gradient matrix and the difference vector are allocated in static variables in order to avoid creation and disruption of the data structures at every invocation of the fit procedure. 
-These variables are allocated after the inizialization of the application and freed at the end via $InitBuffers$ and $FreeBuffers$ functions.
-The gsl library is exploited in both $procedure$ and $post\_procedure$ functions in orer to perform matrix-matrix, matrix-vector multiplication and solve a linear system.
+These variables are allocated after the initialization of the application and freed at the end via $InitBuffers$ and $FreeBuffers$ functions.
+The \textit{gsl} library is exploited in both $procedure$ and $post\_procedure$ functions in order to perform matrix-matrix, matrix-vector multiplication and solve a linear system.
+
+\ \\The image library below, instead, utilizes the \textit{tiff} library for operating over images. This library is used principally for make debugging.
 \ \\
 \lstinputlisting{./CODE/image.h}
-
+\ \\
 \lstinputlisting{./CODE/image.c}
-
+\ \\
+Here we have some definitions very useful in our parallel program.
+\ \\
 \lstinputlisting{./CODE/parallel.h}
-
+\ \\
+In the next file there is the code of the farm.
+\ \\
 \lstinputlisting{./CODE/farm.c}
-
+\ \\
+The next file contains the data parallel implementation of the algorithm.
+\ \\
 \lstinputlisting{./CODE/data_parallel.c}
-
+\ \\
+We realized an our implementation of the scatter communication in such a way to compare it with the \textit{MPI} version utilized. We can see that it uses again \textit{MPI} primitives, in particular, the \textit{MPI\_Send} and \textit{MPI\_receive}. 
+\ \\
+\lstinputlisting{./CODE/scatter.h}
+\ \\
+\ \\
 \lstinputlisting{./CODE/scatter.c}
-
+\ \\
+\ \\
 \lstinputlisting{./CODE/old_dp.c}
-
+\ \\
+Here there is the module that simulate the camera. It is possible to active it defining the macro \textit{MODULE} during the compilation. In this way this becomes the module that generates the stream of the images. Note that the camera module, using AF\_INET sockets, can be allocated everywhere respect than the allocation of the parallel program.
+\ \\
 \lstinputlisting{./CODE/camera.h}
-
+\ \\
+\ \\
 \lstinputlisting{./CODE/camera.c}
+\ \\
+The camera, as we can see in the implementation above, uses the C read and write functions wrapped in \textit{Read} and \textit{Write} defined in the files below.
+\ \\
+\lstinputlisting{./CODE/macro.h}
+\ \\
+\ \\
+\lstinputlisting{./CODE/macro.c}
+\ \\
