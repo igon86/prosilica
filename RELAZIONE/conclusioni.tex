@@ -1,1 +1,7 @@
 \section{Conclusions}
+
+There are some aspects come out regarding the different choices and the results of the tests that are very interesting and we will introduce them in this section.
+
+The first thing that we can notice from the results of the test \ref{chart:ottavina_farm_1000} is the total indifference when we use the on-demand scheduling of images respect than a round-robin assignment. This is in accord with our considerations in the cost model of the farm.
+
+In the test \ref{chart:ottavina_data_1000} we see that the data parallel scheme can operate in architectures with only one or two nodes with powerful acts. Instead, this is not possible in the farm solution that we know require at least three nodes. For the different parallelism degrees of this application, we have a better behaviour of the data parallel scheme. This is in accord another time with our cost model that tell us the less memory occupation of the data parallel. Considering this test done on a shared memory architecture the occupation of secondary caches with only a matrix can improve the performance respect than to have different matrices.

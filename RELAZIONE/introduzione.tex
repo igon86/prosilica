@@ -94,6 +94,6 @@ This means that there is no need of communications of values between different p
 Finally, we notice that the last point must be executed only after the calculations above and they take a negligible time respect than the previous operations.
 
 This situation suggests a parallelism scheme in which the data can be partitioned between different modules for computing the first two points and a reduce operation is performed in order to execute the last two steps on single node. 
-This iw the well known map reduce scheme.
+This is the well known map reduce scheme.
 
 At this point we chose to realize both a farm and data parallel scheme. We will further discuss their cost model in the next section.
