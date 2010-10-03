@@ -69,4 +69,4 @@ From above we know that in both the solutions the number of workers $nw$ is the 
 \item $nw+2$ in the farm
 \item $nw+n_{scatter}+1$ in the map reduce
 \end{itemize}
-If the linear scatter is not a bottleneck we have the same parallelism degree of the farm, otherwise some nodes of our architecture will be allocate with service processes. This means an decrease of the performance principally in architecture with a low number of nodes. For verify this, our data parallel will be able to use only a node for the the communications or more than one. We will see these things in the next sections.
+If the linear scatter is not a bottleneck we have the same parallelism degree of the farm, otherwise some nodes of our architecture will be allocate with service processes. This means an decrease of the performance principally in architecture with a low number of nodes. For verify this, our data parallel will be able to use a single node for the communications instead of the classic behaviour. We will see these things in the next sections.

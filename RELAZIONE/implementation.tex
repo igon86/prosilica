@@ -13,8 +13,17 @@ The project is structured in various files:
 \item \textbf{farm.c}: the farm implementation.
 \item \textbf{camera.c} and \textbf{camera.h}: files that contain the camera module simulator.
 \item \textbf{macro.c} and \textbf{macro.h}: contain wrapper of read and write operations over file descriptors. They are used, for instance, in the camera module.
-\item \textbf{scatter.c} and \textbf{scatter.h}: this is an our version of scatter communication. In particular, it has linear latency in function of the number of workers.
+\item \textbf{scatter.c} and \textbf{scatter.h}: this is an our version of scatter and reduce communications. In particular, they have linear latency in function of the number of workers.
 \end{itemize}
+
+It is possible to compile the farm and the data parallel programs and the camera module for various architectures using the appropriate Makefiles. It is necessary to specify in the arguments the width and the height of the images that will compose the stream. Examples of typical invocations used on OttavinaReale multiprocessor are
+\begin{center}
+mpirun -np $x$ ./farm $w$ $h$
+\end{center}
+\begin{center}
+mpirun -np $x$ ./dataparallel $w$ $h$
+\end{center}
+where $x$ is the number of \textit{MPI} processes and $w$ and $h$ are the dimensions of the image.
 
 As a first thing we want to show the library of fit functions which constitute the core of the application.
 \ \\
@@ -42,25 +51,27 @@ Now let's discuss some relevant details about the implementation of these functi
 These variables are allocated after the initialization of the application and freed at the end via $InitBuffers$ and $FreeBuffers$ functions.
 The \textit{gsl} library is exploited in both $procedure$ and $post\_procedure$ functions in order to perform matrix-matrix, matrix-vector multiplication and solve a linear system.
 
-\ \\The image library below, instead, utilizes the \textit{tiff} library for operating over images. This library is used principally for make debugging.
+\ \\The image library below, instead, utilizes the \textit{tiff} library for operates over images. This library is used principally for make debugging.
 \ \\
 \lstinputlisting{./CODE/image.h}
 \ \\
 \lstinputlisting{./CODE/image.c}
 \ \\
-Here we have some definitions very useful in our parallel program.
+Here we have some definitions very useful in our parallel program. In both farm and data parallel implementation the process with rank equal to zero is the emitter that, in the first paradigm, performs the scheduling strategy of the images, and in the second scheme performs the scatter.
+
+The farm solution is composed by two services processes ($PS$ represents the number of these processes) as usually, instead the data parallel has not services processes in the classic behaviour and one in the padded behaviour. We have this because in \textit{MPI} the reduce and the scatter are performed by workers: this means that a worker will make a scatter and another worker will perform the reduce in addition to their job. Considering our cost model the reduce is not a problem, but the scatter could be hence we realized the \textit{padded} version in which the scatter is not performed by a worker.
 \ \\
 \lstinputlisting{./CODE/parallel.h}
 \ \\
-In the next file there is the code of the farm.
+In the next file there is the code of the farm using \textit{MPI} primitives. As we can see, we can have the on-demand scheduling or the classical round-robin. This choice can be adopted during the compilation time setting or no the \textit{ON\_DEMAND} flag.
 \ \\
 \lstinputlisting{./CODE/farm.c}
 \ \\
-The next file contains the data parallel implementation of the algorithm.
+The next file contains the data parallel implementation of the algorithm. This implementation of the our map reduce utilizes entirely the \textit{MPI} primitives and it is possible to choice the padded behaviour defining the macro \textit{PADDED} at compilation time.
 \ \\
 \lstinputlisting{./CODE/data_parallel.c}
 \ \\
-We realized an our implementation of the scatter communication in such a way to compare it with the \textit{MPI} version utilized. We can see that it uses again \textit{MPI} primitives, in particular, the \textit{MPI\_Send} and \textit{MPI\_receive}. 
+We realized an our implementation of scatter and reduce in such a way to compare them with the implementations present in the \textit{MPI} version utilized. We can see that they uses again \textit{MPI} primitives, in particular, the \textit{MPI\_Send} and \textit{MPI\_Recv}. In according to our discussions in the Introduction, the reduce function is very easy to perform as we can see in the code below.
 \ \\
 \lstinputlisting{./CODE/scatter.h}
 \ \\
@@ -70,7 +81,7 @@ We realized an our implementation of the scatter communication in such a way to 
 \ \\
 \lstinputlisting{./CODE/old_dp.c}
 \ \\
-Here there is the module that simulate the camera. It is possible to active it defining the macro \textit{MODULE} during the compilation. In this way this becomes the module that generates the stream of the images. Note that the camera module, using AF\_INET sockets, can be allocated everywhere respect than the allocation of the parallel program.
+Here there is the module that simulate the camera. It is possible to active it in the farm or data parallel program defining the macro \textit{MODULE} during the compilation. In this way this becomes the module that generates the stream of the images. Note that the camera module, using AF\_INET sockets, can be allocated everywhere respect than the allocation of the parallel program.
 \ \\
 \lstinputlisting{./CODE/camera.h}
 \ \\
