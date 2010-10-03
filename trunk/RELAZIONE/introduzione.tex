@@ -88,8 +88,12 @@ Following the pseudo code in Figure 1 we have:
 \end{enumerate}
 
 It is clear that only computation in $1$ and $2$ is relevant since the linear system resolution is performed with a really small data size.
-From above, we can notice that the first three points could be executed in local in a module if we know a partition of the \textit{gradient\_matrix} and a partition of the \textit{diff\_vector}. In particular, if we consider very fine grain computations, we notice that it is sufficient to have a single element of the matrix and a single element of the vector for computing the partial multiplications between elements. This means that there is no need of communications of values between different partitions of the matrix but it is necessary to communicate the partial results in such way it is possible to sum them and to obtain the $8$x$8\ gradient\_matrix$ and the vector $gradient\_vector$. Finally, we notice that the fourth and the last point must be executed only after the calculations above and they take a negligible time respect than the previous operations.
+We can also notice that the operation performed in such steps are independent for every pixel.
+This suggests a data parallel scheme which involve replication of functions and partioning of the data.
+This means that there is no need of communications of values between different partitions of the matrix but it is necessary to communicate the partial results calculated by every worker and sum them and to obtain the $8$x$8\ gradient\_matrix$ and the vector $gradient\_vector$. 
+Finally, we notice that the last point must be executed only after the calculations above and they take a negligible time respect than the previous operations.
 
-This situation suggests a parallelism scheme in which the data can be partitioned between different modules for computing the first three points and after we need a reduce communication for obtain the final results and execute the last two parts of the algorithm. This means that our program can be parallelized through a map reduce too.
+This situation suggests a parallelism scheme in which the data can be partitioned between different modules for computing the first two points and a reduce operation is performed in order to execute the last two steps on single node. 
+This iw the well known map reduce scheme.
 
 At this point we chose to realize both a farm and data parallel scheme. We will further discuss their cost model in the next section.
