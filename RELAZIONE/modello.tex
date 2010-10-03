@@ -5,6 +5,7 @@ In this section we will talk about the cost models of the farm and data parallel
 When we instantiated the problem, we assumed that the emitter in the farm and the scattering module in the data parallel have always an image ready to send. In this way we simulated the minimal interarrival time of images from the source generating the stream (that it will be the camera module during the real behaviour of this application).
 
 \subsection{Farm}
+\label{farm_cost}
 
 Let's analyze the service time $T_{s}$. 
 In the farm, the emitter, the generic worker and the collector are organized in pipeline, hence it is equal to
@@ -44,6 +45,7 @@ In case of tasks with different completion time it is important to find a schedu
 As we will see in the next sections, the tests will confirm that there is no difference about the circular assignment of images and the on-demand strategy in our case.
 
 \subsection{Map Reduce}
+\label{data_cost}
 
 The data parallel paradigm can be able to reduce the latency of the computation, but in this case it operates on a stream of elements hence the most important parameter is yet the service time. 
 As we said, the data parallel computation used for this parallel program is a map with reduce.
