@@ -6,10 +6,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-void error (char *msg);
+void error(char *msg);
 
-ssize_t Read (int fd, const void *buf, size_t nbyte);
+ssize_t Read(int fd, const void *buf, size_t nbyte);
 
-ssize_t Write (int fd, const void *buf, size_t nbyte);
+ssize_t Write(int fd, const void *buf, size_t nbyte);
 
 #endif

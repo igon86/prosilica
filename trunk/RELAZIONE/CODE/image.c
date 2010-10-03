@@ -1,5 +1,5 @@
 #include "image.h"
-	
+
 /***************************************************************************************************************
  Write mono8 black and white TIFF
  ****************************************************************************************************************/
@@ -15,54 +15,54 @@
  */
 void writeImage(unsigned char *image, char *dest, int w, int h)
 {
-	
+
     TIFF *out = TIFFOpen(dest, "w");
     tsize_t linebytes;
     uint32 row = 0;
     /* buffer used to store the row of pixel information for writing to
-	 file */
+       file */
     unsigned char *buf = NULL;
     /* 8bit image */
     int sampleperpixel = 1;
-	
+
     TIFFSetField(out, TIFFTAG_IMAGEWIDTH, w);	/* set the width of the
-	 image */
+						   image */
     TIFFSetField(out, TIFFTAG_IMAGELENGTH, h);	/* set the height of the
-	 image */
+						   image */
     TIFFSetField(out, TIFFTAG_SAMPLESPERPIXEL, sampleperpixel);	/* set number of
-	 channels per pixel */
+								   channels per pixel */
     TIFFSetField(out, TIFFTAG_BITSPERSAMPLE, 8);	/* set the size of the
-	 channels */
+							   channels */
     TIFFSetField(out, TIFFTAG_ORIENTATION, ORIENTATION_TOPLEFT);	/* set the origin of the
-	 image */
-	
+									   image */
+
     /* Some other essential fields to set */
     TIFFSetField(out, TIFFTAG_PLANARCONFIG, PLANARCONFIG_CONTIG);
     TIFFSetField(out, TIFFTAG_PHOTOMETRIC, PHOTOMETRIC_MINISBLACK);
-	
+
     /* determining the dimension of a single row */
     linebytes = sampleperpixel * w;	/* length in memory of one row of
-	 pixel in the image */
-	
+					   pixel in the image */
+
     /* Allocating memory to store the pixels of current row */
     if (TIFFScanlineSize(out) == linebytes)
-		buf = (unsigned char *) _TIFFmalloc(linebytes);
+	buf = (unsigned char *) _TIFFmalloc(linebytes);
     else
-		buf = (unsigned char *) _TIFFmalloc(TIFFScanlineSize(out));
-	
+	buf = (unsigned char *) _TIFFmalloc(TIFFScanlineSize(out));
+
     /* Set the strip size of the file to be size of one row of pixels */
     TIFFSetField(out, TIFFTAG_ROWSPERSTRIP,
-				 TIFFDefaultStripSize(out, w * sampleperpixel));
-	
+		 TIFFDefaultStripSize(out, w * sampleperpixel));
+
     /* Writing image to the file one strip at a time */
     for (row = 0; row < h; row++) {
-		memcpy(buf, &image[(h - row - 1) * linebytes], linebytes);	/* tricky index */
-		if (TIFFWriteScanline(out, buf, row, 0) < 0)
-			break;
+	memcpy(buf, &image[(h - row - 1) * linebytes], linebytes);	/* tricky index */
+	if (TIFFWriteScanline(out, buf, row, 0) < 0)
+	    break;
     }
     (void) TIFFClose(out);
     if (buf)
-		_TIFFfree(buf);
+	_TIFFfree(buf);
 }
 
 
@@ -86,14 +86,17 @@ unsigned char *createMatrix(int height, int width, double *input)
     unsigned char *matrix = (unsigned char *) malloc(dim);
     unsigned char *p = matrix;
 #if DEBUG
-	printf("Sono nella createMatrix e ho allocato %d\nLA GAUSSIANA RICHIESTA HA I SEGUENTI PARAMETRI:\n",dim);
-	for (i=0;i<DIM_FIT;i++) printf("%f\t",input[i]);
-	printf("\n");
-#endif	
+    printf
+	("Sono nella createMatrix e ho allocato %d\nLA GAUSSIANA RICHIESTA HA I SEGUENTI PARAMETRI:\n",
+	 dim);
+    for (i = 0; i < DIM_FIT; i++)
+	printf("%f\t", input[i]);
+    printf("\n");
+#endif
     /* build the image */
     for (i = 0; i < height; i++)
-		for (j = 0; j < width; j++)
-			*p++ = (unsigned char) evaluateGaussian(input, j, i);
+	for (j = 0; j < width; j++)
+	    *p++ = (unsigned char) evaluateGaussian(input, j, i);
     return matrix;
 }
 
@@ -107,29 +110,31 @@ unsigned char *createMatrix(int height, int width, double *input)
  \param		dimx,dimy	dimensions of the image
  \retval	representation of the image as a unsigned char matrix 
  */
-unsigned char* createImage(int width, int height){
-	
-    double input[DIM_FIT];
-	int i,max;
-	
-	/* random amplitude value with mean AVERAGE
-	and a maximum deviation of DEVIATION */
-	max = AVERAGE + ( rand() % DEVIATION ) - DEVIATION/2;
+unsigned char *createImage(int width, int height)
+{
 
-	for(i=0;i<DIM_FIT;i++) input[i] = 0;
-	
+    double input[DIM_FIT];
+    int i, max;
+
+    /* random amplitude value with mean AVERAGE
+       and a maximum deviation of DEVIATION */
+    max = AVERAGE + (rand() % DEVIATION) - DEVIATION / 2;
+
+    for (i = 0; i < DIM_FIT; i++)
+	input[i] = 0;
+
 #if DEBUG
-	printf("Max is %d\n",max);
+    printf("Max is %d\n", max);
 #endif
-		
-	/* values of the gaussian are chosen with respect of the dimension
-	of the image in order to have a nice centered gaussian */ 	
-	input[PAR_A] = max;
-	input[PAR_X] = width/2;
-	input[PAR_Y] = height/2;
-	input[PAR_SX] = width/4;
-	input[PAR_SY] = height/4;
-	
+
+    /* values of the gaussian are chosen with respect of the dimension
+       of the image in order to have a nice centered gaussian */
+    input[PAR_A] = max;
+    input[PAR_X] = width / 2;
+    input[PAR_Y] = height / 2;
+    input[PAR_SX] = width / 4;
+    input[PAR_SY] = height / 4;
+
     /* image representing the Gaussian fit */
     return createMatrix(height, width, input);
 }

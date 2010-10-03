@@ -1,7 +1,7 @@
 #ifndef __CAMERA__H
 #define __CAMERA__H
 
-#include <sys/types.h> 
+#include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <string.h>
