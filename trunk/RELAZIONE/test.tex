@@ -51,6 +51,18 @@ hostfile on axth
 \label{graf:time_axth}}
 \subfigure[]{\includegraphics[width=\columnwidth,height=3.5in]{./CHART/axth_scalability}%
 \label{graf:scala_axth}}
-\caption{ Comperison of application service time of the various implementation \ref{graf:time_axth} and relative Scalability \ref{graf:scala_axth}. Test performed on a set of 20 nodes with Intel E7400 @ 2.80 Ghz cpu. Images of $10^6$ 8bit pixels.}
-\label{chart:ottavina_camera}
+\caption{ Comparison of application service time of the various implementation \ref{graf:time_axth} and relative Scalability \ref{graf:scala_axth}. Test performed on a set of 20 nodes with Intel E7400 @ 2.80 Ghz cpu. Images of $10^6$ 8bit pixels.}
+\label{chart:axt}
 \end{figure}
+
+\begin{figure}[p]
+\centering
+\subfigure[]{\includegraphics[width=\columnwidth,height=3.5in]{./CHART/pianosa_time}%
+\label{graf:pianosa_time}}
+\subfigure[]{\includegraphics[width=\columnwidth,height=3.5in]{./CHART/communication}%
+\label{graf:communication}}
+\caption{ Service time on the Pianosa cluster of farm and data parallel implementation \ref{graf:time_axth}. Communication cost on the two distrubuted architectures \ref{graf:scala_axth}. The first test is performed on a set of 24 nodes with Intel Pentium III @ 800 Mhz cpu. Images of $10^6$ 8bit pixels.}
+\label{chart:pianosa_comm}
+\end{figure}
+
+

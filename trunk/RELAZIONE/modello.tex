@@ -2,17 +2,21 @@
 
 In this section we will talk about the cost models of the farm and data parallel paradigms used to parallelize the algorithm above. In both of them there is replication of the function in every worker, but in the second we have partition of data. The methodology used for measure the performance is based on standard measures, in particular we have taken principally into account the service time and the scalability. These cost models are based on another cost model regarding the communications between processes: the latency of a send is composed by a fixed term $T_{setup}$ independent from the message length, and by a term $T_{trasm}$ variable in the length of the message.
 
-When we instantiated the problem, we assumed that the emitter in the farm and the scattering module in the data parallel have always an image ready to send. In this way we simulated the minimal interarrival time of images from another module generating the stream (that it will be the camera module during the real behaviour of this application).
+When we instantiated the problem, we assumed that the emitter in the farm and the scattering module in the data parallel have always an image ready to send. In this way we simulated the minimal interarrival time of images from the source generating the stream (that it will be the camera module during the real behaviour of this application).
 
 \subsection{Farm}
 
-The most important parameter of this paradigm, that is working with computations based on stream, is the service time $T_{s}$. In the farm, the emitter, the generic worker and the collector are organized in pipeline, hence it is equal to
+Let's analyze the service time $T_{s}$. 
+In the farm, the emitter, the generic worker and the collector are organized in pipeline, hence it is equal to
 \[
 T_{s} = \max \lbrace T_{e}, T_{w}, T_{c}\rbrace
 \]
-where, in this specific case, the service time of the emitter (called $T_{e}$) is equal to the communication latency $L_{image}$ for sending an image and the collector service time $T_{c}$ is negligible respect $T_{e}$ because this module sends only the result of the computation. Following the considerations above the term $L_{image}$ is equal to minimum interarrival time $T_{a}$ at the system. According to queuing theory we have that the service time $T_{s}$ of the farm system is equal to the interarrival time $L_{image}$ if
+where, in this specific case, the service time of the emitter (called $T_{e}$) is equal to the communication latency $L_{image}$ for sending an image.
+The collector service time $T_{c}$ is negligible respect $T_{e}$ because this module sends only the result of the computation which have a really small data size.
+Following the considerations above the term $L_{image}$ is equal to minimum interarrival time $T_{a}$ at the system. 
+According to queuing theory we have that the service time $T_{s}$ of the farm system is equal to the interarrival time $L_{image}$ if
 \[
-T_{w} = L_{image} \Leftrightarrow \frac{T_{image}}{nw} = L_{image} \Leftrightarrow nw = \frac{T_{image}}{L_{image}} 
+T_{w} \leq L_{image} \Leftrightarrow \frac{T_{image}}{nw} \leq L_{image} \Leftrightarrow nw = \big \lceil \frac{T_{image}}{L_{image}} \big \rceil
 \]
 where $T_{image}$ is the time spent to execute the Gauss-Newton algorithm over an image and $nw$ is the ideal number of workers. If the purpose is to maximize the bandwidth (loosing a few in efficiency) we can choose the ceiling of this value.
 
@@ -21,29 +25,38 @@ If we let $m$ as the stream length, the completion time can be evaluated as
 T_{C} = nw \cdot L_{image} + \frac{m}{nw} \cdot T_{w} + T_{c} 
 \]
 where $\frac{m}{nw}$ is the mean number of tasks for worker.
-If we have that $m \gg nw+2$ (stream length is more bigger than the number of modules of the farm), like in this project, we can consider the completion time close to
+If we have that $m \gg nw+2$ ( stream length is sufficiently greater than the number of modules of the farm) we can consider the completion time close to
 \begin{equation}
 \label{completiontime}
 T_{C} \simeq m \cdot T_{s}
 \end{equation}
-The scalability is a measure of how much speed is the computation respect than the sequential case. Formally, it is defined as
+The scalability is a measure of how much faster is the computation with respect than the sequential case. 
+Formally, it is defined as
 \begin{equation}
 \label{scalability}
 s = \frac{T_{image}}{T_{s}}
 \end{equation}
 where $T_{s}$ changes in function of the parallelism degree $n=nw+2$.
 
-The Gauss-Newton algorithm practically executes a function for each pixel in the image. The time spent for this function is not variable considering different pixel values, hence we have the maximum loading balance and a round-robin strategy is a well solution. But if this condition was not valid, it was important to find a scheduling solution for balancing the load like, for instance, an on-demand strategy. As we will see in the next sections, the tests will confirm that there is not difference about the circular assignment of images and the on-demand strategy in this project.
+The Gauss-Newton algorithm practically executes a function for each pixel in the image. 
+The time spent for this function is fixed and independent of the pixel value hence we have perfect loading balance and a round-robin strategy is a good solution. 
+In case of tasks with different completion time it is important to find a scheduling solution for balancing the load among workers; an on-demand strategy for instance. 
+As we will see in the next sections, the tests will confirm that there is no difference about the circular assignment of images and the on-demand strategy in our case.
 
 \subsection{Map Reduce}
 
-The data parallel paradigm can be able to reduce the latency of the computation, but in this case it operates on a stream of elements hence the most important parameter is yet the service time. As we said, the data parallel computation used for this parallel program is a map with reduce. In this case each worker computes the algorithm on own partition of data, hence there is not need to have communications between workers but it is necessary to have scatter and reduce communications. The scheme of these communications is very important: in the simplest case we have $nw$ send from or to the workers but is possible to think about tree schemes where the latency becomes logarithmic in the number of workers and no more linear. Another aspect to take into account is how to partition the pixels of the image: it can be done by rows, columns or in an interleaving way. In particular, we decided to partition the elements of the $gradient\_matrix$ and the $diff\_vector$ by rows obtaining a minimum number of cache faults. However, in this section we are not interesting in details regarding the implementation but our cost model will take in consideration these choices.
+The data parallel paradigm can be able to reduce the latency of the computation, but in this case it operates on a stream of elements hence the most important parameter is yet the service time. 
+As we said, the data parallel computation used for this parallel program is a map with reduce.
+In this case each worker computes the algorithm on his own partition of data thus there is not need to have communications between workers but it is necessary to have scatter and reduce communications. 
+The scheme of these communications is very important: in the simplest case we have $nw$ send from or to the workers thus linear latency with respect to the number of nodes.
+Then it is possible to map communications on a tree schemes in such a way that the latency becomes logarithmic in the number of workers. 
 
 In the most general case for a map reduce operating on a stream of elements, the service time can be evaluated as
 \[
 T_{s} = \max\lbrace T_{scatter}, T_{w}, T_{reduce}\rbrace
-\]
-because, like in the farm, we have a pipeline behaviour. Obviously, $T_{w}$ is the time spent for execute our algorithm over a partition of the image. We obtain that the map is not bottleneck if we choose $nw$ workers such that
+\] 
+Obviously, $T_{w}$ is the time spent to execute our algorithm over a partition of the image. 
+In order to obtain maximum bandwidth we choose $nw$ workers such that
 \[
 nw = \frac{T_{image}}{L_{image}}
 \]
@@ -54,13 +67,15 @@ T_{scatter} \leq L_{image}
 \[
 T_{reduce} \leq L_{image}
 \] 
-In this specific case the associative function of the reduce is simply a sum over the partial results obtained by the execution of the algorithm over the single partitions of the image. This means, as we said in Section 1.3, that the time spent for this operation is negligible respect than the functions in the workers hence there is not need to realize it using a tree but it is sufficient to use only a module. This module will be able to execute the the last two functions described in the Section 1.3 too. In this project, the considerations about the linear or logarithmic latency are principally referred to the scatter.
+In this specific case the associative function of the reduce is simply a sum over the partial results obtained by the execution of the algorithm over the single partitions of the image. 
+This means, as we said in Section 1.3, that the time spent for this operation is negligible so further considerations about the linear or logarithmic latency are principally referred to the scatter operation only.
 
 The completion time is evaluated like in Formula \ref{completiontime} and the scalability is the same of Formula \ref{scalability}.
 
 \subsection{Farm vs Map}
 
-In general the data parallel solutions require less memory capacity of the architecture nodes respect than the farm scheme. If we think that in the ideal case the entirely data structures of the program should be present in main memory, to have only a single computation over an image respect than different computations over different images can be an advantage from the point of view of the swap information. This can become important in shared memory architecture especially when we increase the grain of the data input.
+In general the data parallel solutions require less memory with respect to the farm scheme. 
+If we think that in the ideal case the entirely data structures of the program should be present in main memory, to have only a single computation over an image respect than different computations over different images can be an advantage from the point of view of the swap information. This can become important in shared memory architecture especially when we increase the grain of the data input.
 
 This latter aspect is fundamental too: to have an optimal dimension of the input data permits to increase the benefits because, in according to our communications cost model above, we can amortize the $T_{setup}$ cost. In the data parallel form this means to found the dimension of the partitions (hence the parallelism degree) of the matrix, instead in the farm this means to have an adequate dimension of the input images. We tested our parallel program in both the paradigms with different data grain in such a way to recognize the situations above.
 
