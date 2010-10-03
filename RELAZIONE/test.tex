@@ -7,7 +7,11 @@ This section contains all the results of the tests performed for verify the corr
 \item \textbf{Pianosa}: a cluster of 24 nodes with Intel Pentium III @ 800 MHz CPU.
 \end{itemize}
 
-In particular we have done comparisons between different implementations of the farm and data parallel. For instance, we have the on-demand or round-robin scheduling in the farm, or different number of service processes in the map reduce solutions. Very important is the evaluation of the differences between farm and data parallel over the different architectures for understand what is the behaviour if in the real world the program will be execute on different hardware platforms. We tested the impact of the camera module too because in the real world will be present a real camera that will generate a stream of images. We concluded changing the grain of the input data for measure different dimensions of the Gaussian images because it can happen that there is the need of a higher resolution. Finally, we have measured the communication latencies of the various primitives utilized like MPI or our versions.
+In particular we compared different implementations of the farm and data parallel.
+For instance, we tested on-demand or round-robin scheduling in the farm, or different number of service processes in the map reduce solutions.
+Very important is the evaluation of the differences between farm and data parallel over the different architectures. 
+We also tested the impact of the camera module because in the real world a camera will generate the stream of images.
+We concluded by changing the grain of the input data ( dimension of the Gaussian images ) and measuring communication latencies on various architetures.
 
 \begin{figure}[p]
 \centering
@@ -66,7 +70,7 @@ In particular we have done comparisons between different implementations of the 
 \subfigure[]{\includegraphics[width=\columnwidth,height=3.5in]{./CHART/pianosa_scala}%
 \label{graf:pianosa_scala}}
 \caption{ Service time on the Pianosa cluster of farm and data parallel implementation \ref{graf:time_axth} and relative scalability \ref{graf:pianosa_scala}.  Test is performed on a set of 24 nodes with Intel Pentium III @ 800 MHz CPU. Images of $10^6$ 8bit pixels.}
-\label{chart:pianosa_comm}
+\label{chart:pianosa}
 \end{figure}
 
 \begin{figure}[p]
